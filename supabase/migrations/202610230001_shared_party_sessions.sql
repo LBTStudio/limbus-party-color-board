@@ -289,7 +289,7 @@ create or replace function public._party_session_snapshot(p_session_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -335,7 +335,7 @@ create or replace function public.create_party_session(p_title text, p_display_n
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -345,6 +345,10 @@ declare
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
   if v_title = '' then raise exception 'SESSION_TITLE_REQUIRED' using errcode = '22023'; end if;
+  if (select count(*) from public.party_sessions s
+      where s.owner_user_id = v_user_id and s.created_at > now() - interval '1 hour') >= 10 then
+    raise exception 'SESSION_CREATE_RATE_LIMIT' using errcode = '53300';
+  end if;
   if v_name = '' then v_name := '編成主'; end if;
   insert into public.party_sessions (title, owner_user_id)
   values (v_title, v_user_id) returning id into v_session_id;
@@ -358,7 +362,7 @@ create or replace function public.list_my_party_sessions()
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare v_user_id uuid := auth.uid(); v_result jsonb;
 begin
@@ -378,7 +382,7 @@ create or replace function public.create_party_invite(p_session_id uuid, p_expir
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -393,6 +397,10 @@ begin
   if p_expires_hours is null or p_expires_hours < 1 or p_expires_hours > 720 then
     raise exception 'EXPIRY_MUST_BE_1_TO_720_HOURS' using errcode = '22023';
   end if;
+  if (select count(*) from public.session_invites i
+      where i.created_by = v_user_id and i.created_at > now() - interval '1 hour') >= 20 then
+    raise exception 'INVITE_CREATE_RATE_LIMIT' using errcode = '53300';
+  end if;
   -- Two independently generated UUIDs produce a 256-bit hex token; only its hash is stored.
   v_token := lower(replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''));
   v_expires := now() + make_interval(hours => p_expires_hours);
@@ -406,7 +414,7 @@ create or replace function public.revoke_party_invite(p_invite_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare v_user_id uuid := auth.uid();
 begin
@@ -423,7 +431,7 @@ create or replace function public.request_party_access(p_token text, p_display_n
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -437,6 +445,10 @@ begin
     raise exception 'INVITE_INVALID_OR_EXPIRED' using errcode = '22023';
   end if;
   if v_display_name = '' then raise exception 'DISPLAY_NAME_REQUIRED' using errcode = '22023'; end if;
+  if (select count(*) from public.session_access_requests r
+      where r.user_id = v_user_id and r.requested_at > now() - interval '1 hour') >= 30 then
+    raise exception 'ACCESS_REQUEST_RATE_LIMIT' using errcode = '53300';
+  end if;
   select i.session_id into v_session_id
   from public.session_invites i
   join public.party_sessions s on s.id=i.session_id
@@ -464,7 +476,7 @@ create or replace function public.check_my_party_access(p_session_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -485,7 +497,7 @@ create or replace function public.poll_party_session(p_session_id uuid, p_after_
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -517,7 +529,7 @@ create or replace function public.apply_party_edit(
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -570,7 +582,7 @@ create or replace function public.list_party_session_admin(p_session_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -608,7 +620,7 @@ create or replace function public.decide_party_access_request(p_request_id uuid,
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -646,7 +658,7 @@ create or replace function public.remove_party_session_member(p_session_id uuid,
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare v_owner uuid; v_caller uuid := auth.uid();
 begin
@@ -666,7 +678,7 @@ create or replace function public.archive_party_session(p_session_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = pg_catalog
 as $$
 declare v_user_id uuid := auth.uid();
 begin
