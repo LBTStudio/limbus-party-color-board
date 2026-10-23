@@ -10,6 +10,7 @@ const migration = read('../supabase/migrations/202610230001_shared_party_session
 const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
+const closedSessionAccessMigration = read('../supabase/migrations/20261023195900_restrict_closed_session_status_to_related_users.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -276,6 +277,25 @@ test('forward migration updates already-deployed resource-cap RPCs and serialize
   assert.ok(secondRowLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
 });
 
+
+test('closed-session status is only disclosed to a user related to that session', () => {
+  const start = closedSessionAccessMigration.indexOf('create or replace function public.check_my_party_access');
+  const end = closedSessionAccessMigration.indexOf('revoke all on function public.check_my_party_access', start);
+  const fn = closedSessionAccessMigration.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(fn, /s\.archived_at is not null/);
+  assert.match(fn, /s\.owner_user_id=v_user_id/);
+  assert.match(fn, /public\.session_members m[\s\S]*?m\.session_id=s\.id and m\.user_id=v_user_id/);
+  assert.match(fn, /public\.session_access_requests r[\s\S]*?r\.session_id=s\.id and r\.user_id=v_user_id/);
+  const closedStatus = fn.indexOf("return jsonb_build_object('status','closed'");
+  assert.ok(closedStatus > fn.indexOf('s.archived_at is not null'));
+  assert.ok(closedStatus > fn.indexOf('s.owner_user_id=v_user_id'));
+  assert.ok(closedStatus > fn.indexOf('r.session_id=s.id and r.user_id=v_user_id'));
+  assert.match(fn, /security definer/i);
+  assert.match(fn, /set search_path = pg_catalog/i);
+  assert.match(closedSessionAccessMigration, /revoke all on function public\.check_my_party_access\(uuid\) from public, anon/i);
+  assert.match(closedSessionAccessMigration, /grant execute on function public\.check_my_party_access\(uuid\) to authenticated/i);
+});
 
 test('shared session lifecycle clearly separates browser-local and cloud data', () => {
   const html = read('../index.html');
