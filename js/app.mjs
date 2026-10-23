@@ -18,8 +18,10 @@ import {
 import { escapeHtml } from './security.mjs';
 import {
   createManualPersona,
+  discoverLbtAccounts,
   discoverLbtPersonaCandidates,
   importLocalPersonas,
+  isPersonaOwnedByLbtAccount,
   loadLocalPersonas,
   sanitizeLocalPersona,
   saveLocalPersonas,
@@ -27,6 +29,8 @@ import {
 
 const DATA_URL = './data/personas.json';
 const STORAGE_KEY = 'lbt_party_color_board_v1';
+const LBT_ACCOUNT_FILTER_KEY = 'lbt_party_color_board_lbt_account_filter_v1';
+const LBT_SHOW_UNOWNED_KEY = 'lbt_party_color_board_show_unowned_v1';
 let sharedPersonaPersistenceWarningShown = false;
 const PARTY_SORTS = new Set([
   'default', 'no-asc', 'no-desc', 'name', 'hp-desc', 'san-desc', 'speed-desc', 'pattern', 'color',
@@ -49,6 +53,10 @@ const state = {
   pendingAdd: false,
   pickerMode: 'all',
   pickerQuery: '',
+  lbtAccounts: [],
+  selectedLbtAccountId: '',
+  showUnownedPersonas: false,
+  lbtAccountPreferencesLoaded: false,
   localPersonas: [],
   importCandidates: [],
   modalReturnToPicker: false,
@@ -63,6 +71,62 @@ function browserStorage() {
     return window.localStorage;
   } catch {
     return null;
+  }
+}
+
+function readStoragePreference(key) {
+  try {
+    return browserStorage()?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoragePreference(key, value) {
+  try {
+    browserStorage()?.setItem(key, value);
+  } catch {
+    // Preferences are optional; the current tab still uses the selected values.
+  }
+}
+
+function refreshLbtAccountOptions() {
+  state.lbtAccounts = discoverLbtAccounts(browserStorage(), state.data?.personas || []);
+  if (!state.lbtAccountPreferencesLoaded) {
+    state.showUnownedPersonas = readStoragePreference(LBT_SHOW_UNOWNED_KEY) === '1';
+    state.lbtAccountPreferencesLoaded = true;
+  }
+
+  const preferredId = state.selectedLbtAccountId || readStoragePreference(LBT_ACCOUNT_FILTER_KEY) || '';
+  const preferred = state.lbtAccounts.find((account) => account.id === preferredId);
+  const active = state.lbtAccounts.find((account) => account.active);
+  state.selectedLbtAccountId = (preferred || active || state.lbtAccounts[0])?.id || '';
+}
+
+function renderLbtAccountControls() {
+  const wrapper = $('#picker-account-controls');
+  const select = $('#picker-lbt-account');
+  const showUnowned = $('#picker-show-unowned');
+  const status = $('#picker-account-status');
+  const hasAccounts = state.lbtAccounts.length > 0;
+  wrapper.hidden = !hasAccounts;
+  if (!hasAccounts) return;
+
+  select.innerHTML = state.lbtAccounts.map((account) => {
+    const activeLabel = account.active ? '・LBT側で選択中' : '';
+    const label = `${account.name}（所持公式人格${account.ownedCount}件${activeLabel}）`;
+    return `<option value="${escapeHtml(account.id)}">${escapeHtml(label)}</option>`;
+  }).join('');
+  select.value = state.selectedLbtAccountId;
+  showUnowned.checked = state.showUnownedPersonas;
+
+  const account = state.lbtAccounts.find((item) => item.id === state.selectedLbtAccountId);
+  if (!account) {
+    status.textContent = 'LBTのアカウント保存データが見つからないため、全人格を表示しています。';
+  } else if (state.showUnownedPersonas) {
+    status.textContent = `LBTアカウント「${account.name}」を選択中。未所持人格も表示する設定なので、公式DBの全人格が候補になります。手動作成の創作人格は常に表示されます。`;
+  } else {
+    status.textContent = `LBTアカウント「${account.name}」の所持人格（公式DBに一致する${account.ownedCount}件）に候補を絞っています。未所持人格を追加する場合は「未所持の人格も表示」をオンにしてください。手動作成の創作人格は常に表示されます。`;
   }
 }
 
@@ -238,6 +302,7 @@ function saveState() {
 function init(data) {
   state.data = data;
   state.localPersonas = loadLocalPersonas(browserStorage());
+  refreshLbtAccountOptions();
   state.personas = [...data.personas, ...state.localPersonas];
   state.map = makePersonaMap(state.personas);
 
@@ -309,6 +374,21 @@ function bindEvents() {
   });
   $('#picker-search').addEventListener('input', (event) => {
     state.pickerQuery = event.target.value;
+    renderPickerList();
+  });
+
+  $('#picker-lbt-account').addEventListener('change', (event) => {
+    const nextId = event.target.value;
+    if (!state.lbtAccounts.some((account) => account.id === nextId)) return;
+    state.selectedLbtAccountId = nextId;
+    writeStoragePreference(LBT_ACCOUNT_FILTER_KEY, nextId);
+    renderLbtAccountControls();
+    renderPickerList();
+  });
+  $('#picker-show-unowned').addEventListener('change', (event) => {
+    state.showUnownedPersonas = event.target.checked;
+    writeStoragePreference(LBT_SHOW_UNOWNED_KEY, state.showUnownedPersonas ? '1' : '0');
+    renderLbtAccountControls();
     renderPickerList();
   });
 
@@ -650,10 +730,12 @@ function openPicker(index) {
 
   state.pickerIndex = index;
   state.pendingAdd = index === null;
+  refreshLbtAccountOptions();
   state.pickerQuery = '';
   $('#picker-search').value = '';
   $('#picker-title').textContent = index === null ? '人格を追加' : '人格を変更';
   syncPickerMode();
+  renderLbtAccountControls();
   renderPickerList();
   $('#picker').showModal();
   requestAnimationFrame(() => $('#picker-search').focus());
@@ -686,9 +768,11 @@ function renderLbtImportCandidates() {
     `;
   }).join('');
   empty.hidden = candidates.length > 0;
+  const selectedAccount = state.lbtAccounts.find((account) => account.id === state.selectedLbtAccountId);
+  const scopeLabel = selectedAccount ? `アカウント「${selectedAccount.name}」の保存データから` : 'LBT保存データから';
   status.textContent = candidates.length
-    ? `${candidates.length}件の同期・創作人格が見つかりました。チェックした人格だけを追加ライブラリに取り込みます。元のLBT保存データは変更しません。${sharedActive ? ' 共有セッションで編集権限がある場合、取り込んだ人格を編成に追加すると、必要な人格データだけが参加者へ同期されます。LBTの生セーブやアカウント情報は送信しません。' : ' 追加人格を別端末で使う場合は、編成に追加して「共同編集スペース（クラウド保存）」を利用してください。URL共有には含まれません。'}`
-    : '同じブラウザプロフィールのLBT保存データから、取り込み対象の同期・創作人格を検出できませんでした。公式DBの人格はすでに一覧にあります。';
+    ? `${scopeLabel}${candidates.length}件の同期・創作人格が見つかりました。チェックした人格だけを追加ライブラリに取り込みます。元のLBT保存データは変更しません。${sharedActive ? ' 共有セッションで編集権限がある場合、取り込んだ人格を編成に追加すると、必要な人格データだけが参加者へ同期されます。LBTの生セーブやアカウント情報は送信しません。' : ' 追加人格を別端末で使う場合は、編成に追加して「共同編集スペース（クラウド保存）」を利用してください。URL共有には含まれません。'}`
+    : `${scopeLabel}取り込み対象の同期・創作人格を検出できませんでした。別のアカウントを試すか、人格選択画面の「手動で創作人格を追加」を利用してください。公式DBの人格は、所持絞り込みの設定に応じて通常の選択候補に表示されます。`;
   $('#apply-lbt-import').disabled = candidates.length === 0;
 }
 
@@ -713,8 +797,13 @@ function openLbtPersonaImport() {
   state.pickerQuery = '';
   $('#picker-search').value = '';
   $('#picker').close();
+  refreshLbtAccountOptions();
   try {
-    state.importCandidates = discoverLbtPersonaCandidates(browserStorage(), state.data.personas);
+    state.importCandidates = discoverLbtPersonaCandidates(
+      browserStorage(),
+      state.data.personas,
+      state.lbtAccounts.length ? state.selectedLbtAccountId : null,
+    );
   } catch (error) {
     state.importCandidates = [];
     showToast('LBT保存データを読み取れませんでした: ' + (error.message || '保存データエラー'));
@@ -892,8 +981,11 @@ function renderPickerList() {
   const query = state.pickerQuery.trim().normalize('NFKC').toLowerCase();
   const selectedKeys = new Set(state.party.map((entry) => entry.key));
   const currentKey = state.pickerIndex !== null ? state.party[state.pickerIndex]?.key : null;
+  const selectedAccount = state.lbtAccounts.find((account) => account.id === state.selectedLbtAccountId) || null;
+  const ownedOnly = Boolean(selectedAccount && !state.showUnownedPersonas);
 
   const results = state.personas.filter((persona) => {
+    if (ownedOnly && !isPersonaOwnedByLbtAccount(persona, selectedAccount)) return false;
     if (state.pickerMode === 'local' && !persona.localOnly) return false;
     if (state.pickerMode !== 'all' && state.pickerMode !== 'local' && persona.kind !== state.pickerMode) return false;
     if (!query) return true;
@@ -942,6 +1034,9 @@ function renderPickerList() {
   }).join('');
 
   $('#picker-empty').hidden = results.length > 0;
+  $('#picker-empty').textContent = ownedOnly
+    ? '選択中のLBTアカウントの所持人格候補がありません。未所持人格も表示する場合は、上のチェックを入れてください。'
+    : '該当する人格がありません。';
 }
 
 function deleteLocalPersona(key) {
