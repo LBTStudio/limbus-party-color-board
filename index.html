@@ -27,80 +27,50 @@
 
 <main id="main">
   <section class="panel controls" aria-labelledby="controls-title">
-    <h2 id="controls-title" class="sr-only">表示設定</h2>
-    <div class="control">
-      <label for="party-sort">編成の並び</label>
-      <select id="party-sort">
-        <option value="default">登録順</option>
-        <option value="no-asc">人格番号 昇順</option>
-        <option value="no-desc">人格番号 降順</option>
-        <option value="name">名前順</option>
-        <option value="hp-desc">HP 高い順</option>
-        <option value="san-desc">SAN 高い順</option>
-        <option value="speed-desc">速度 高い順</option>
-        <option value="pattern">色構成順（S0→S4）</option>
-        <option value="color">選択色が多い順</option>
-      </select>
-    </div>
-    <div class="control">
-      <label for="resource-sort">資源色の並び</label>
-      <select id="resource-sort">
-        <option value="count-desc">数の多い順</option>
-        <option value="count-asc">数の少ない順</option>
-        <option value="personas-desc">出せる人数順</option>
-        <option value="sin-order">色順（憤怒→嫉妬）</option>
-        <option value="name">名前順</option>
-      </select>
-    </div>
-    <div class="control-actions">
-      <button type="button" id="add-member" class="btn">＋ 人格を追加</button>
-      <button type="button" id="import-tsv" class="btn btn-ghost">TSV取込（任意）</button>
+    <h2 id="controls-title" class="sr-only">編成操作と表示設定</h2>
+    <div class="toolbar-primary">
+      <button type="button" id="add-member" class="btn toolbar-add">＋ 人格を追加</button>
       <button type="button" id="copy-tsv" class="btn btn-ghost">TSVをコピー</button>
-      <button type="button" id="reset-party" class="btn btn-ghost">編成をクリア</button>
+      <p class="toolbar-note">最大6人 · 変更内容は自動で集計されます</p>
     </div>
-  </section>
-
-  <section class="panel shared-panel" id="shared-panel" aria-labelledby="shared-title">
-    <div class="section-head">
-      <div><p class="kicker">SHARED PARTY WORKSPACE</p><h2 id="shared-title">共有編成（クラウド保存）</h2></div>
-      <p class="section-meta" id="shared-role-label">この端末の個人編成</p>
+    <div class="toolbar-filters" aria-label="表示順の設定">
+      <div class="control">
+        <label for="party-sort">人格の並び順</label>
+        <select id="party-sort">
+          <option value="default">登録順</option>
+          <option value="no-asc">人格番号 昇順</option>
+          <option value="no-desc">人格番号 降順</option>
+          <option value="name">名前順</option>
+          <option value="hp-desc">HP 高い順</option>
+          <option value="san-desc">SAN 高い順</option>
+          <option value="speed-desc">速度 高い順</option>
+          <option value="pattern">色構成順（S0→S4）</option>
+          <option value="color">選択色が多い順</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="resource-sort">資源色の並び順</label>
+        <select id="resource-sort">
+          <option value="count-desc">数の多い順</option>
+          <option value="count-asc">数の少ない順</option>
+          <option value="personas-desc">出せる人数順</option>
+          <option value="sin-order">色順（憤怒→嫉妬）</option>
+          <option value="name">名前順</option>
+        </select>
+      </div>
     </div>
-    <p class="hint">「共有編成」は端末やログインセッションの管理ではなく、複数人で同じ編成を扱うクラウド上の作業スペースです。参加者は発行者の承認後に閲覧・編集できます。</p>
-    <div class="shared-storage-explainer" aria-label="データの保存先">
-      <div class="shared-storage-card"><span class="shared-storage-label">PERSONAL · THIS BROWSER</span><strong>個人編成</strong><p>この端末のブラウザ内に保存。共有しない限り、Supabase へ編成データは送信しません。</p></div>
-      <div class="shared-storage-card is-cloud"><span class="shared-storage-label">SHARED · CLOUD DATABASE</span><strong>共有編成</strong><p>編成キー・参加者・招待・編集履歴を Supabase に保存。参加者の端末は表示と操作を担当します。</p></div>
-    </div>
-    <details class="shared-lifecycle">
-      <summary>共有データの保存期間と自動削除</summary>
-      <ul>
-        <li>参加者が共有編成を開いている間は、活動状況を軽量に記録します（最大5分に1回）。</li>
-        <li>30日間、誰も共有編成を開かなければ自動で終了扱いになります。</li>
-        <li>終了から7日後に共有編成と関連データを完全削除します。発行者が手動で終了した場合も同じです。</li>
-        <li>個人編成はこの自動削除の対象外で、このブラウザ内の保存データとして残ります。</li>
-      </ul>
-      <p class="hint">自動削除は日次ジョブで処理されるため、期限ちょうどではなく次回の実行時に反映されます。</p>
+    <details class="toolbar-more">
+      <summary>その他の操作</summary>
+      <div class="toolbar-more-menu">
+        <button type="button" id="import-tsv" class="btn btn-ghost">TSV / CSVを取り込む</button>
+        <button type="button" id="reset-party" class="btn btn-ghost">編成をクリア</button>
+        <a class="btn btn-ghost" href="#shared-panel">共有編成・同期へ</a>
+      </div>
     </details>
-    <p class="shared-status" id="shared-status" role="status" aria-live="polite">共有機能を準備しています。</p>
-    <div id="shared-captcha-widget" class="shared-captcha" aria-label="不正利用防止の確認" hidden></div>
-    <p id="shared-captcha-hint" class="hint" hidden>初回の共有機能利用では、不正利用防止の確認が必要です。</p>
-    <div class="shared-fields">
-      <label for="shared-display-name">共有時の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname" value="参加者"></label>
-      <label for="shared-session-title">新しい共有編成の名前<input class="input" id="shared-session-title" maxlength="80" placeholder="例：第1グループ編成"></label>
-    </div>
-    <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create">＋ 共有編成を作成</button><button type="button" class="btn btn-ghost" id="shared-refresh">クラウドから一覧を更新</button></div>
-    <div id="shared-session-list" class="shared-list" aria-label="共有編成一覧"></div>
-    <div id="shared-access-waiting" class="shared-subpanel" hidden><h3>参加承認待ち</h3><p id="shared-access-message" class="hint">発行者の承認を待っています。</p><button type="button" class="btn btn-ghost" id="shared-check-access">承認状態を確認</button></div>
-    <div id="shared-active" class="shared-subpanel" hidden>
-      <div class="section-head"><div><h3 id="shared-active-title">共有編成</h3><p class="hint" id="shared-active-meta"></p></div><div class="shared-active-actions"><button type="button" class="btn btn-ghost" id="shared-leave">この端末で閉じる</button><button type="button" class="btn btn-danger-ghost" id="shared-archive" hidden>共有編成を終了</button></div></div>
-      <p class="hint shared-close-note">「この端末で閉じる」は表示を個人編成に戻すだけで、クラウドの共有編成は削除しません。使い終えた共有編成は発行者が「共有編成を終了」してください。</p>
-      <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create-invite">参加リンクを発行</button><button type="button" class="btn btn-ghost" id="shared-retry-save" hidden>未保存の編集を再試行</button></div>
-      <div id="shared-invite-tools" class="shared-invite-tools" hidden><label for="shared-invite-link">共有リンク（有効期限7日）</label><div class="shared-copy-row"><input class="input" id="shared-invite-link" type="text" readonly><button type="button" class="btn btn-ghost" id="shared-copy-invite">リンクをコピー</button></div><p class="hint">このリンクは参加申請用です。承認前は編成データを公開しません。表示名は本人確認ではないため、発行者は想定した相手か別の手段で確認してから承認してください。</p></div>
-      <div id="shared-conflict" class="shared-conflict" hidden><strong>編集競合</strong><p id="shared-conflict-message">別の編集が先に保存されました。</p><div class="control-actions shared-actions"><button type="button" class="btn btn-ghost" id="shared-accept-remote">サーバー版を採用</button><button type="button" class="btn" id="shared-reapply-local">自分の編成を再適用</button></div><p class="hint">「自分の編成を再適用」は現在の編成全体でサーバー版を置き換えます。最新内容を確認してから選択してください。</p></div>
-      <div id="shared-admin" class="shared-admin" hidden><h3>参加権限の管理</h3><div id="shared-requests"></div><div id="shared-members"></div><div id="shared-invites"></div></div>
-    </div>
   </section>
 
-<section class="panel resource-section" aria-labelledby="resource-title">
+
+  <section class="panel resource-section" aria-labelledby="resource-title">
     <div class="section-head">
       <div>
         <p class="kicker">SIN RESOURCES</p>
@@ -141,6 +111,51 @@
     <div id="party-cards" class="party-grid"></div>
     <div id="empty-state" class="empty" hidden>
       <p>編成が空です。「＋ 人格を追加」から人格を選んでください。</p>
+    </div>
+  </section>
+
+
+  <section class="panel shared-panel" id="shared-panel" aria-labelledby="shared-title">
+    <div class="section-head">
+      <div><p class="kicker">SHARED PARTY WORKSPACE</p><h2 id="shared-title">共有編成（クラウド保存）</h2></div>
+      <p class="section-meta" id="shared-role-label">この端末の個人編成</p>
+    </div>
+    <p class="hint shared-intro">複数人で同じ編成を扱うクラウド作業スペースです。参加者は発行者の承認後に閲覧・編集できます。</p>
+    <details class="shared-info">
+      <summary>保存先・保存期間について</summary>
+    <div class="shared-storage-explainer" aria-label="データの保存先">
+      <div class="shared-storage-card"><span class="shared-storage-label">PERSONAL · THIS BROWSER</span><strong>個人編成</strong><p>この端末のブラウザ内に保存。共有しない限り、Supabase へ編成データは送信しません。</p></div>
+      <div class="shared-storage-card is-cloud"><span class="shared-storage-label">SHARED · CLOUD DATABASE</span><strong>共有編成</strong><p>編成キー・参加者・招待・編集履歴を Supabase に保存。参加者の端末は表示と操作を担当します。</p></div>
+    </div>
+    <details class="shared-lifecycle">
+      <summary>共有データの保存期間と自動削除</summary>
+      <ul>
+        <li>参加者が共有編成を開いている間は、活動状況を軽量に記録します（最大5分に1回）。</li>
+        <li>30日間、誰も共有編成を開かなければ自動で終了扱いになります。</li>
+        <li>終了から7日後に共有編成と関連データを完全削除します。発行者が手動で終了した場合も同じです。</li>
+        <li>個人編成はこの自動削除の対象外で、このブラウザ内の保存データとして残ります。</li>
+      </ul>
+      <p class="hint">自動削除は日次ジョブで処理されるため、期限ちょうどではなく次回の実行時に反映されます。</p>
+    </details>
+    </details>
+
+    <p class="shared-status" id="shared-status" role="status" aria-live="polite">共有機能を準備しています。</p>
+    <div id="shared-captcha-widget" class="shared-captcha" aria-label="不正利用防止の確認" hidden></div>
+    <p id="shared-captcha-hint" class="hint" hidden>初回の共有機能利用では、不正利用防止の確認が必要です。</p>
+    <div class="shared-fields">
+      <label for="shared-display-name">共有時の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname" value="参加者"></label>
+      <label for="shared-session-title">新しい共有編成の名前<input class="input" id="shared-session-title" maxlength="80" placeholder="例：第1グループ編成"></label>
+    </div>
+    <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create">＋ 共有編成を作成</button><button type="button" class="btn btn-ghost" id="shared-refresh">クラウドから一覧を更新</button></div>
+    <div id="shared-session-list" class="shared-list" aria-label="共有編成一覧"></div>
+    <div id="shared-access-waiting" class="shared-subpanel" hidden><h3>参加承認待ち</h3><p id="shared-access-message" class="hint">発行者の承認を待っています。</p><button type="button" class="btn btn-ghost" id="shared-check-access">承認状態を確認</button></div>
+    <div id="shared-active" class="shared-subpanel" hidden>
+      <div class="section-head"><div><h3 id="shared-active-title">共有編成</h3><p class="hint" id="shared-active-meta"></p></div><div class="shared-active-actions"><button type="button" class="btn btn-ghost" id="shared-leave">この端末で閉じる</button><button type="button" class="btn btn-danger-ghost" id="shared-archive" hidden>共有編成を終了</button></div></div>
+      <p class="hint shared-close-note">「この端末で閉じる」は表示を個人編成に戻すだけで、クラウドの共有編成は削除しません。使い終えた共有編成は発行者が「共有編成を終了」してください。</p>
+      <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create-invite">参加リンクを発行</button><button type="button" class="btn btn-ghost" id="shared-retry-save" hidden>未保存の編集を再試行</button></div>
+      <div id="shared-invite-tools" class="shared-invite-tools" hidden><label for="shared-invite-link">共有リンク（有効期限7日）</label><div class="shared-copy-row"><input class="input" id="shared-invite-link" type="text" readonly><button type="button" class="btn btn-ghost" id="shared-copy-invite">リンクをコピー</button></div><p class="hint">このリンクは参加申請用です。承認前は編成データを公開しません。表示名は本人確認ではないため、発行者は想定した相手か別の手段で確認してから承認してください。</p></div>
+      <div id="shared-conflict" class="shared-conflict" hidden><strong>編集競合</strong><p id="shared-conflict-message">別の編集が先に保存されました。</p><div class="control-actions shared-actions"><button type="button" class="btn btn-ghost" id="shared-accept-remote">サーバー版を採用</button><button type="button" class="btn" id="shared-reapply-local">自分の編成を再適用</button></div><p class="hint">「自分の編成を再適用」は現在の編成全体でサーバー版を置き換えます。最新内容を確認してから選択してください。</p></div>
+      <div id="shared-admin" class="shared-admin" hidden><h3>参加権限の管理</h3><div id="shared-requests"></div><div id="shared-members"></div><div id="shared-invites"></div></div>
     </div>
   </section>
 
