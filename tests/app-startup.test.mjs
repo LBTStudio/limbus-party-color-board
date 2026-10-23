@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const app = readFileSync(new URL('../js/app.mjs', import.meta.url), 'utf8');
+const personaImport = readFileSync(new URL('../js/persona-import.mjs', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
@@ -204,7 +205,7 @@ test('persona picker refreshes LBT account sync data and replaces stale official
   assert.match(syncRefresh, /localPersonaPickerSignature\(existing\) !== localPersonaPickerSignature\(candidate\)/);
   assert.match(picker, /syncedIdentityKeysForAccount\(selectedAccount\)/);
   assert.match(picker, /if \(syncedIdentityKeys\.has\(identityKey\)\) return false/);
-  assert.match(app, /byKey\.delete\(previousKey\)/);
+  assert.match(personaImport, /byKey\.delete\(previousKey\)/);
 });
 
 test('persona detail resource summaries show all seven sins including explicit zero counts', () => {
