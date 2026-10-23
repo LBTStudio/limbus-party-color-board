@@ -269,6 +269,33 @@ test('active LBT account is still discovered when the account index exceeds the 
   assert.ok(candidates.some((persona) => persona.name === '現在のアカウントの創作人格'));
 });
 
+test('active LBT account with a numeric ID is prioritized before the account safety cap', () => {
+  const storage = new MemoryStorage();
+  const accountIds = Array.from({ length: 31 }, (_, index) => index);
+  storage.setItem(LBT_INDEX, JSON.stringify({
+    accounts: accountIds.map((id) => ({ id, name: `アカウント${id}`, createdAt: id, updatedAt: id })),
+  }));
+  storage.setItem(LBT_ACTIVE, '30');
+
+  for (const id of accountIds) {
+    storage.setItem(`lbt_account_${id}`, JSON.stringify(id === 30 ? {
+      personaMode: 'custom',
+      personaNo: 'active-numeric-custom',
+      personaSrc: lbtSource({ name: '数値IDの現在の創作人格', no: 999, custom: true }),
+      syncedManual: false,
+      roster: { personas: [] },
+    } : {
+      personaMode: null,
+      personaNo: null,
+      personaSrc: null,
+      roster: { personas: [] },
+    }));
+  }
+
+  const candidates = discoverLbtPersonaCandidates(storage, []);
+  assert.ok(candidates.some((persona) => persona.name === '数値IDの現在の創作人格'));
+});
+
 test('local persona import is repeatable and updates the same saved identity rather than duplicating it', () => {
   const storage = new MemoryStorage();
   const source = lbtSource({ name: '同期人格', no: 4 });

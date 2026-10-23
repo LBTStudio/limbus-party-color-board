@@ -253,7 +253,7 @@ function readAccountStates(storage) {
       && /^[A-Za-z0-9_-]{1,120}$/.test(String(account.id ?? '')));
     // Sort the active account before applying the safety cap, or a long account
     // list could silently omit the very save the user currently has open.
-    accounts.sort((a, b) => Number(b.id === activeId) - Number(a.id === activeId));
+    accounts.sort((a, b) => Number(String(b.id) === activeId) - Number(String(a.id) === activeId));
     accounts.length = Math.min(accounts.length, MAX_ACCOUNTS);
     for (const account of accounts) {
       const state = parseJson(safeGet(storage, `lbt_account_${account.id}`));
