@@ -39,37 +39,36 @@ jobs:
         run: npm test
 
       - name: Prepare generated-data change
-  id: prepare
-  run: |
-    if git diff --quiet -- data/personas.json supabase/seed-persona-keys.sql; then
-      echo "changed=false" >> "$GITHUB_OUTPUT"
-      echo "No generated persona data changes."
-      exit 0
-    fi
+        id: prepare
+        run: |
+          if git diff --quiet -- data/personas.json supabase/seed-persona-keys.sql; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No generated persona data changes."
+            exit 0
+          fi
 
-    git config user.name "github-actions[bot]"
-    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-    git switch -c automation/update-persona-data
-    git add data/personas.json supabase/seed-persona-keys.sql
-    git commit -m "chore: propose persona data update from LBT"
-    echo "changed=true" >> "$GITHUB_OUTPUT"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c automation/update-persona-data
+          git add data/personas.json supabase/seed-persona-keys.sql
+          git commit -m "chore: propose persona data update from LBT"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
-- name: Open or refresh review pull request
-  if: steps.prepare.outputs.changed == 'true'
-  env:
-    GH_TOKEN: ${{ github.token }}
-    BRANCH_NAME: automation/update-persona-data
-  run: |
-    # The bot updates a dedicated branch; generated external data never lands
-    # on main without a human reviewing the resulting pull request.
-    git push --force origin "HEAD:${BRANCH_NAME}"
-    existing_pr="$(gh pr list --state open --head "${GITHUB_REPOSITORY_OWNER}:${BRANCH_NAME}" --json number --jq '.[0].number // empty')"
-    if [ -n "$existing_pr" ]; then
-      gh pr edit "$existing_pr" \
-        --title "chore: update persona data from LBT" \
-        --body "Automated proposal generated from LIMBUS_BUILD_TERMINAL data. Review the generated JSON and allowlist diff before merging. This workflow does not push generated data directly to main."
-    else
-      gh pr create --base main --head "$BRANCH_NAME" \
-        --title "chore: update persona data from LBT" \
-        --body "Automated proposal generated from LIMBUS_BUILD_TERMINAL data. Review the generated JSON and allowlist diff before merging. This workflow does not push generated data directly to main."
-    fi
+      - name: Open or refresh review pull request
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: automation/update-persona-data
+        run: |
+          # External data never lands on main without a human review.
+          git push --force origin "HEAD:${BRANCH_NAME}"
+          existing_pr="$(gh pr list --state open --head "${GITHUB_REPOSITORY_OWNER}:${BRANCH_NAME}" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" \
+              --title "chore: update persona data from LBT" \
+              --body "Automated proposal generated from LIMBUS_BUILD_TERMINAL data. Review the generated JSON and allowlist diff before merging. This workflow does not push generated data directly to main."
+          else
+            gh pr create --base main --head "$BRANCH_NAME" \
+              --title "chore: update persona data from LBT" \
+              --body "Automated proposal generated from LIMBUS_BUILD_TERMINAL data. Review the generated JSON and allowlist diff before merging. This workflow does not push generated data directly to main."
+          fi
