@@ -236,10 +236,12 @@ function relevantDataDifferenceScore(persona, base) {
   for (let index = 0; index < 5; index++) {
     const a = persona.slots?.[index] || {};
     const b = base.slots?.[index] || {};
-    if ((a.name ?? '') !== (b.name ?? '')) score++;
-    if ((a.type ?? '') !== (b.type ?? '')) score++;
+    // Skill names, attack types, and sin colors are the exact fields that must
+    // reflect synchronized LBT edits, so prefer the snapshot with those changes.
+    if ((a.name ?? '') !== (b.name ?? '')) score += 5;
+    if ((a.type ?? '') !== (b.type ?? '')) score += 5;
     const colors = (slot) => JSON.stringify([...(slot.colors || [])].sort());
-    if (colors(a) !== colors(b)) score++;
+    if (colors(a) !== colors(b)) score += 5;
   }
   return score;
 }
