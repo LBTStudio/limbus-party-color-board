@@ -264,6 +264,8 @@ async function activateSession(sessionId, prefetched = null) {
     accessRevoked: false,
     lastActivity: Date.now(),
     failures: 0,
+    pollBusy: false,
+    adminUpdatedAt: 0,
   };
   pendingRequestSessionId = null;
   admin = null;
@@ -308,7 +310,8 @@ function schedulePoll(delay = null) {
 
 async function pollSession() {
   const session = active;
-  if (!session || document.hidden || session.accessRevoked || session.status === 'closed') return;
+  if (!session || document.hidden || session.accessRevoked || session.status === 'closed' || session.pollBusy) return;
+  session.pollBusy = true;
   try {
     const result = await getApi().pollSession(session.sessionId, session.revision);
     if (active !== session) return;
@@ -316,10 +319,14 @@ async function pollSession() {
     if (result.status === 'closed') {
       session.status = 'closed';
       statusMessage = '発行者がこのセッションを終了しました。編集は保存できません。';
+      bridge.renderAll();
       render();
+      session.pollBusy = false;
       return;
     }
+    const previousRole = session.role;
     if (result.role) session.role = result.role;
+    if (previousRole !== session.role) bridge.renderAll();
     const remoteKeys = Array.isArray(result.party_keys) ? result.party_keys : null;
     if (remoteKeys && Number(result.revision) > session.revision) {
       const localKeys = currentKeys();
@@ -354,7 +361,9 @@ async function pollSession() {
       session.status = 'closed';
       statusMessage = 'アクセス権が失効したか、セッションが終了されています。共有セッションを閉じてください。';
       stopPolling();
+      bridge.renderAll();
       render();
+      session.pollBusy = false;
       return;
     }
     session.failures += 1;
@@ -362,6 +371,7 @@ async function pollSession() {
     statusMessage = '同期エラー: ' + (error.message || '通信に失敗しました') + '。再接続を試みます。';
     render();
   }
+  session.pollBusy = false;
   if (active === session && !session.accessRevoked && session.status !== 'closed') {
     const delay = session.failures
       ? Math.min(60000, 5000 * (2 ** Math.min(session.failures, 4)))
@@ -544,6 +554,9 @@ function leaveSession() {
   if (active && active.saveBusy) {
     setStatus('保存処理中です。完了してから共有セッションを閉じてください。');
     return;
+  }
+  if (active && (active.retry || active.incomingState || !sameKeys(currentKeys(), active.lastSavedKeys))) {
+    if (!window.confirm('サーバーに未保存、または競合中の編集があります。破棄して個人編成に戻りますか？')) return;
   }
   stopPolling();
   if (accessTimer) clearTimeout(accessTimer);
