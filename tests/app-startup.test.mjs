@@ -60,6 +60,22 @@ test('manual and LBT imports do not bypass the local-persona cap through memory-
   );
 });
 
+test('saveState warns once when a local-only lineup cannot be persisted and clears the warning after recovery', () => {
+  const start = app.indexOf('function saveState()');
+  const end = app.indexOf('\nfunction init(', start);
+  const save = app.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(save, /let storageSaved = false/);
+  assert.match(save, /storageSaved = true/);
+  assert.match(save, /hasLocalOnlySnapshot/);
+  assert.match(save, /localOnlyPersistenceWarningShown/);
+  assert.match(save, /追加人格を含む編成はURLに退避できない/);
+  assert.ok(
+    save.indexOf('localStorage.setItem(STORAGE_KEY') < save.indexOf('hasLocalOnlySnapshot'),
+    'check persistence before silently omitting the lineup from URL fallback',
+  );
+});
+
 test('party color strip retains the compact legacy design and explains the S0-S4 order', () => {
   assert.match(html, /色帯は左からS0→S4の順です/);
   assert.match(app, /class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です"/);
