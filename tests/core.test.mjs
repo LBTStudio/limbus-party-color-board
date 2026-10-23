@@ -227,8 +227,16 @@ test('TSV persona keys disambiguate local synced variants that share an official
 
   const missingLocalVariant = parsePartySheet([
     '枠\t人格キー\t人格番号\t人格名\t種別',
-    '1\tunavailable-local-key\t1\t${official.name}\t同期',
+    `1\tunavailable-local-key\t1\t${official.name}\t同期`,
   ].join('\n'), personas);
   assert.equal(missingLocalVariant.party.length, 0, 'do not silently map a missing synced variant to the official base persona');
   assert.match(missingLocalVariant.errors.join(' '), /人格を特定できません/);
+
+  const missingNamespacedKey = resolvePersona(personas, {
+    key: 'lbt-sync-unavailable123',
+    name: official.name,
+    no: official.no,
+  });
+  assert.match(missingNamespacedKey.error, /ローカル追加人格キー/);
+  assert.equal(missingNamespacedKey.persona, undefined, 'missing local keys must never fall back to an official identity with a matching name/number');
 });
