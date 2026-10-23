@@ -264,6 +264,9 @@ export function resolvePersona(personas, { name = '', no = '', key = '', kind = 
       }
       return { persona: exact };
     }
+    if (/^(?:lbt-sync-|lbt-original-|manual-)/u.test(rawKey)) {
+      return { error: `ローカル追加人格キー「${rawKey}」がこのブラウザにありません。共有元から人格データを再取得するか、キー列を確認してください。` };
+    }
   }
 
   const matchesKind = (persona) => {
