@@ -38,7 +38,7 @@ Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous
 匿名ユーザーを大量生成する攻撃は、ユーザー単位の SQL レート制限だけでは防ぎ切れません。**公開範囲を広げる前に CAPTCHA を有効にしてください。**
 
 1. Cloudflare Turnstile でこのサイトのホスト名を登録し、Site key と Secret key を取得する。
-2. \`js/supabase-config.mjs\` の \`TURNSTILE_SITE_KEY\` を Site key に置き換えてコミットする。Site key は公開値なのでリポジトリに置いて構わない。
+2. `js/supabase-config.mjs` の `TURNSTILE_SITE_KEY` を Cloudflare の Site key と一致させる。現在の `main` には提供された Site key を設定済み。Site key は公開値なのでリポジトリに置いて構わない。
 3. [Supabase の CAPTCHA 設定を直接開く](https://supabase.com/dashboard/project/hobntjcrzybqsiobrpsz/auth/protection)。画面で **Enable CAPTCHA protection** を有効にし、プロバイダーに Cloudflare Turnstile を選択して対応する Secret key を設定する。UI上で「Bot and Abuse Protection」という見出しが見当たらない場合は、直リンクを使う。**Secret key は Supabase Dashboard にのみ保存し、GitHub / ブラウザ / チャットへ置かない。**
 4. デプロイ後、シークレットウィンドウで初回共有操作時に CAPTCHA が表示され、確認を完了しないと匿名ログインが作成されないことを確認する。失敗時・期限切れ時の再試行もテストする。
 
