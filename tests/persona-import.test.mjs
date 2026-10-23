@@ -169,6 +169,7 @@ test('LBT save discovery extracts the current synced build, saved build differen
   const editedSkills = baseNormal.skills.map((skill, index) => ({
     ...skill,
     name: index === 0 ? '変更されたS0' : skill.name,
+    type: index === 0 ? '斬撃防御' : skill.type,
     sin: index === 0 ? '傲慢' : skill.sin,
   }));
   const activeState = {
@@ -223,9 +224,15 @@ test('LBT save discovery extracts the current synced build, saved build differen
             skills: baseTokui.skills.map((skill, index) => ({
               ...skill,
               name: index === 1 ? '保存ビルドだけのスキル' : skill.name,
+              type: index === 1 ? '反撃貫通' : skill.type,
               sin: index === 1 ? '嫉妬' : skill.sin,
             })),
-            pas: { name: baseTokui.passive_name, cond: '', always: '', effect: '' },
+            pas: {
+              name: '保存ビルドのパッシブ',
+              cond: '色欲x3 保有',
+              always: '保存時の常時効果',
+              effect: '保存ビルドのパッシブ効果',
+            },
             uniqueBuffs: [],
           },
         },
@@ -258,7 +265,9 @@ test('LBT save discovery extracts the current synced build, saved build differen
   assert.equal(current.speed, '1d7');
   assert.equal(current.passiveName, '編集パッシブ');
   assert.equal(current.passiveCond, '嫉妬x1');
+  assert.equal(current.passiveEffect, '編集済みの効果');
   assert.equal(current.slots[0].name, '変更されたS0');
+  assert.equal(current.slots[0].type, '斬撃防御');
   assert.deepEqual(current.slots[0].colors, ['傲慢']);
   assert.equal(current.syncRank, '00');
   assert.equal(current.syncMax, true);
@@ -269,7 +278,11 @@ test('LBT save discovery extracts the current synced build, saved build differen
   assert.equal(savedDiff.kind, 'tokui');
   assert.equal(savedDiff.hp, 180);
   assert.equal(savedDiff.slots[1].name, '保存ビルドだけのスキル');
+  assert.equal(savedDiff.slots[1].type, '反撃貫通');
   assert.deepEqual(savedDiff.slots[1].colors, ['嫉妬']);
+  assert.equal(savedDiff.passiveName, '保存ビルドのパッシブ');
+  assert.equal(savedDiff.passiveCond, '色欲x3 保有');
+  assert.equal(savedDiff.passiveEffect, '保存ビルドのパッシブ効果');
 
   const original = candidates.find((persona) => persona.name === 'オリジナル人格');
   assert.ok(original);
@@ -530,4 +543,96 @@ test('renamed LBT roster displayName is reflected in the add-persona candidates'
   assert.ok(candidate);
   assert.equal(candidate.name, '変更後の同期人格名');
   assert.ok(!candidates.some((persona) => persona.name === '元の同期人格名'));
+});
+
+test('re-import reflects the latest saved LBT skill names, attributes, and passive fields without duplicating the persona', () => {
+  const storage = new MemoryStorage();
+  const rawSource = lbtSource({ name: '保存済み同期人格', no: 31 });
+  // Exercise defensive normalization too: if a stale slots array exists on the saved source,
+  // the current LBT skills snapshot must remain authoritative.
+  const source = {
+    ...rawSource,
+    slots: [{ rank: 'S0', name: '古いスキル名', type: '斬撃', colors: ['嫉妬'] }],
+  };
+  const catalog = [makeCatalogSource(rawSource, 'n31', 'normal')];
+  const makeState = ({ skillName, skillType, skillSin, passiveName, passiveCond, passiveEffect }) => ({
+    personaMode: null,
+    personaNo: null,
+    personaSrc: null,
+    roster: {
+      personas: [{
+        uid: 'n31',
+        no: 31,
+        mode: 'n',
+        displayName: '変更済み同期名',
+        synced: true,
+        syncRank: null,
+        syncMax: false,
+        build: {
+          personaSrc: source,
+          syncedManual: true,
+          hp: '130',
+          san: '52',
+          speed: '1d7',
+          skills: rawSource.skills.map((skill, index) => index === 0
+            ? { ...skill, name: skillName, type: skillType, sin: skillSin }
+            : skill),
+          pas: { name: passiveName, cond: passiveCond, always: '', effect: passiveEffect },
+          uniqueBuffs: [],
+        },
+      }],
+    },
+  });
+
+  writeAccount(storage, makeState({
+    skillName: '初回スキル',
+    skillType: '斬撃反撃',
+    skillSin: '憤怒',
+    passiveName: '初回パッシブ',
+    passiveCond: '憤怒x2',
+    passiveEffect: '初回効果',
+  }));
+  const firstCandidate = discoverLbtPersonaCandidates(storage, catalog, 'acct-1')[0];
+  assert.ok(firstCandidate);
+  assert.equal(firstCandidate.slots[0].name, '初回スキル');
+  assert.equal(firstCandidate.slots[0].type, '斬撃反撃');
+  assert.deepEqual(firstCandidate.slots[0].colors, ['憤怒']);
+  assert.equal(firstCandidate.passiveName, '初回パッシブ');
+  assert.equal(firstCandidate.passiveCond, '憤怒x2');
+  assert.equal(firstCandidate.passiveEffect, '初回効果');
+
+  const firstImport = importLocalPersonas(storage, [firstCandidate]);
+  assert.equal(firstImport.added, 1);
+  assert.equal(firstImport.updated, 0);
+  const originalKey = firstImport.personas[0].key;
+
+  storage.setItem('lbt_account_acct-1', JSON.stringify(makeState({
+    skillName: '更新後スキル',
+    skillType: '貫通反撃',
+    skillSin: '嫉妬',
+    passiveName: '更新後パッシブ',
+    passiveCond: '嫉妬x3',
+    passiveEffect: '更新後効果',
+  })));
+  const latestCandidate = discoverLbtPersonaCandidates(storage, catalog, 'acct-1')[0];
+  assert.ok(latestCandidate);
+  assert.equal(latestCandidate.slots[0].name, '更新後スキル');
+  assert.equal(latestCandidate.slots[0].type, '貫通反撃');
+  assert.deepEqual(latestCandidate.slots[0].colors, ['嫉妬']);
+  assert.equal(latestCandidate.passiveName, '更新後パッシブ');
+  assert.equal(latestCandidate.passiveCond, '嫉妬x3');
+  assert.equal(latestCandidate.passiveEffect, '更新後効果');
+
+  const secondImport = importLocalPersonas(storage, [latestCandidate]);
+  assert.equal(secondImport.added, 0);
+  assert.equal(secondImport.updated, 1);
+  assert.equal(secondImport.personas.length, 1);
+  assert.equal(secondImport.personas[0].key, originalKey, 'stable source identity should keep the existing picker key');
+  assert.equal(secondImport.personas[0].slots[0].name, '更新後スキル');
+  assert.equal(secondImport.personas[0].slots[0].type, '貫通反撃');
+  assert.deepEqual(secondImport.personas[0].slots[0].colors, ['嫉妬']);
+  assert.equal(secondImport.personas[0].passiveName, '更新後パッシブ');
+  assert.equal(secondImport.personas[0].passiveCond, '嫉妬x3');
+  assert.equal(secondImport.personas[0].passiveEffect, '更新後効果');
+  assert.equal(loadLocalPersonas(storage).length, 1);
 });
