@@ -18,6 +18,9 @@ test('Supabase persona allowlist matches the checked-in persona catalog', () => 
   });
   assert.deepEqual(generatedKeys, expectedKeys);
   assert.equal(new Set(generatedKeys).size, generatedKeys.length);
+  assert.match(seed, /delete from public\\.party_persona_keys/i);
+  assert.match(seed, /where not \\(persona_key = any \\(array\\[/i);
+  assert.match(seed, /commit;/i);
 });
 
 test('shared session tables have RLS enabled and browser roles cannot access them directly', () => {
