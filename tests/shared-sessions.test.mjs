@@ -69,12 +69,28 @@ test('shared session RPCs enforce owner/member roles and per-session revision ch
   assert.match(migration, /cardinality\(p_party_keys\) > 6/i);
 });
 
-test('browser config does not contain a privileged key and defaults to not configured', () => {
+test('browser config rejects privileged keys and allows supported public-key formats', () => {
   assert.match(config, /SUPABASE_URL = 'https:\/\/hobntjcrzybqsiobrpsz\.supabase\.co'/);
   const keyMatch = config.match(/SUPABASE_PUBLISHABLE_KEY = '([^']+)'/);
   assert.ok(keyMatch);
-  assert.equal(keyMatch[1], 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY');
-  assert.doesNotMatch(keyMatch[1], /sb_secret_|service_role|supabase_admin/i);
+  const configuredKey = keyMatch[1];
+  const isLegacyAnonKey = (() => {
+    try {
+      const payload = configuredKey.split('.')[1];
+      if (!payload) return false;
+      const json = Buffer.from(payload.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+      return JSON.parse(json).role === 'anon';
+    } catch {
+      return false;
+    }
+  })();
+  assert.ok(
+    configuredKey === 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY'
+      || configuredKey.startsWith('sb_publishable_')
+      || isLegacyAnonKey,
+    'Use a publishable key or legacy anon key (or keep the placeholder until setup).',
+  );
+  assert.doesNotMatch(configuredKey, /sb_secret_|service_role|supabase_admin/i);
   assert.match(client, /!isPrivilegedKey\(SUPABASE_PUBLISHABLE_KEY\)/);
 });
 test('polling avoids hidden-tab churn and offers explicit conflict handling', () => {
