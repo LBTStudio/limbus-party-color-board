@@ -71,11 +71,12 @@ test('shared session RPCs enforce owner/member roles and per-session revision ch
 
 test('browser config does not contain a privileged key and defaults to not configured', () => {
   assert.match(config, /SUPABASE_URL = 'https:\/\/hobntjcrzybqsiobrpsz\.supabase\.co'/);
-  assert.match(config, /REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY/);
-  assert.doesNotMatch(config, /sb_secret_|service_role/i);
-  assert.match(client, /!SUPABASE_PUBLISHABLE_KEY\.toLowerCase\(\)\.includes\('secret'\)/);
+  const keyMatch = config.match(/SUPABASE_PUBLISHABLE_KEY = '([^']+)'/);
+  assert.ok(keyMatch);
+  assert.equal(keyMatch[1], 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY');
+  assert.doesNotMatch(keyMatch[1], /sb_secret_|service_role|supabase_admin/i);
+  assert.match(client, /!isPrivilegedKey\(SUPABASE_PUBLISHABLE_KEY\)/);
 });
-
 test('polling avoids hidden-tab churn and offers explicit conflict handling', () => {
   assert.match(sharedUi, /document\.hidden/);
   assert.match(sharedUi, /5000/);
