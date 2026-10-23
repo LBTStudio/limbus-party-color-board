@@ -96,8 +96,8 @@ begin
 end;
 $$;
 
--- This v2 RPC keeps the original role checks, optimistic revision, idempotency and
--- rate limits. Non-catalog keys must have one validated snapshot in the same operation.
+-- The v2 RPC retains existing role/revision/idempotency/rate-limit checks. It validates
+-- untrusted JSON and stores only an explicit allowlisted projection of each snapshot.
 create or replace function public.apply_party_edit_v2(
   p_session_id uuid,
   p_expected_revision bigint,
@@ -120,11 +120,15 @@ declare
   v_persona jsonb;
   v_slot jsonb;
   v_color jsonb;
-  v_slot_index integer;
   v_keyword jsonb;
+  v_slot_index integer;
   v_local_keys text[] := '{}'::text[];
+  v_keyword_values text[];
+  v_slot_colors text[];
   v_key text;
   v_numeric numeric;
+  v_clean_personas jsonb := '[]'::jsonb;
+  v_clean_slots jsonb;
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
   if p_operation_id is null then raise exception 'OPERATION_ID_REQUIRED' using errcode = '22023'; end if;
@@ -185,7 +189,8 @@ begin
       raise exception 'UNSELECTED_LOCAL_PERSONA_SNAPSHOT' using errcode = '22023';
     end if;
 
-    if coalesce(v_persona->>'name','') = '' or char_length(v_persona->>'name') > 100
+    if jsonb_typeof(v_persona->'name') is distinct from 'string'
+      or coalesce(v_persona->>'name','') = '' or char_length(v_persona->>'name') > 100
       or coalesce(v_persona->>'kind','') not in ('normal','tokui','custom')
       or coalesce(v_persona->>'variantType','') not in ('sync','custom','manual')
       or jsonb_typeof(v_persona->'no') is distinct from 'number'
@@ -200,13 +205,21 @@ begin
       or char_length(v_persona->>'originType') > 40
       or jsonb_typeof(v_persona->'syncMax') is distinct from 'boolean'
       or (v_persona->>'syncRank' is not null and v_persona->>'syncRank' not in ('0','00','000'))
-      or char_length(coalesce(v_persona->>'passiveName','')) > 100
-      or char_length(coalesce(v_persona->>'passiveCond','')) > 240
-      or char_length(coalesce(v_persona->>'affiliation','')) > 100
+      or jsonb_typeof(v_persona->'passiveName') is distinct from 'string'
+      or char_length(v_persona->>'passiveName') > 100
+      or jsonb_typeof(v_persona->'passiveCond') is distinct from 'string'
+      or char_length(v_persona->>'passiveCond') > 240
+      or jsonb_typeof(v_persona->'affiliation') is distinct from 'string'
+      or char_length(v_persona->>'affiliation') > 100
       or jsonb_typeof(v_persona->'keywords') is distinct from 'array'
       or jsonb_typeof(v_persona->'slots') is distinct from 'array'
     then
       raise exception 'INVALID_PARTY_PERSONA_FIELDS' using errcode = '22023';
+    end if;
+    if (v_persona->>'variantType' in ('custom','manual') and v_persona->>'kind' <> 'custom')
+      or (v_persona->>'variantType' = 'sync' and v_persona->>'kind' = 'custom')
+    then
+      raise exception 'INCONSISTENT_PARTY_PERSONA_KIND' using errcode = '22023';
     end if;
 
     v_numeric := (v_persona->>'no')::numeric;
@@ -226,6 +239,7 @@ begin
       raise exception 'INVALID_PARTY_PERSONA_SPEED' using errcode = '22023';
     end if;
 
+    v_keyword_values := '{}'::text[];
     if jsonb_array_length(v_persona->'keywords') > 60 then
       raise exception 'PARTY_PERSONA_KEYWORD_LIMIT' using errcode = '22023';
     end if;
@@ -236,19 +250,27 @@ begin
       then
         raise exception 'INVALID_PARTY_PERSONA_KEYWORDS' using errcode = '22023';
       end if;
+      if (v_keyword #>> '{}') = any(v_keyword_values) then
+        raise exception 'DUPLICATE_PARTY_PERSONA_KEYWORD' using errcode = '22023';
+      end if;
+      v_keyword_values := array_append(v_keyword_values, v_keyword #>> '{}');
     end loop;
 
     if jsonb_array_length(v_persona->'slots') <> 5 then
       raise exception 'PARTY_PERSONA_REQUIRES_FIVE_SLOTS' using errcode = '22023';
     end if;
+    v_clean_slots := '[]'::jsonb;
     for v_slot, v_slot_index in
       select value, (ordinality - 1)::integer
       from jsonb_array_elements(v_persona->'slots') with ordinality
     loop
       if jsonb_typeof(v_slot) is distinct from 'object'
+        or jsonb_typeof(v_slot->'rank') is distinct from 'string'
         or coalesce(v_slot->>'rank','') <> ('S' || v_slot_index::text)
-        or char_length(coalesce(v_slot->>'name','')) > 120
-        or char_length(coalesce(v_slot->>'type','')) > 80
+        or jsonb_typeof(v_slot->'name') is distinct from 'string'
+        or char_length(v_slot->>'name') > 120
+        or jsonb_typeof(v_slot->'type') is distinct from 'string'
+        or char_length(v_slot->>'type') > 80
         or jsonb_typeof(v_slot->'colors') is distinct from 'array'
       then
         raise exception 'INVALID_PARTY_PERSONA_SLOT' using errcode = '22023';
@@ -256,6 +278,7 @@ begin
       if jsonb_array_length(v_slot->'colors') > 2 then
         raise exception 'PARTY_PERSONA_COLOR_LIMIT' using errcode = '22023';
       end if;
+      v_slot_colors := '{}'::text[];
       for v_color in select value from jsonb_array_elements(v_slot->'colors')
       loop
         if jsonb_typeof(v_color) is distinct from 'string'
@@ -263,12 +286,44 @@ begin
         then
           raise exception 'INVALID_PARTY_PERSONA_COLOR' using errcode = '22023';
         end if;
+        if (v_color #>> '{}') = any(v_slot_colors) then
+          raise exception 'DUPLICATE_PARTY_PERSONA_COLOR' using errcode = '22023';
+        end if;
+        v_slot_colors := array_append(v_slot_colors, v_color #>> '{}');
       end loop;
+      v_clean_slots := v_clean_slots || jsonb_build_array(jsonb_build_object(
+        'rank',v_slot->'rank',
+        'name',v_slot->'name',
+        'type',v_slot->'type',
+        'colors',v_slot->'colors'
+      ));
     end loop;
+
+    -- Store only allowlisted fields. Never retain arbitrary fields supplied by a client.
+    v_clean_personas := v_clean_personas || jsonb_build_array(jsonb_build_object(
+      'key',v_key,
+      'kind',v_persona->'kind',
+      'variantType',v_persona->'variantType',
+      'originType',v_persona->'originType',
+      'sourceLabel',v_persona->'sourceLabel',
+      'syncRank',v_persona->'syncRank',
+      'syncMax',v_persona->'syncMax',
+      'no',v_persona->'no',
+      'name',v_persona->'name',
+      'hp',v_persona->'hp',
+      'san',v_persona->'san',
+      'speed',v_persona->'speed',
+      'speedAvg',v_persona->'speedAvg',
+      'keywords',v_persona->'keywords',
+      'affiliation',v_persona->'affiliation',
+      'passiveName',v_persona->'passiveName',
+      'passiveCond',v_persona->'passiveCond',
+      'slots',v_clean_slots
+    ));
   end loop;
 
   -- Official identities must match the allowlist. Any other selected key must be
-  -- an authorized local key with exactly one snapshot in this atomic edit.
+  -- an allowed local key with exactly one snapshot in this atomic edit.
   if exists (
     select 1 from unnest(p_party_keys) as selected(k)
     where exists (select 1 from public.party_persona_keys official where official.persona_key=selected.k)
@@ -287,7 +342,7 @@ begin
   v_new_revision := v_revision + 1;
   update public.party_sessions
     set party_keys=p_party_keys,
-        party_personas=p_party_personas,
+        party_personas=v_clean_personas,
         revision=v_new_revision,
         updated_at=now()
     where id=p_session_id;
