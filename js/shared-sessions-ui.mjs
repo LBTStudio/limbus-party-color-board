@@ -24,13 +24,17 @@ function getApi() {
 }
 
 function displayName() {
-  const value = String($('#shared-display-name')?.value || '').trim().slice(0, 40);
-  return value || '参加者';
+  try {
+    const value = String(localStorage.getItem('lbt_party_shared_display_name') || '').trim().slice(0, 40);
+    return value || '参加者';
+  } catch {
+    return '参加者';
+  }
 }
 
-function rememberDisplayName() {
+function rememberDisplayName(value = displayName()) {
   try {
-    localStorage.setItem('lbt_party_shared_display_name', displayName());
+    localStorage.setItem('lbt_party_shared_display_name', String(value || '').trim().slice(0, 40) || '参加者');
   } catch { /* Optional preference. */ }
 }
 
@@ -300,10 +304,9 @@ async function createSession() {
     $('#shared-session-title').focus();
     return;
   }
-  rememberDisplayName();
   try {
     setStatus('共有編成をクラウドに作成しています…');
-    const result = await getApi().createSession(title, displayName());
+    const result = await getApi().createSession(title, title);
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
     $('#shared-session-title').value = '';
     await activateSession(result.session_id, result);
@@ -795,8 +798,7 @@ async function initializeRoute(route) {
     setStatus('参加申請をキャンセルしました。招待リンクを再度開くと申請できます。');
     return;
   }
-  $('#shared-display-name').value = provided.trim().slice(0, 40);
-  rememberDisplayName();
+  rememberDisplayName(provided.trim().slice(0, 40));
   try {
     const result = await getApi().requestAccess(token, displayName());
     if (result.status === 'approved') {
@@ -897,10 +899,6 @@ async function initializeTurnstile() {
 
 export async function initializeSharedSessionsUi(callbacks) {
   bridge = callbacks;
-  try {
-    const savedName = localStorage.getItem('lbt_party_shared_display_name');
-    if (savedName && !$('#shared-display-name').value) $('#shared-display-name').value = savedName;
-  } catch { /* Optional display-name preference. */ }
 
   const controller = {
     get isActive() { return Boolean(active); },
@@ -911,7 +909,6 @@ export async function initializeSharedSessionsUi(callbacks) {
   };
   window.sharedPartySession = controller;
 
-  $('#shared-display-name').addEventListener('change', rememberDisplayName);
   $('#shared-panel-toggle').addEventListener('click', () => {
     const nextOpen = !sharedPanelOpen;
     setSharedPanelOpen(nextOpen);
