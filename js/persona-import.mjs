@@ -244,6 +244,12 @@ function readAccountStates(storage) {
 export function discoverLbtPersonaCandidates(storage, catalog = []) {
   const accounts = readAccountStates(storage);
   const byKey = new Map();
+  const sourceRefs = new Set();
+  const addCandidate = (candidate) => {
+    if (!candidate || (candidate.sourceRef && sourceRefs.has(candidate.sourceRef))) return;
+    byKey.set(candidate.key, candidate);
+    if (candidate.sourceRef) sourceRefs.add(candidate.sourceRef);
+  };
   for (const account of accounts) {
     const state = account.state;
     const baseMeta = {
@@ -274,7 +280,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
           identityKey: `${modeForMap}:${no}`,
           sourceLabel: isCustom ? '現在のオリジナル人格' : '現在の同期化・手動編集',
         }, catalog);
-        if (candidate) byKey.set(candidate.key, candidate);
+        addCandidate(candidate);
       }
     }
 
@@ -298,7 +304,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
           ...baseMeta, mode: 'custom', no, sourceRef, identityKey,
           sourceLabel: '保存済みオリジナル人格', syncRank, syncMax,
         }, catalog);
-        if (candidate) byKey.set(candidate.key, candidate);
+        addCandidate(candidate);
         continue;
       }
 
@@ -313,7 +319,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
         const base = basePersona(mode, no);
         const differs = !base || !sameRelevantData(candidate, base);
         if (candidate && (build.syncedManual === true || entry.synced === true || syncRank || syncMax || differs)) {
-          byKey.set(candidate.key, candidate);
+          addCandidate(candidate);
         }
         continue;
       }
@@ -336,7 +342,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
           syncMax,
           lbtPersonaNo: no,
         };
-        byKey.set(candidate.key, candidate);
+        addCandidate(candidate);
       }
     }
   }
