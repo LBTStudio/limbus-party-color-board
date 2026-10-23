@@ -10,6 +10,7 @@ let admin = null;
 let inviteUrl = '';
 let pendingRequestSessionId = null;
 let statusMessage = '';
+let sharedPanelOpen = false;
 let pollTimer = null;
 let accessTimer = null;
 let bridge = null;
@@ -154,6 +155,22 @@ function activeStatusLabel() {
   return labels[active.status] || '同期中';
 }
 
+function setSharedPanelOpen(open, { focusRequests = false } = {}) {
+  sharedPanelOpen = Boolean(open);
+  const panel = $('#shared-panel');
+  const toggle = $('#shared-panel-toggle');
+  if (!panel || !toggle) return;
+  panel.classList.toggle('is-open', sharedPanelOpen);
+  toggle.setAttribute('aria-expanded', String(sharedPanelOpen));
+  const label = $('#shared-panel-toggle-label');
+  const mark = $('.shared-toggle-mark');
+  if (label) label.textContent = sharedPanelOpen ? '管理を閉じる' : '管理を開く';
+  if (mark) mark.textContent = sharedPanelOpen ? '−' : '＋';
+  if (sharedPanelOpen && focusRequests) {
+    $('#shared-requests h3')?.focus({ preventScroll: true });
+  }
+}
+
 function render() {
   const statusEl = $('#shared-status');
   if (!statusEl) return;
@@ -166,6 +183,13 @@ function render() {
   $('#shared-role-label').textContent = active
     ? roleLabel(active.role) + ' / revision ' + active.revision
     : 'この端末の個人編成';
+  const pendingCount = Array.isArray(admin?.requests) ? admin.requests.length : 0;
+  const requestBadge = $('#shared-request-badge');
+  if (requestBadge) {
+    requestBadge.hidden = pendingCount === 0;
+    requestBadge.textContent = '参加申請 ' + pendingCount;
+    requestBadge.setAttribute('aria-label', '未処理の参加申請 ' + pendingCount + ' 件');
+  }
 
   const list = $('#shared-session-list');
   list.replaceChildren();
@@ -281,6 +305,7 @@ async function activateSession(sessionId, prefetched = null) {
   pendingRequestSessionId = null;
   admin = null;
   inviteUrl = '';
+  setSharedPanelOpen(true);
   setRoute('session=' + active.sessionId);
   bridge.setPartyKeys(snapshot.party_keys);
   statusMessage = '「' + active.title + '」をクラウドから開きました。保存・同期状態はこのパネルで確認できます。';
@@ -299,9 +324,23 @@ async function refreshAdmin() {
   try {
     const result = await getApi().getAdmin(session.sessionId);
     if (active !== session || session.role !== 'owner') return;
+    const previousAdmin = admin;
+    const requests = Array.isArray(result.requests) ? result.requests : [];
+    const previousIds = new Set((Array.isArray(previousAdmin?.requests) ? previousAdmin.requests : [])
+      .map((request) => request.request_id));
+    const arrivedRequests = previousAdmin
+      ? requests.filter((request) => !previousIds.has(request.request_id))
+      : [];
+    const firstLoadHasPendingRequests = !previousAdmin && requests.length > 0;
     admin = result;
     session.adminUpdatedAt = Date.now();
     render();
+    if (firstLoadHasPendingRequests || arrivedRequests.length > 0) {
+      setSharedPanelOpen(true, { focusRequests: true });
+      if (arrivedRequests.length > 0) {
+        bridge.showToast('新しい参加申請が' + arrivedRequests.length + '件あります。内容を確認してください。');
+      }
+    }
   } catch (error) {
     if (active !== session || session.role !== 'owner') return;
     statusMessage = '参加権限の管理情報を取得できませんでした: ' + error.message;
@@ -653,7 +692,7 @@ function captureInitialRoute() {
   // Route links open the collaboration area directly rather than leaving
   // invited users at the top of the unrelated personal-board interface.
   if (route.token || route.sessionId || route.requestedSessionId) {
-    $('#shared-panel')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    setSharedPanelOpen(true);
   }
 
   // Invite tokens are bearer-like secrets. Remove them before any third-party
@@ -811,6 +850,11 @@ export async function initializeSharedSessionsUi(callbacks) {
   window.sharedPartySession = controller;
 
   $('#shared-display-name').addEventListener('change', rememberDisplayName);
+  $('#shared-panel-toggle').addEventListener('click', () => {
+    const nextOpen = !sharedPanelOpen;
+    setSharedPanelOpen(nextOpen);
+    if (nextOpen && active?.role === 'owner') void refreshAdmin();
+  });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
   $('#shared-create').addEventListener('click', () => createSession());
   $('#shared-create-invite').addEventListener('click', () => issueInvite());
