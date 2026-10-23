@@ -399,7 +399,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
       byKey.delete(previousKey);
       priorities.delete(previousKey);
     }
-    byKey.set(candidate.key, { ...candidate, _sourceSelectionPriority: priority });
+    byKey.set(candidate.key, candidate);
     priorities.set(candidate.key, priority);
     if (sourceRef) sourceKeys.set(sourceRef, candidate.key);
   };
@@ -413,10 +413,16 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
       syncMax: false,
     };
     const owned = Array.isArray(state.roster?.personas) ? state.roster.personas.filter(record) : [];
-    const basePersona = (mode, no) => catalog.find((persona) => (
-      (mode === 't' ? persona.kind === 'tokui' : persona.kind === 'n' ? persona.kind === 'normal' : false)
-      && String(persona.no) === String(no)
-    ));
+    const basePersona = (mode, no) => {
+      const prefix = mode === 't' ? 't' : mode === 'n' ? 'n' : '';
+      // Prefer canonical catalog keys to normalize baseline lookup consistently.
+      const byKey = prefix ? catalog.find((persona) => persona.key === `${prefix}${no}`) : null;
+      if (byKey) return byKey;
+      return catalog.find((persona) => (
+        (mode === 't' ? persona.kind === 'tokui' : mode === 'n' ? persona.kind === 'normal' : false)
+        && String(persona.no) === String(no)
+      ));
+    };
 
     // Current equipped build: import only custom identities or edits explicitly marked as synchronized.
     if (record(state.personaSrc)) {
@@ -447,15 +453,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
         // A more complete saved roster build can still replace it if it reflects
         // more visible changes than this stale equipped-state snapshot.
         const priority = (base ? relevantDataDifferenceScore(candidate, base) * 10 : 0) + 2;
-        addCandidate({
-          ...candidate,
-          _debugSelection: {
-            modeForMap,
-            no,
-            foundBase: Boolean(base),
-            catalog: catalog.map((item) => ({ key: item.key, kind: item.kind, no: item.no })),
-          },
-        }, priority);
+        addCandidate(candidate, priority);
       }
     }
 
