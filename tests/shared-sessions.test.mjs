@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
 const migration = read('../supabase/migrations/202610230001_shared_party_sessions.sql');
+const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -194,4 +195,57 @@ test('per-session resource caps are protected by parent-row locks', () => {
   const requestLock = decide.indexOf('for update', sessionLock + 1);
   assert.ok(sessionLock >= 0 && requestLock > sessionLock);
   assert.ok(requestLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
+});
+
+
+test('forward migration updates already-deployed resource-cap RPCs and serializes limits', () => {
+  assert.match(forwardMigration, /create index if not exists session_access_requests_decided_by_idx/i);
+  assert.equal((forwardMigration.match(/\bas \$\$/g) || []).length, 5);
+  assert.equal((forwardMigration.match(/^\$\$;$/gm) || []).length, 5);
+
+  const names = [
+    'create_party_session',
+    'create_party_invite',
+    'request_party_access',
+    'apply_party_edit',
+    'decide_party_access_request',
+  ];
+  for (const name of names) {
+    assert.match(forwardMigration, new RegExp('create or replace function public\\.' + name + '\\(', 'i'));
+  }
+
+  const functionBody = (name) => {
+    const start = forwardMigration.indexOf('create or replace function public.' + name);
+    assert.ok(start >= 0, name + ' exists in the forward migration');
+    const next = forwardMigration.indexOf('create or replace function public.', start + 1);
+    return forwardMigration.slice(start, next < 0 ? undefined : next);
+  };
+
+  const rateLimits = [
+    ['create_party_session', 'SESSION_CREATE_RATE_LIMIT'],
+    ['create_party_invite', 'INVITE_CREATE_RATE_LIMIT'],
+    ['request_party_access', 'ACCESS_REQUEST_RATE_LIMIT'],
+    ['apply_party_edit', 'PARTY_EDIT_RATE_LIMIT'],
+  ];
+  for (const [name, limit] of rateLimits) {
+    const body = functionBody(name);
+    const advisoryLock = body.indexOf('pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0))');
+    const limitCheck = body.indexOf(limit);
+    assert.ok(advisoryLock >= 0 && limitCheck > advisoryLock, name + ' locks before checking per-user rate limits');
+  }
+
+  const invite = functionBody('create_party_invite');
+  assert.ok(invite.indexOf('for update') >= 0);
+  assert.ok(invite.indexOf('for update') < invite.indexOf('ACTIVE_INVITE_LIMIT'));
+
+  const request = functionBody('request_party_access');
+  assert.ok(request.indexOf('for update') >= 0);
+  assert.ok(request.indexOf('for update') < request.indexOf('PENDING_REQUEST_LIMIT'));
+  assert.ok(request.indexOf('for update') < request.indexOf('insert into public.session_access_requests'));
+
+  const decide = functionBody('decide_party_access_request');
+  const firstRowLock = decide.indexOf('for update');
+  const secondRowLock = decide.indexOf('for update', firstRowLock + 1);
+  assert.ok(firstRowLock >= 0 && secondRowLock > firstRowLock);
+  assert.ok(secondRowLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
 });
