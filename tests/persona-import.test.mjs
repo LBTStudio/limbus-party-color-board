@@ -244,8 +244,8 @@ test('local persona import is repeatable and updates the same saved identity rat
   const storage = new MemoryStorage();
   const source = lbtSource({ name: '同期人格', no: 4 });
   const candidate = {
-    key: 'lbt-sync-abcd1234ef567890',
     ...makeCatalogSource(source, 'n4'),
+    key: 'lbt-sync-abcd1234ef567890',
     variantType: 'sync',
     localOnly: true,
     originType: 'lbt-sync',
