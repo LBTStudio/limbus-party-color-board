@@ -74,6 +74,10 @@ function browserStorage() {
   }
 }
 
+function normalizeAssignee(value) {
+  return String(value ?? '').trim().slice(0, 40);
+}
+
 function readStoragePreference(key) {
   try {
     return browserStorage()?.getItem(key) ?? null;
@@ -152,6 +156,9 @@ function personaSnapshotForShare(persona) {
     san: persona.san,
     speed: persona.speed,
     speedAvg: persona.speedAvg,
+    resSlash: persona.resSlash || '普通',
+    resPierce: persona.resPierce || '普通',
+    resBlunt: persona.resBlunt || '普通',
     keywords: [...(persona.keywords || [])],
     affiliation: persona.affiliation || '',
     passiveName: persona.passiveName || '',
@@ -171,7 +178,7 @@ function getShareablePartyPersonas() {
     .filter(Boolean);
 }
 
-function applySharedPartySnapshot(keys, sharedPersonas = []) {
+function applySharedPartySnapshot(keys, sharedPersonas = [], sharedAssignees = {}) {
   const selectedKeys = new Set(Array.isArray(keys) ? keys : []);
   const incoming = (Array.isArray(sharedPersonas) ? sharedPersonas : [])
     .filter((persona) => selectedKeys.has(persona?.key))
@@ -192,7 +199,13 @@ function applySharedPartySnapshot(keys, sharedPersonas = []) {
     }
   }
   refreshPersonaPool(state.localPersonas);
-  state.party = sanitizeParty(keys) || [];
+  const assignments = sharedAssignees && typeof sharedAssignees === 'object' && !Array.isArray(sharedAssignees)
+    ? sharedAssignees
+    : {};
+  state.party = (sanitizeParty(keys) || []).map((entry) => ({
+    ...entry,
+    assignee: normalizeAssignee(assignments[entry.key]),
+  }));
   const missing = (Array.isArray(keys) ? keys : []).filter((key) => !state.map.has(key));
   if (missing.length) {
     showToast('共有編成に必要な追加人格データが不足しています。共有元で再保存してください。');
@@ -235,7 +248,7 @@ function sanitizeParty(entries) {
     const key = typeof entry === 'string' ? entry : entry?.key;
     if (typeof key !== 'string' || !state.map.has(key) || seen.has(key)) continue;
     seen.add(key);
-    party.push({ key });
+    party.push({ key, assignee: normalizeAssignee(typeof entry === 'string' ? '' : entry?.assignee) });
     if (party.length >= MAX_PARTY) break;
   }
   return party;
@@ -252,7 +265,11 @@ function saveState() {
     ? sharedController.personalPartySnapshot
     : state.party.map((entry) => entry.key);
   const payload = {
-    party: savedParty.map((entry) => typeof entry === 'string' ? entry : entry.key),
+    party: savedParty.map((entry) => {
+      const key = typeof entry === 'string' ? entry : entry?.key;
+      const assignee = normalizeAssignee(typeof entry === 'string' ? '' : entry?.assignee);
+      return { key, assignee };
+    }),
     partySort: state.partySort,
     resourceSort: state.resourceSort,
     skillSortSlot: state.skillSortSlot,
@@ -375,6 +392,26 @@ function bindEvents() {
   $('#picker-search').addEventListener('input', (event) => {
     state.pickerQuery = event.target.value;
     renderPickerList();
+  });
+
+  $('#party-cards').addEventListener('change', (event) => {
+    const input = event.target.closest('[data-assignee-index]');
+    if (!input) return;
+    const index = Number(input.dataset.assigneeIndex);
+    const entry = state.party[index];
+    if (!entry || !canEditParty()) {
+      input.value = entry?.assignee || '';
+      return;
+    }
+    entry.assignee = normalizeAssignee(input.value);
+    input.value = entry.assignee;
+    saveState();
+    renderMatrix();
+    const card = input.closest('.persona-card');
+    const label = card?.querySelector('[data-assignee-display]');
+    if (label) label.textContent = entry.assignee || '未設定';
+    const cardSlot = card?.querySelector('.card-slot');
+    if (cardSlot) cardSlot.textContent = entry.assignee || '担当者未設定';
   });
 
   $('#picker-lbt-account').addEventListener('change', (event) => {
@@ -544,7 +581,7 @@ function renderMatrix() {
   const result = state.lastAggregate;
   const sorted = sortParty(state.party, state.partySort, state.selectedSin, state.map, state.skillSortSlot);
 
-  let head = '<tr><th class="member-head" scope="col">人格</th>';
+  let head = '<tr><th class="member-head" scope="col">担当者 / 人格</th>';
   for (let index = 0; index < 5; index++) {
     head += `<th scope="col">S${index}</th>`;
   }
@@ -560,7 +597,7 @@ function renderMatrix() {
     if (!persona) continue;
     const slot = state.party.findIndex((item) => item.key === entry.key) + 1;
     body += '<tr>';
-    body += `<th scope="row" class="member"><span class="member-label">枠 ${slot}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></th>`;
+    body += `<th scope="row" class="member"><span class="member-label">${escapeHtml(entry.assignee || '担当者未設定')}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></th>`;
     for (const skillSlot of persona.slots) {
       const chips = skillSlot.colors.map((sin) => (
         `<span class="slot-chip" style="--sin:${SIN_META[sin].color}">${escapeHtml(sin)}</span>`
@@ -663,7 +700,7 @@ function renderParty() {
         </div>
         <div class="card-head">
           <div class="card-id">
-            <span class="card-slot">SLOT ${slot}</span>
+            <span class="card-slot">${escapeHtml(entry.assignee || '担当者未設定')}</span>
             <span class="kind-badge">${personaKindLabel(persona)}</span>
             <span class="card-no">${escapeHtml(personaNumberLabel(persona))}</span>
           </div>
@@ -675,13 +712,23 @@ function renderParty() {
         <div class="card-title">
           <div>
             <h3 class="persona-name">${escapeHtml(persona.name)}</h3>
+            <div class="persona-assignee">
+              <span class="persona-assignee-current">担当者：<strong data-assignee-display>${escapeHtml(entry.assignee || '未設定')}</strong></span>
+              <label class="persona-assignee-editor">
+                <span class="sr-only">この人格を担当するPL名／ユーザー名</span>
+                <input class="input" type="text" maxlength="40" autocomplete="off"
+                  data-assignee-index="${originalIndex}" aria-label="${escapeHtml(persona.name)}の担当者名"
+                  placeholder="PL名 / ユーザー名" value="${escapeHtml(entry.assignee || '')}" ${canEditParty() ? '' : 'disabled'}>
+              </label>
+            </div>
             <div class="keyword-row">${keywordTags}</div>
           </div>
         </div>
-        <dl class="stats">
-          <div><dt>HP</dt><dd>${escapeHtml(persona.hp)}</dd></div>
-          <div><dt>SAN</dt><dd>${escapeHtml(persona.san)}</dd></div>
-          <div><dt>速度</dt><dd>${escapeHtml(persona.speed)}</dd></div>
+        <dl class="stats stats-resistances">
+          <div><dt>速度</dt><dd>${escapeHtml(persona.speed || '—')}</dd></div>
+          <div><dt>斬撃耐性</dt><dd>${escapeHtml(persona.resSlash || '普通')}</dd></div>
+          <div><dt>貫通耐性</dt><dd>${escapeHtml(persona.resPierce || '普通')}</dd></div>
+          <div><dt>打撃耐性</dt><dd>${escapeHtml(persona.resBlunt || '普通')}</dd></div>
         </dl>
         <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
@@ -1087,9 +1134,9 @@ function choosePersona(key) {
       showToast(`編成は最大 ${MAX_PARTY} 名です。`);
       return;
     }
-    state.party.push({ key });
+    state.party.push({ key, assignee: '' });
   } else if (state.pickerIndex !== null) {
-    state.party[state.pickerIndex] = { key };
+    state.party[state.pickerIndex] = { key, assignee: normalizeAssignee(state.party[state.pickerIndex]?.assignee) };
   }
 
   state.pickerIndex = null;
@@ -1134,7 +1181,7 @@ function applyImport() {
     return;
   }
 
-  state.party = result.party.map((entry) => ({ key: entry.key }));
+  state.party = result.party.map((entry) => ({ key: entry.key, assignee: normalizeAssignee(entry.assignee) }));
   state.selectedSin = null;
   state.partySort = 'default';
   state.previousPartySort = 'default';
@@ -1162,6 +1209,7 @@ function resetParty() {
 async function copyTsv() {
   const result = state.lastAggregate;
   const rows = [[
+    '担当者',
     '枠',
     '人格キー',
     '人格番号',
@@ -1180,6 +1228,7 @@ async function copyTsv() {
     const persona = state.map.get(entry.key);
     if (!persona) return;
     rows.push([
+      normalizeAssignee(entry.assignee),
       index + 1,
       persona.key,
       sheetNumber(persona),
@@ -1243,7 +1292,11 @@ async function boot() {
       const { initializeSharedSessionsUi } = await import('./shared-sessions-ui.mjs');
       await initializeSharedSessionsUi({
         getPartyKeys: () => state.party.map((entry) => entry.key),
-        setPartyKeys: (keys, sharedPersonas = []) => applySharedPartySnapshot(keys, sharedPersonas),
+        getPartyEntries: () => state.party.map((entry) => ({ ...entry })),
+        getPartyAssignees: () => Object.fromEntries(state.party
+          .filter((entry) => normalizeAssignee(entry.assignee))
+          .map((entry) => [entry.key, normalizeAssignee(entry.assignee)])),
+        setPartyKeys: (keys, sharedPersonas = [], sharedAssignees = {}) => applySharedPartySnapshot(keys, sharedPersonas, sharedAssignees),
         getPartyPersonas: getShareablePartyPersonas,
         renderAll,
         saveState,
