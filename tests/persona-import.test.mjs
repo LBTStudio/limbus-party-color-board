@@ -560,6 +560,6 @@ test('renamed LBT roster identity is importable even without sync rank metadata 
   );
   const candidate = candidates.find((persona) => persona.sourceRef === 'acct-1:identity:n:22');
 
-  assert.ok(candidate);
+  assert.ok(candidate, JSON.stringify(candidates));
   assert.equal(candidate.name, '手動で変更した同期名');
 });
