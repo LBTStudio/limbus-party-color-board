@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {
   createManualPersona,
   MAX_LOCAL_PERSONAS,
+  discoverLbtAccounts,
   discoverLbtPersonaCandidates,
   importLocalPersonas,
+  isPersonaOwnedByLbtAccount,
   loadLocalPersonas,
   sanitizeLocalPersona,
   saveLocalPersonas,
@@ -90,6 +92,76 @@ function writeAccount(storage, state, name = 'テスト用アカウント') {
   storage.setItem(LBT_ACTIVE, 'acct-1');
   storage.setItem('lbt_account_acct-1', JSON.stringify(state));
 }
+
+test('multiple LBT accounts expose their owned official personas and active account', () => {
+  const storage = new MemoryStorage();
+  storage.setItem(LBT_INDEX, JSON.stringify({
+    accounts: [
+      { id: 'acct-a', name: 'アカウントA' },
+      { id: 'acct-b', name: 'アカウントB' },
+    ],
+  }));
+  storage.setItem(LBT_ACTIVE, 'acct-b');
+  storage.setItem('lbt_account_acct-a', JSON.stringify({
+    charName: 'A',
+    roster: { personas: [{ mode: 'n', no: 1, uid: 'n1' }, { mode: 't', no: 2, uid: 't2' }] },
+  }));
+  storage.setItem('lbt_account_acct-b', JSON.stringify({
+    charName: 'B',
+    roster: { personas: [{ mode: 'n', no: 3, uid: 'n3' }] },
+  }));
+
+  const catalog = [
+    { key: 'n1', kind: 'normal', no: 1 },
+    { key: 't2', kind: 'tokui', no: 2 },
+    { key: 'n3', kind: 'normal', no: 3 },
+    { key: 'n4', kind: 'normal', no: 4 },
+  ];
+  const accounts = discoverLbtAccounts(storage, catalog);
+  assert.equal(accounts.length, 2);
+  assert.equal(accounts[0].id, 'acct-b', 'active account is presented first');
+  assert.equal(accounts[0].active, true);
+  assert.deepEqual(accounts[0].ownedKeys, ['n3']);
+  assert.equal(accounts[0].ownedCount, 1);
+  const accountA = accounts.find((account) => account.id === 'acct-a');
+  assert.deepEqual(accountA.ownedKeys.sort(), ['n1', 't2']);
+  assert.ok(accountA.ownedIdentityKeys.includes('n:1'));
+
+  assert.equal(isPersonaOwnedByLbtAccount(catalog[0], accountA), true);
+  assert.equal(isPersonaOwnedByLbtAccount(catalog[3], accountA), false);
+});
+
+test('LBT persona candidates can be restricted to the selected account', () => {
+  const storage = new MemoryStorage();
+  storage.setItem(LBT_INDEX, JSON.stringify({
+    accounts: [
+      { id: 'acct-a', name: 'アカウントA' },
+      { id: 'acct-b', name: 'アカウントB' },
+    ],
+  }));
+  storage.setItem(LBT_ACTIVE, 'acct-b');
+  storage.setItem('lbt_account_acct-a', JSON.stringify({
+    personaMode: 'custom',
+    personaNo: 'custom-a',
+    personaSrc: lbtSource({ name: 'Aの創作人格', no: 'custom-a', custom: true }),
+    roster: { personas: [{ mode: 'custom', no: 'custom-a', uid: 'custom-a', src: lbtSource({ name: 'Aの創作人格', no: 'custom-a', custom: true }) }] },
+  }));
+  storage.setItem('lbt_account_acct-b', JSON.stringify({
+    personaMode: 'custom',
+    personaNo: 'custom-b',
+    personaSrc: lbtSource({ name: 'Bの創作人格', no: 'custom-b', custom: true }),
+    roster: { personas: [{ mode: 'custom', no: 'custom-b', uid: 'custom-b', src: lbtSource({ name: 'Bの創作人格', no: 'custom-b', custom: true }) }] },
+  }));
+
+  const all = discoverLbtPersonaCandidates(storage, []);
+  const accountA = discoverLbtPersonaCandidates(storage, [], 'acct-a');
+  const accountB = discoverLbtPersonaCandidates(storage, [], 'acct-b');
+  assert.ok(all.some((persona) => persona.name === 'Aの創作人格'));
+  assert.ok(all.some((persona) => persona.name === 'Bの創作人格'));
+  assert.deepEqual(accountA.map((persona) => persona.name), ['Aの創作人格']);
+  assert.deepEqual(accountB.map((persona) => persona.name), ['Bの創作人格']);
+  assert.deepEqual(discoverLbtPersonaCandidates(storage, [], 'missing'), []);
+});
 
 test('LBT save discovery extracts the current synced build, saved build differences, and original personas', () => {
   const baseNormal = lbtSource({ name: '基準人格', no: 1 });
