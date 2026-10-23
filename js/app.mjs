@@ -14,6 +14,13 @@ import {
   totalColors,
 } from './core.mjs';
 import { escapeHtml } from './security.mjs';
+import {
+  createManualPersona,
+  discoverLbtPersonaCandidates,
+  importLocalPersonas,
+  loadLocalPersonas,
+  saveLocalPersonas,
+} from './persona-import.mjs';
 
 const DATA_URL = './data/personas.json';
 const STORAGE_KEY = 'lbt_party_color_board_v1';
@@ -35,11 +42,28 @@ const state = {
   pendingAdd: false,
   pickerMode: 'all',
   pickerQuery: '',
+  localPersonas: [],
+  importCandidates: [],
+  modalReturnToPicker: false,
   lastAggregate: null,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const $ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+function browserStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function refreshPersonaPool(localPersonas = state.localPersonas) {
+  state.localPersonas = Array.isArray(localPersonas) ? localPersonas : [];
+  state.personas = [...state.data.personas, ...state.localPersonas];
+  state.map = makePersonaMap(state.personas);
+}
 
 function readStored() {
   try {
@@ -114,8 +138,9 @@ function saveState() {
 
 function init(data) {
   state.data = data;
-  state.personas = data.personas;
-  state.map = makePersonaMap(data.personas);
+  state.localPersonas = loadLocalPersonas(browserStorage());
+  state.personas = [...data.personas, ...state.localPersonas];
+  state.map = makePersonaMap(state.personas);
 
   const stored = readStored();
   const urlKeys = readUrlKeys();
@@ -163,6 +188,14 @@ function bindEvents() {
   $('#copy-tsv').addEventListener('click', copyTsv);
   $('#reset-party').addEventListener('click', resetParty);
   $('#import-apply').addEventListener('click', applyImport);
+  $('#open-lbt-persona-import').addEventListener('click', openLbtPersonaImport);
+  $('#apply-lbt-import').addEventListener('click', applyLbtPersonaImport);
+  $('#cancel-lbt-import').addEventListener('click', closeLbtPersonaImport);
+  $('#dismiss-lbt-import').addEventListener('click', closeLbtPersonaImport);
+  $('#open-manual-persona').addEventListener('click', openManualPersonaDialog);
+  $('#save-manual-persona').addEventListener('click', saveManualPersonaFromDialog);
+  $('#cancel-manual-persona').addEventListener('click', closeManualPersonaDialog);
+  $('#dismiss-manual-persona').addEventListener('click', closeManualPersonaDialog);
   $('#import-text').addEventListener('input', () => {
     const error = $('#import-error');
     error.hidden = true;
@@ -174,9 +207,12 @@ function bindEvents() {
   });
 
   document.addEventListener('click', handleClick);
-  for (const dialog of $$('dialog')) {
+  for (const dialog of $('dialog')) {
     dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
+      if (event.target !== dialog) return;
+      if (dialog.id === 'lbt-import-dialog') closeLbtPersonaImport();
+      else if (dialog.id === 'manual-persona-dialog') closeManualPersonaDialog();
+      else dialog.close();
     });
   }
 }
@@ -235,7 +271,8 @@ function canEditParty() {
 function renderMeta() {
   const meta = state.data.meta;
   const result = state.lastAggregate;
-  $('#source-meta').textContent = `${meta.sourceVersion} / 通常${meta.normalCount} + 特異${meta.tokuiCount}`;
+  const localCount = state.localPersonas.length;
+  $('#source-meta').textContent = `${meta.sourceVersion} / 通常${meta.normalCount} + 特異${meta.tokuiCount}${localCount ? ` / 追加人格${localCount}` : ''}`;
   $('#version-label').textContent = meta.sourceVersion;
   $('#resource-total').textContent = `合計 ${result.grandTotal}`;
   $('#party-count').textContent = `${state.party.length}名`;
@@ -445,7 +482,7 @@ function syncControls() {
 }
 
 function syncPickerMode() {
-  for (const button of $$('[data-picker-mode]')) {
+  for (const button of $('[data-picker-mode]')) {
     button.setAttribute('aria-pressed', String(button.dataset.pickerMode === state.pickerMode));
   }
 }
@@ -482,13 +519,209 @@ function openPicker(index) {
   requestAnimationFrame(() => $('#picker-search').focus());
 }
 
+function renderLbtImportCandidates() {
+  const list = $('#lbt-import-candidates');
+  const empty = $('#lbt-import-empty');
+  const status = $('#lbt-import-status');
+  const candidates = state.importCandidates;
+  const sharedActive = Boolean(window.sharedPartySession?.isActive);
+  list.innerHTML = candidates.map((persona, index) => {
+    const skills = persona.slots
+      .filter((slot) => slot.name)
+      .map((slot) => `${slot.rank} ${slot.name}${slot.colors.length ? `（${slot.colors.join('・')}）` : ''}`)
+      .join(' / ');
+    const typeLabel = persona.variantType === 'sync' ? '同期データ' : 'オリジナル人格';
+    return `
+      <label class="lbt-import-option">
+        <input type="checkbox" data-lbt-import-index="${index}" checked>
+        <span class="lbt-import-option-copy">
+          <span class="lbt-import-option-title">
+            <span>${escapeHtml(persona.name)}</span>
+            <span class="persona-source-badge">${escapeHtml(typeLabel)}</span>
+          </span>
+          <span class="lbt-import-option-meta">${escapeHtml(persona.sourceAccount || 'LBT保存データ')} · ${escapeHtml(persona.sourceLabel || typeLabel)} · HP ${persona.hp} / SAN ${persona.san}</span>
+          <span class="lbt-import-option-skills">${escapeHtml(skills || 'スキル・罪悪属性は未登録')}</span>
+        </span>
+      </label>
+    `;
+  }).join('');
+  empty.hidden = candidates.length > 0;
+  status.textContent = candidates.length
+    ? `${candidates.length}件の同期・創作人格が見つかりました。チェックした人格だけを追加ライブラリに取り込みます。元のLBT保存データは変更しません。${sharedActive ? ' なお、追加人格は現在のクラウド共有セッションでは使用できません。' : ''}`
+    : '同じブラウザプロフィールのLBT保存データから、取り込み対象の同期・創作人格を検出できませんでした。公式DBの人格はすでに一覧にあります。';
+  $('#apply-lbt-import').disabled = candidates.length === 0;
+}
+
+function reopenPickerAfterLocalDialog(mode = null) {
+  const shouldReopen = state.modalReturnToPicker;
+  const index = state.pickerIndex;
+  state.modalReturnToPicker = false;
+  if (!shouldReopen) return;
+  if (mode) state.pickerMode = mode;
+  requestAnimationFrame(() => {
+    openPicker(index);
+    if (mode) {
+      state.pickerMode = mode;
+      syncPickerMode();
+      renderPickerList();
+    }
+  });
+}
+
+function openLbtPersonaImport() {
+  state.modalReturnToPicker = true;
+  $('#picker').close();
+  try {
+    state.importCandidates = discoverLbtPersonaCandidates(browserStorage(), state.data.personas);
+  } catch (error) {
+    state.importCandidates = [];
+    showToast('LBT保存データを読み取れませんでした: ' + (error.message || '保存データエラー'));
+  }
+  renderLbtImportCandidates();
+  $('#lbt-import-dialog').showModal();
+}
+
+function closeLbtPersonaImport() {
+  if ($('#lbt-import-dialog').open) $('#lbt-import-dialog').close();
+  state.importCandidates = [];
+  reopenPickerAfterLocalDialog();
+}
+
+function mergeLocalPersonasInMemory(candidates) {
+  const byKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
+  const bySource = new Map(state.localPersonas.filter((persona) => persona.sourceRef).map((persona) => [persona.sourceRef, persona]));
+  for (const persona of candidates) {
+    if (!persona?.key || !persona?.name) continue;
+    const previous = bySource.get(persona.sourceRef) || byKey.get(persona.key);
+    const next = { ...persona, key: previous?.key || persona.key };
+    byKey.set(next.key, next);
+    if (next.sourceRef) bySource.set(next.sourceRef, next);
+  }
+  refreshPersonaPool([...byKey.values()]);
+}
+
+function applyLbtPersonaImport() {
+  const indexes = $('#lbt-import-candidates [data-lbt-import-index]')
+    .filter((input) => input.checked)
+    .map((input) => Number(input.dataset.lbtImportIndex));
+  const selected = indexes.map((index) => state.importCandidates[index]).filter(Boolean);
+  if (!selected.length) {
+    $('#lbt-import-status').textContent = '取り込む人格にチェックを入れてください。';
+    return;
+  }
+
+  try {
+    const result = importLocalPersonas(browserStorage(), selected);
+    refreshPersonaPool(result.personas);
+    showToast(`LBT人格を${result.added}件追加、${result.updated}件更新しました。`);
+  } catch (error) {
+    mergeLocalPersonasInMemory(selected);
+    showToast('今回の追加データをメモリ上に読み込みました。永続保存はできませんでした: ' + (error.message || '保存エラー'));
+  }
+  if ($('#lbt-import-dialog').open) $('#lbt-import-dialog').close();
+  state.importCandidates = [];
+  reopenPickerAfterLocalDialog('local');
+}
+
+function renderManualSkillFields() {
+  const options = ['<option value="">なし</option>', ...SIN_ORDER.map((sin) => `<option value="${sin}">${sin}</option>`)].join('');
+  $('#manual-skill-fields').innerHTML = Array.from({ length: 5 }, (_, index) => `
+    <div class="manual-skill-row">
+      <span class="manual-skill-rank">S${index}</span>
+      <label class="manual-skill-field manual-skill-field-name" for="manual-skill-name-${index}">スキル名
+        <input class="input" id="manual-skill-name-${index}" maxlength="120" placeholder="スキル${index}">
+      </label>
+      <label class="manual-skill-field manual-skill-field-type" for="manual-skill-type-${index}">種別
+        <input class="input" id="manual-skill-type-${index}" maxlength="80" placeholder="斬撃・貫通など">
+      </label>
+      <label class="manual-skill-field" for="manual-skill-color-a-${index}">罪悪属性1
+        <select id="manual-skill-color-a-${index}">${options}</select>
+      </label>
+      <label class="manual-skill-field" for="manual-skill-color-b-${index}">属性2（任意）
+        <select id="manual-skill-color-b-${index}">${options}</select>
+      </label>
+    </div>
+  `).join('');
+}
+
+function resetManualPersonaForm() {
+  $('#manual-persona-error').hidden = true;
+  $('#manual-persona-error').textContent = '';
+  $('#manual-persona-name').value = '';
+  $('#manual-persona-hp').value = '100';
+  $('#manual-persona-san').value = '45';
+  $('#manual-persona-speed').value = '1d5';
+  $('#manual-persona-affiliation').value = '';
+  $('#manual-persona-keywords').value = '';
+  $('#manual-persona-passive-name').value = '';
+  $('#manual-persona-passive-cond').value = '';
+  renderManualSkillFields();
+}
+
+function openManualPersonaDialog() {
+  state.modalReturnToPicker = true;
+  $('#picker').close();
+  resetManualPersonaForm();
+  $('#manual-persona-dialog').showModal();
+  requestAnimationFrame(() => $('#manual-persona-name').focus());
+}
+
+function closeManualPersonaDialog() {
+  if ($('#manual-persona-dialog').open) $('#manual-persona-dialog').close();
+  reopenPickerAfterLocalDialog();
+}
+
+function saveManualPersonaFromDialog() {
+  const error = $('#manual-persona-error');
+  error.hidden = true;
+  let persona;
+  try {
+    const slots = Array.from({ length: 5 }, (_, index) => ({
+      name: $(`#manual-skill-name-${index}`).value,
+      type: $(`#manual-skill-type-${index}`).value,
+      colors: [
+        $(`#manual-skill-color-a-${index}`).value,
+        $(`#manual-skill-color-b-${index}`).value,
+      ].filter(Boolean),
+    }));
+    persona = createManualPersona({
+      name: $('#manual-persona-name').value,
+      hp: $('#manual-persona-hp').value,
+      san: $('#manual-persona-san').value,
+      speed: $('#manual-persona-speed').value,
+      affiliation: $('#manual-persona-affiliation').value,
+      keywords: $('#manual-persona-keywords').value,
+      passiveName: $('#manual-persona-passive-name').value,
+      passiveCond: $('#manual-persona-passive-cond').value,
+      slots,
+    });
+  } catch (failure) {
+    error.textContent = failure.message || '人格を作成できませんでした。';
+    error.hidden = false;
+    return;
+  }
+
+  try {
+    const storage = browserStorage();
+    state.localPersonas = saveLocalPersonas(storage, [...loadLocalPersonas(storage), persona]);
+  } catch {
+    state.localPersonas = [...state.localPersonas.filter((item) => item.key !== persona.key), persona];
+    showToast('人格を一時追加しましたが、ブラウザへ永続保存できませんでした。');
+  }
+  refreshPersonaPool(state.localPersonas);
+  if ($('#manual-persona-dialog').open) $('#manual-persona-dialog').close();
+  reopenPickerAfterLocalDialog('local');
+  showToast(`創作人格「${persona.name}」を追加しました。`);
+}
+
 function renderPickerList() {
   const query = state.pickerQuery.trim().normalize('NFKC').toLowerCase();
   const selectedKeys = new Set(state.party.map((entry) => entry.key));
   const currentKey = state.pickerIndex !== null ? state.party[state.pickerIndex]?.key : null;
 
   const results = state.personas.filter((persona) => {
-    if (state.pickerMode !== 'all' && persona.kind !== state.pickerMode) return false;
+    if (state.pickerMode === 'local' && !persona.localOnly) return false;
+    if (state.pickerMode !== 'all' && state.pickerMode !== 'local' && persona.kind !== state.pickerMode) return false;
     if (!query) return true;
     const haystack = [
       persona.name,
@@ -497,24 +730,34 @@ function renderPickerList() {
       personaNumberLabel(persona),
       persona.keywords.join(' '),
       persona.affiliation,
+      persona.sourceLabel,
+      persona.sourceAccount,
     ].join(' ').normalize('NFKC').toLowerCase();
     return haystack.includes(query);
   });
 
   $('#picker-list').innerHTML = results.map((persona) => {
-    const disabled = selectedKeys.has(persona.key) && persona.key !== currentKey;
+    const alreadySelected = selectedKeys.has(persona.key) && persona.key !== currentKey;
+    const localOnlyBlocked = Boolean(persona.localOnly && window.sharedPartySession?.isActive);
+    const disabled = alreadySelected || localOnlyBlocked;
     const colors = [...new Set(persona.slots.flatMap((slot) => slot.colors))];
     const keywords = persona.keywords.length > 0 ? persona.keywords.join('・') : (persona.affiliation || '—');
+    const stateLabel = alreadySelected ? '編成済み' : (localOnlyBlocked ? '共有編成では未対応' : '');
+    const sourceBadge = persona.localOnly
+      ? `<span class="persona-source-badge">${escapeHtml(persona.sourceLabel || personaKindLabel(persona))}</span>`
+      : '';
     return `
       <button type="button" class="picker-item" data-action="pick-persona" data-key="${escapeHtml(persona.key)}"
-        ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(`${personaNumberLabel(persona)} ${persona.name}${disabled ? ' 編成済み' : ''}`)}">
+        ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(`${personaNumberLabel(persona)} ${persona.name}${stateLabel ? ` ${stateLabel}` : ''}`)}">
         <span class="picker-main">
           <span class="picker-line">
             <span class="picker-no">${escapeHtml(personaNumberLabel(persona))}</span>
             <span class="picker-name">${escapeHtml(persona.name)}</span>
-            ${disabled ? '<span class="picker-state">編成済み</span>' : ''}
+            ${sourceBadge}
+            ${stateLabel ? `<span class="picker-state">${escapeHtml(stateLabel)}</span>` : ''}
           </span>
           <span class="picker-keywords">${escapeHtml(keywords)}</span>
+          ${persona.localOnly && persona.sourceAccount ? `<span class="lbt-import-option-meta">保存元：${escapeHtml(persona.sourceAccount)}</span>` : ''}
         </span>
         <span class="picker-colors" aria-hidden="true">${colors.map((sin) => (
           `<span class="picker-dot" style="--sin:${SIN_META[sin].color}" title="${escapeHtml(sin)}"></span>`
@@ -530,6 +773,10 @@ function choosePersona(key) {
   if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   const persona = state.map.get(key);
   if (!persona) return;
+  if (persona.localOnly && window.sharedPartySession?.isActive) {
+    showToast('LBT同期・創作人格は現在クラウド共有セッションに未対応です。個人編成に戻ると選択できます。');
+    return;
+  }
   const existingIndex = state.party.findIndex((entry) => entry.key === key);
   if (existingIndex >= 0 && existingIndex !== state.pickerIndex) {
     showToast('その人格はすでに編成されています。');
