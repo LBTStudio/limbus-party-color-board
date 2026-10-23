@@ -650,6 +650,12 @@ function captureInitialRoute() {
     requestedSessionId: params.get('request'),
   };
 
+  // Route links open the collaboration area directly rather than leaving
+  // invited users at the top of the unrelated personal-board interface.
+  if (route.token || route.sessionId || route.requestedSessionId) {
+    $('#shared-panel')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
+
   // Invite tokens are bearer-like secrets. Remove them before any third-party
   // script is loaded, while keeping the captured token only in this closure.
   if (route.token) setRoute('');
