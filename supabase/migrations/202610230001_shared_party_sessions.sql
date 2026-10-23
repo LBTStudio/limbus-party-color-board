@@ -266,6 +266,12 @@ create table if not exists public.session_events (
 
 create index if not exists party_sessions_owner_updated_idx
   on public.party_sessions (owner_user_id, updated_at desc) where archived_at is null;
+create index if not exists party_sessions_owner_created_idx
+  on public.party_sessions (owner_user_id, created_at desc);
+create index if not exists session_invites_creator_created_idx
+  on public.session_invites (created_by, created_at desc);
+create index if not exists session_access_requests_user_requested_idx
+  on public.session_access_requests (user_id, requested_at desc);
 create index if not exists session_members_user_idx
   on public.session_members (user_id, session_id);
 create index if not exists session_requests_pending_idx
