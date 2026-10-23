@@ -185,6 +185,12 @@ function currentSourceFromSnapshot(source, snapshot) {
   return result;
 }
 
+function applyRosterDisplayName(source, entry) {
+  if (!record(source)) return source;
+  const displayName = text(entry?.displayName, 100);
+  return displayName ? { ...source, name: displayName } : source;
+}
+
 function kindFromMode(mode, source) {
   if (mode === 't') return 'tokui';
   if (mode === 'n') return 'normal';
@@ -379,7 +385,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
         const syncRank = ['0', '00', '000'].includes(String(currentOwnedEntry?.syncRank ?? ''))
           ? String(currentOwnedEntry.syncRank) : null;
         const syncMax = currentOwnedEntry?.syncMax === true;
-        const candidate = makeCandidate(source, {
+        const candidate = makeCandidate(applyRosterDisplayName(source, currentOwnedEntry), {
           ...baseMeta,
           mode: modeForMap,
           no,
@@ -408,7 +414,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
         const effective = entry.build?.personaSrc
           ? currentSourceFromSnapshot(entry.build.personaSrc, entry.build)
           : source;
-        const candidate = makeCandidate(effective, {
+        const candidate = makeCandidate(applyRosterDisplayName(effective, entry), {
           ...baseMeta, mode: 'custom', no, sourceRef, identityKey,
           sourceLabel: '保存済みオリジナル人格', syncRank, syncMax,
         }, catalog);
@@ -419,7 +425,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
       const build = record(entry.build) ? entry.build : null;
       if (build && record(build.personaSrc)) {
         const source = currentSourceFromSnapshot(build.personaSrc, build);
-        const candidate = makeCandidate(source, {
+        const candidate = makeCandidate(applyRosterDisplayName(source, entry), {
           ...baseMeta, mode, no, sourceRef, identityKey,
           sourceLabel: build.syncedManual ? '同期化・手動編集済み' : '保存済みビルド差分',
           syncRank, syncMax,
@@ -432,13 +438,15 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
         continue;
       }
 
-      // Sync rank / MAX is metadata separate from a manual build snapshot. Use the official catalog as its template.
-      if (entry.synced === true || syncRank || syncMax) {
-        const base = basePersona(mode, no);
-        if (!base) continue;
+      // Sync rank / MAX and an explicitly renamed roster identity are metadata separate from a manual build snapshot.
+      const base = basePersona(mode, no);
+      if (!base) continue;
+      const displayName = text(entry.displayName, 100);
+      if (entry.synced === true || syncRank || syncMax || (displayName && displayName !== text(base.name, 100))) {
+        const renamedBase = applyRosterDisplayName(base, entry);
         const candidate = {
-          ...base,
-          key: `lbt-sync-${hashText(`${namespace}:${sourceRef}:${JSON.stringify(base)}:${syncRank || ''}:${syncMax}`)}`,
+          ...renamedBase,
+          key: `lbt-sync-${hashText(`${namespace}:${sourceRef}:${JSON.stringify(renamedBase)}:${syncRank || ''}:${syncMax}`)}`,
           variantType: 'sync',
           localOnly: true,
           originType: 'lbt-sync',
