@@ -493,3 +493,73 @@ test('LBT identity keys are namespaced per browser profile and remain stable on 
   assert.ok(firstStorage.getItem('lbt_party_color_board_installation_id_v1'));
   assert.ok(secondStorage.getItem('lbt_party_color_board_installation_id_v1'));
 });
+
+test('renamed LBT roster displayName is reflected in the add-persona candidates', () => {
+  const storage = new MemoryStorage();
+  const source = lbtSource({ name: '元の同期人格名', no: 21 });
+  writeAccount(storage, {
+    personaMode: 'n',
+    personaNo: 21,
+    personaSrc: source,
+    syncedManual: true,
+    roster: {
+      personas: [{
+        uid: 'n21',
+        no: 21,
+        mode: 'n',
+        displayName: '変更後の同期人格名',
+        synced: true,
+        syncRank: '00',
+        syncMax: false,
+        build: {
+          personaSrc: source,
+          syncedManual: true,
+          hp: '100',
+          san: '40',
+          speed: '1d5',
+          skills: source.skills,
+        },
+      }],
+    },
+  });
+  const catalog = [makeCatalogSource(source, 'n21', 'normal')];
+
+  const candidates = discoverLbtPersonaCandidates(storage, catalog, 'acct-1');
+  const candidate = candidates.find((persona) => persona.sourceRef === 'acct-1:identity:n:21');
+
+  assert.ok(candidate);
+  assert.equal(candidate.name, '変更後の同期人格名');
+  assert.ok(!candidates.some((persona) => persona.name === '元の同期人格名'));
+});
+
+test('renamed LBT roster identity is importable even without sync rank metadata or a saved build', () => {
+  const storage = new MemoryStorage();
+  const source = lbtSource({ name: '元の通常人格名', no: 22 });
+  writeAccount(storage, {
+    personaMode: null,
+    personaNo: null,
+    personaSrc: null,
+    roster: {
+      personas: [{
+        uid: 'n22',
+        no: 22,
+        mode: 'n',
+        displayName: '手動で変更した同期名',
+        synced: false,
+        syncRank: null,
+        syncMax: false,
+        equipped: false,
+      }],
+    },
+  });
+
+  const candidates = discoverLbtPersonaCandidates(
+    storage,
+    [makeCatalogSource(source, 'n22', 'normal')],
+    'acct-1',
+  );
+  const candidate = candidates.find((persona) => persona.sourceRef === 'acct-1:identity:n:22');
+
+  assert.ok(candidate);
+  assert.equal(candidate.name, '手動で変更した同期名');
+});
