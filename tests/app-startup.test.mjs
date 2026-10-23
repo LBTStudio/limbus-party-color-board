@@ -100,15 +100,16 @@ test('LBT identity imports save active-party snapshot changes and block read-onl
   );
 });
 
-test('party color strip retains the compact legacy design and explains the S0-S4 order', () => {
-  assert.match(html, /色帯は左からS0→S4の順です/);
-  assert.match(app, /class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です"/);
-  assert.match(app, /<span style="background:\$\{gradientFor\(skillSlot\.colors\)\}" title="\$\{escapeHtml\(label\)\}"><\/span>/);
-  assert.match(styles, /\.color-strip \{\s*display: flex;\s*height: 4px;[\s\S]*?\.color-strip span \{\s*flex: 1 1 0;/);
+test('numbered color strip maps indices above the unchanged 4px S0-S4 bar', () => {
+  assert.match(html, /色帯の上にある数字0〜4は、左からS0→S4/);
+  assert.match(app, /const stripLabels = persona\.slots\.map\(\(skillSlot, index\)/);
+  assert.match(app, /class="color-strip-indexes" aria-hidden="true">\$\{stripLabels\}/);
+  assert.match(app, /class="color-strip" role="img" aria-label="色帯上の数字0〜4は、左からS0〜S4/);
+  assert.match(styles, /\.color-strip-indexes \{[\s\S]*?display: flex;[\s\S]*?\.color-strip \{\s*display: flex;\s*height: 4px;/);
+  assert.match(styles, /\.color-strip-wrap \{\s*margin: -3px 0 1px;[\s\S]*?\.color-strip \{\s*display: flex;\s*height: 4px;[\s\S]*?margin: 0;/);
   assert.doesNotMatch(app, /color-strip-slot/);
   assert.doesNotMatch(styles, /color-strip-slot/);
 });
-
 test('passive resource costs and skill-specific resource sorting are wired into the UI', () => {
   assert.match(html, /id="skill-sort-slot"/);
   assert.match(html, /資源色ソートの対象スキル/);

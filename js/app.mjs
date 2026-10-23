@@ -537,6 +537,9 @@ function renderParty() {
       .filter((sin) => counts[sin] > 0)
       .sort((a, b) => counts[b] - counts[a] || SIN_ORDER.indexOf(a) - SIN_ORDER.indexOf(b));
 
+    const stripLabels = persona.slots.map((skillSlot, index) => (
+      `<span title="${escapeHtml(skillSlot.rank)}">${index}</span>`
+    )).join('');
     const strip = persona.slots.map((skillSlot) => {
       const sins = skillSlot.colors.length ? skillSlot.colors.join('・') : '罪悪属性なし';
       const label = `${skillSlot.rank} ${skillSlot.name} / ${skillSlot.type} / ${sins}`;
@@ -567,7 +570,10 @@ function renderParty() {
 
     cards.push(`
       <article class="${cardClass}" data-key="${escapeHtml(persona.key)}" style="--selected-sin-color:${selectedColor}">
-        <div class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です">${strip}</div>
+        <div class="color-strip-wrap">
+          <div class="color-strip-indexes" aria-hidden="true">${stripLabels}</div>
+          <div class="color-strip" role="img" aria-label="色帯上の数字0〜4は、左からS0〜S4の罪悪属性を示します">${strip}</div>
+        </div>
         <div class="card-head">
           <div class="card-id">
             <span class="card-slot">SLOT ${slot}</span>
