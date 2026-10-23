@@ -113,13 +113,17 @@
 
 
 
-## 16〜20名規模の容量・負荷目安
+## 16名規模の容量・負荷目安
 
-- 1スペースのメンバー上限は発行者込み20名。16名の参加は既存のDB上限内であり、承認RPCは親セッションをロックしてから上限を確認する。
-- 可視タブのポーリングは、各利用者が直近2分以内に操作していれば約5秒間隔、操作が落ち着けば約15秒間隔（どちらも少量のジッターあり）。16名全員が常時アクティブの場合の理論値は約3.2 poll RPC/秒、約276,480回/日、約829万回/30日。全員がアイドルなら約1.07回/秒、約92,160回/日、約276万回/30日。
+- 1スペースのメンバー上限は発行者込み16名。承認RPCは親セッション行を `FOR UPDATE` でロックしてから人数を確認するため、同時に複数の承認を行っても上限を超えない。
+- 可視タブのポーリングは、各利用者が直近2分以内に操作していれば約5秒間隔、操作が落ち着けば約15秒間隔（どちらも少量のジッターあり）。
+- 16名全員が5秒ポーリングを続ける場合は **192要求/分、11,520要求/時、276,480要求/日、約829万要求/30日**。全員が15秒間隔なら **64要求/分、3,840要求/時、92,160要求/日、約276万要求/30日**。
+- 変更なし応答だけを想定し、応答JSONを1回150〜500 bytesと置いた概算は、16名が常時5秒ポーリングで約1.24〜4.15 GB/30日、15秒ポーリングで約0.42〜1.38 GB/30日。これはレスポンス本文だけの概算で、HTTP・認証応答や実際の応答サイズは別途 Dashboard で確認する。
+- revision が変わると変更なし応答ではなく編成スナップショットを返す。例えば1回の共有編集が30秒ごとに起き、各参加者へ平均1〜10 KBのスナップショットが返る場合、16名分で約1.38〜13.8 GB/30日になる。全ポーリングで上限48 KBのスナップショットが返る極端な上限は約398 GB/30日で、継続的な更新が多い運用では Free の帯域枠を超え得る。
+- ポーリング要求そのもののレートはピーク約3.2 RPC/秒なので、16人規模でDB行数も少ない現状では CPU / 同時接続数より、更新頻度とスナップショットの Egress が先に制約になると予想する。
 - ポーリングの unchanged 応答は小さな JSON のみ。編成が変わったときだけスナップショットを返し、クライアントは1回の共有人格スナップショットを48,000 bytes以下に制限する。参加者ごとに同じ更新を1回ずつ読むので、16名全員が48 KB近い編成を繰り返し更新する使い方は無料枠の egress を消費し得る。
-- 2026-10-24 時点の本番DBは約12.2 MB、共有テーブルは今回の確認時点でセッション0件・メンバー0件・招待0件・申請0件・編集イベント0件。DB容量は小さく、16名で通常の編成編集をする短時間の運用は十分現実的と見積もる。ただし常時16名が終日操作するケースは負荷試験をしておらず、保証はできない。
-- Supabase Free/Nano を仮定した公表枠は、DB 500 MB、egress 5 GB/月、最大200 pooler clients、DB 接続60、shared CPU・最大0.5 GB RAM。API request 数自体は pricing 上「Unlimited」だが、実際のボトルネックは request 数より shared compute と egress。契約プランはDashboardで要確認。16名の理論ピークは5秒ごとの約3.2 poll/秒なので、軽量な変更なし応答が中心なら運用可能と見込む。ただし、本番の契約プランはプロジェクト一覧APIだけでは取得できず、Free/Nanoは保守的な仮定である。変更応答が頻発すると最大48 KBのスナップショットを参加者ごとに返すため帯域が支配要因になりうる。利用が毎日長時間続くなら Dashboard の egress / CPU / connections を監視し、poll 間隔やプランを再評価する。
+- 2026-10-24 の本番照会では `pg_database_size` が 12,236,467 bytes（約11.7 MiB）。その時点の共有テーブルはセッション0件・メンバー0件・招待0件・申請0件・編集イベント0件だった。DB容量は小さく、16名で通常の編成編集をする短時間の運用は十分現実的と見積もる。ただし常時16名が終日操作する実ストレス試験は未実施であり、保証ではない。
+- Supabase Free/Nano を保守的な仮定にした公表枠は、DB 500 MB、Egress 5 GB/月、最大200 pooler clients、DB 接続60、shared CPU・最大0.5 GB RAM。API request 数自体は Pricing 上「Unlimited」だが、実際のボトルネックは request 数より shared compute と Egress。契約プランはプロジェクト一覧APIから確認できないため、Dashboardで要確認。参考: [Supabase Pricing](https://supabase.com/pricing)、[Compute and Disk](https://supabase.com/docs/guides/platform/compute-and-disk)、[Connection pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits)。利用が毎日長時間続くなら Dashboard の Egress / CPU / connections を監視し、poll 間隔やプランを再評価する。
 - 数値はコード上限からの負荷概算で、実測ストレス試験ではない。参照: [Supabase Pricing](https://supabase.com/pricing)、[Compute and Disk](https://supabase.com/docs/guides/platform/compute-and-disk)、[Connection pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits)。
 
 ## 保存先と自動整理ポリシー
