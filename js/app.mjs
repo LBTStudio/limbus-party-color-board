@@ -607,7 +607,7 @@ function mergeLocalPersonasInMemory(candidates) {
 }
 
 function applyLbtPersonaImport() {
-  const indexes = $('#lbt-import-candidates [data-lbt-import-index]')
+  const indexes = Array.from(document.querySelectorAll('#lbt-import-candidates [data-lbt-import-index]'))
     .filter((input) => input.checked)
     .map((input) => Number(input.dataset.lbtImportIndex));
   const selected = indexes.map((index) => state.importCandidates[index]).filter(Boolean);
