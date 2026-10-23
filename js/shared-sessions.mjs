@@ -1,7 +1,17 @@
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './supabase-config.mjs';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, TURNSTILE_SITE_KEY } from './supabase-config.mjs';
 
 const PLACEHOLDER_KEY = 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY';
+const TURNSTILE_PLACEHOLDER = 'REPLACE_WITH_CLOUDFLARE_TURNSTILE_SITE_KEY';
 let clientPromise;
+let captchaToken = '';
+
+export function isTurnstileConfigured() {
+  return Boolean(TURNSTILE_SITE_KEY && TURNSTILE_SITE_KEY !== TURNSTILE_PLACEHOLDER);
+}
+
+export function setCaptchaToken(token) {
+  captchaToken = typeof token === 'string' ? token : '';
+}
 
 function isPrivilegedKey(key) {
   const value = String(key || '').trim();
@@ -58,14 +68,34 @@ async function rpc(name, args = {}, displayName = '') {
   const { data: authData, error: authError } = await client.auth.getSession();
   if (authError) throw authError;
   if (!authData.session) {
-    const { error } = await client.auth.signInAnonymously({
-      options: displayName ? { data: { display_name: displayName.slice(0, 40) } } : {},
-    });
-    if (error) {
-      if (/anonymous|disabled|signups not allowed/i.test(error.message)) {
+    const captchaRequired = isTurnstileConfigured();
+    const token = captchaToken;
+    if (captchaRequired && !token) {
+      throw new Error('不正利用防止の確認が必要です。Turnstile を完了してから、もう一度操作してください。');
+    }
+    let signInError;
+    try {
+      const { error } = await client.auth.signInAnonymously({
+        options: {
+          ...(displayName ? { data: { display_name: displayName.slice(0, 40) } } : {}),
+          ...(token ? { captchaToken: token } : {}),
+        },
+      });
+      signInError = error;
+    } finally {
+      captchaToken = '';
+      if (captchaRequired && typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('supabase-captcha-reset'));
+      }
+    }
+    if (signInError) {
+      if (/anonymous|disabled|signups not allowed/i.test(signInError.message)) {
         throw new Error('Supabase の匿名ログインが有効ではありません。Authentication 設定で Anonymous Sign-Ins を有効にしてください。');
       }
-      throw error;
+      if (/captcha/i.test(signInError.message)) {
+        throw new Error('CAPTCHA の検証に失敗しました。確認をやり直してください。');
+      }
+      throw signInError;
     }
   }
   const { data, error } = await client.rpc(name, args);
