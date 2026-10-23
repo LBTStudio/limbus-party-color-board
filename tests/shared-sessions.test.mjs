@@ -11,6 +11,7 @@ const forwardMigration = read('../supabase/migrations/202610230002_serialize_sha
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
+const immediateDeleteMigration = read('../supabase/migrations/20261024203000_immediate_delete_manually_ended_sessions.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -308,11 +309,13 @@ test('shared session lifecycle clearly separates browser-local and cloud data', 
   assert.match(html, /PERSONAL · THIS BROWSER/);
   assert.match(html, /SHARED · CLOUD DATABASE/);
   assert.match(html, /30日間/);
-  assert.match(html, /7日後/);
+  assert.match(html, /自動終了した共有編成は、終了から7日後/);
+  assert.match(html, /発行者が手動で終了した共有編成は、その場で共有データと関連データを削除/);
   assert.match(html, /この端末で閉じる/);
   assert.match(html, /共同編集スペースを終了/);
   assert.match(sharedUi, /last_activity_at/);
-  assert.match(sharedUi, /共有データは7日後に完全削除/);
+  assert.match(sharedUi, /共有編成・参加者・招待・申請・編集履歴を即時削除/);
+  assert.match(sharedUi, /共有データと関連記録を即時削除/);
 });
 
 test('creating a workspace validates the title and the owner display name separately', () => {
@@ -344,6 +347,50 @@ test('workspace creation is blocked before the create RPC when the current share
   const activateStart = sharedUi.indexOf('async function activateSession(');
   const activateBody = sharedUi.slice(activateStart, activateStart + 500);
   assert.match(activateBody, /const switchError = sessionSwitchError\(\)/);
+});
+
+test('manual workspace ending deletes data immediately while idle cleanup keeps its seven-day grace period', () => {
+  assert.match(immediateDeleteMigration, /create or replace function public\.archive_party_session\(p_session_id uuid\)/i);
+  assert.match(immediateDeleteMigration, /delete from public\.party_sessions[\s\S]*?owner_user_id=v_user_id/i);
+  assert.match(immediateDeleteMigration, /deleted_immediately',true/);
+  assert.match(immediateDeleteMigration, /revoke all on function public\.archive_party_session\(uuid\) from public, anon/i);
+  assert.match(immediateDeleteMigration, /grant execute on function public\.archive_party_session\(uuid\) to authenticated/i);
+  for (const table of ['session_members', 'session_invites', 'session_access_requests', 'session_events']) {
+    assert.ok(migration.includes(table), 'child table is part of the shared-session schema');
+  }
+  assert.match(migration, /references public\.party_sessions\(id\) on delete cascade/i);
+  assert.match(lifecycleMigration, /archived_at < now\(\) - interval '7 days'/i,
+    'the delayed purge remains only for automatically archived idle sessions');
+});
+
+test('member capacity supports 16 participants and workspace lists show the creator display name', () => {
+  assert.match(migration, /SESSION_MEMBER_LIMIT/);
+  assert.match(migration, /session_members m where m\.session_id=v_request\.session_id\) >= 20/);
+  const start = immediateDeleteMigration.indexOf('create or replace function public.list_my_party_sessions()');
+  const end = immediateDeleteMigration.indexOf('revoke all on function public.list_my_party_sessions()', start);
+  const listFunction = immediateDeleteMigration.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(listFunction, /owner_display_name/);
+  assert.match(listFunction, /owner_member\.display_name/);
+  assert.match(listFunction, /owner_member\.user_id = s\.owner_user_id/);
+  assert.match(sharedUi, /'發行者: ' \+ \(item\.owner_display_name \|\| '編成主'\)/);
+  assert.match(sharedUi, /'発行者: ' \+ active\.ownerDisplayName/);
+  assert.match(design, /16名全員が常時アクティブの場合/);
+});
+
+test('tool URL copying is separate from invitation issuance and cannot auto-copy an invite secret', () => {
+  assert.match(html, /id="shared-tool-url"/);
+  assert.match(html, /id="shared-copy-tool-url">ツールURLをコピー/);
+  assert.match(html, /id="shared-copy-invite">招待リンクをコピー/);
+  assert.match(html, /共同編集への参加権限はありません/);
+  assert.match(sharedUi, /function publicToolUrl\(\) \{\s*return location\.origin \+ location\.pathname;/);
+  const start = sharedUi.indexOf('async function issueInvite()');
+  const end = sharedUi.indexOf('async function copyInvite()', start);
+  const issue = sharedUi.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(issue, /render\(\)/);
+  assert.doesNotMatch(issue, /copyInvite\(\)/, 'issuing an invite must not copy it automatically');
+  assert.match(sharedUi, /navigator\.clipboard\.writeText\(value\)/);
 });
 
 test('workspace archival is rejected before the RPC when local changes have not settled', () => {
