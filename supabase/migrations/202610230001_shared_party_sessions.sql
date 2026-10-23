@@ -283,7 +283,7 @@ alter table public.session_events enable row level security;
 -- No direct table access from browser roles. All operations pass through checked RPCs.
 revoke all on table public.party_persona_keys, public.party_sessions, public.session_members,
   public.session_invites, public.session_access_requests, public.session_events
-  from anon, authenticated;
+  from public, anon, authenticated;
 
 create or replace function public._party_session_snapshot(p_session_id uuid)
 returns jsonb
@@ -401,7 +401,7 @@ begin
       where i.created_by = v_user_id and i.created_at > now() - interval '1 hour') >= 20 then
     raise exception 'INVITE_CREATE_RATE_LIMIT' using errcode = '53300';
   end if;
-  -- Two independently generated UUIDs produce a 256-bit hex token; only its hash is stored.
+  -- Two UUIDs provide about 244 random bits in a 64-character hex token; only its hash is stored.
   v_token := lower(replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''));
   v_expires := now() + make_interval(hours => p_expires_hours);
   insert into public.session_invites(session_id,token_hash,expires_at,created_by)
