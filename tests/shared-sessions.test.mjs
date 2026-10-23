@@ -36,7 +36,7 @@ test('shared session tables have RLS enabled and browser roles cannot access the
   assert.match(migration, /revoke all on function public\._party_session_snapshot\(uuid\) from public, anon, authenticated/i);
   assert.doesNotMatch(migration, /create policy/i);
   assert.doesNotMatch(migration, /set search_path = pg_catalog, public/i);
-  assert.equal((migration.match(/set search_path = pg_catalog$/gm) || []).length, 13);
+  assert.equal((migration.match(/set search_path = pg_catalog$/gm) || []).length, 14);
 });
 
 test('session creation, invitations, and access requests have per-user abuse limits', () => {
@@ -56,6 +56,7 @@ test('shared session RPCs enforce owner/member roles and per-session revision ch
     'apply_party_edit',
     'list_party_session_admin',
     'decide_party_access_request',
+    'set_party_session_member_role',
     'remove_party_session_member',
     'revoke_party_invite',
     'archive_party_session',
