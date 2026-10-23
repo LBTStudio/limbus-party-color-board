@@ -1,0 +1,12 @@
+{
+  "name": "limbus-party-color-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LIMBUS BUILD TERMINAL の人格データから、編成と資源色（罪悪属性）を集計・ソートする静的ツール",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build:data": "node tools/build-data.mjs",
+    "serve": "node tools/serve.mjs"
+  }
+}

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0e0b09">
+<title>LIMBUS PARTY COLOR BOARD</title>
+<meta name="description" content="LIMBUS BUILD TERMINAL の人格データから、編成と資源色（罪悪属性）を集計・ソートする非公式ツール。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e0b09'/%3E%3Cpath d='M8 24V8h4.6v12.2H24V24H8Z' fill='%23c8a84b'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div class="brand-text">
+      <p class="brand-kicker">LIMBUS BUILD TERMINAL</p>
+      <h1>PARTY COLOR BOARD</h1>
+    </div>
+  </div>
+  <p class="topbar-meta" id="source-meta">データ読み込み中</p>
+</header>
+
+<main id="main">
+  <section class="panel controls" aria-labelledby="controls-title">
+    <h2 id="controls-title" class="sr-only">表示設定</h2>
+    <div class="control">
+      <label for="party-sort">編成の並び</label>
+      <select id="party-sort">
+        <option value="default">登録順</option>
+        <option value="no-asc">人格番号 昇順</option>
+        <option value="no-desc">人格番号 降順</option>
+        <option value="name">名前順</option>
+        <option value="hp-desc">HP 高い順</option>
+        <option value="san-desc">SAN 高い順</option>
+        <option value="speed-desc">速度 高い順</option>
+        <option value="pattern">色構成順（S0→S4）</option>
+        <option value="color">選択色が多い順</option>
+      </select>
+    </div>
+    <div class="control">
+      <label for="resource-sort">資源色の並び</label>
+      <select id="resource-sort">
+        <option value="count-desc">数の多い順</option>
+        <option value="count-asc">数の少ない順</option>
+        <option value="personas-desc">出せる人数順</option>
+        <option value="sin-order">色順（憤怒→嫉妬）</option>
+        <option value="name">名前順</option>
+      </select>
+    </div>
+    <div class="control-actions">
+      <button type="button" id="add-member" class="btn">＋ 人格を追加</button>
+      <button type="button" id="import-tsv" class="btn btn-ghost">TSV取込（任意）</button>
+      <button type="button" id="copy-tsv" class="btn btn-ghost">TSVをコピー</button>
+      <button type="button" id="reset-party" class="btn btn-ghost">初期編成</button>
+    </div>
+  </section>
+
+  <section class="panel resource-section" aria-labelledby="resource-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">SIN RESOURCES</p>
+        <h2 id="resource-title">資源色サマリー</h2>
+      </div>
+      <p class="section-meta"><span id="resource-total">合計 0</span><span id="selected-sin-label" hidden></span></p>
+    </div>
+    <p class="hint">カードを押すと、その色を出せる人格を上に並べます。数字は資源総数、下段はその色を出せる人格数です。</p>
+    <div id="resource-cards" class="resource-grid" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="matrix-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">AT A GLANCE</p>
+        <h2 id="matrix-title">編成マトリクス</h2>
+      </div>
+      <p class="section-meta" id="party-count">0名</p>
+    </div>
+    <div class="table-wrap">
+      <table id="matrix" class="matrix">
+        <caption class="sr-only">人格ごとの戦術0〜4の罪悪属性と、資源色の集計</caption>
+        <thead></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="party-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">COMPOSITION</p>
+        <h2 id="party-title">人格詳細</h2>
+      </div>
+      <p class="section-meta" id="party-count-2">0名</p>
+    </div>
+    <div id="party-cards" class="party-grid"></div>
+    <div id="empty-state" class="empty" hidden>
+      <p>編成が空です。「＋ 人格を追加」から人格を選んでください。</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Data: <a href="https://github.com/LBTStudio/LIMBUS_BUILD_TERMINAL" target="_blank" rel="noreferrer">LIMBUS BUILD TERMINAL</a> <span id="version-label"></span> / 非公式ファンツール</p>
+    <p>人格・スキル・罪悪色は LBT の DB から自動生成。編成を変えると統計はその場で再計算されます。</p>
+    <p>集計定義: 戦術0〜4の罪悪属性を1スロット1資源として数える。二属性スキルは両方に数える。</p>
+  </footer>
+</main>
+
+<dialog id="picker" class="dialog" aria-labelledby="picker-title">
+  <div class="dialog-head">
+    <div>
+      <p class="kicker">SELECT IDENTITY</p>
+      <h2 id="picker-title">人格を選択</h2>
+    </div>
+    <button type="button" class="icon-btn" data-close-dialog="picker" aria-label="閉じる">×</button>
+  </div>
+  <div class="picker-tools">
+    <label class="sr-only" for="picker-search">人格を検索</label>
+    <input id="picker-search" class="input" type="search" placeholder="名前・番号・キーワードで検索" autocomplete="off">
+    <div class="segmented" role="group" aria-label="人格種別">
+      <button type="button" data-picker-mode="all" aria-pressed="true">すべて</button>
+      <button type="button" data-picker-mode="normal" aria-pressed="false">通常</button>
+      <button type="button" data-picker-mode="tokui" aria-pressed="false">特異</button>
+    </div>
+  </div>
+  <div id="picker-list" class="picker-list"></div>
+  <p id="picker-empty" class="empty" hidden>該当する人格がありません。</p>
+</dialog>
+
+<dialog id="import-dialog" class="dialog" aria-labelledby="import-title">
+  <div class="dialog-head">
+    <div>
+      <p class="kicker">IMPORT FROM SHEET</p>
+      <h2 id="import-title">TSV / CSVから取り込む</h2>
+    </div>
+    <button type="button" class="icon-btn" data-close-dialog="import-dialog" aria-label="閉じる">×</button>
+  </div>
+  <p class="hint">任意の編成を貼り付ける場合だけ使います。DBの人格データは自動参照しているため、通常は「＋ 人格を追加」だけで完結します。「人格番号」または「人格名」を含むヘッダー行が必要です。TSV / CSV のどちらでも取り込めます。メンバー名（PL名）などの列は取り込みません。</p>
+  <label class="sr-only" for="import-text">TSVまたはCSVの内容</label>
+  <textarea id="import-text" class="input textarea" rows="12" placeholder="人格番号&#9;人格名&#9;..."></textarea>
+  <p id="import-error" class="form-error" role="alert" hidden></p>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-ghost" data-close-dialog="import-dialog">キャンセル</button>
+    <button type="button" id="import-apply" class="btn">取り込む</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<noscript>
+  <p class="noscript">このツールの表示には JavaScript が必要です。</p>
+</noscript>
+<script type="module" src="js/app.mjs"></script>
+</body>
+</html>
