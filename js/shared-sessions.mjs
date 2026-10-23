@@ -118,6 +118,9 @@ export function createSharedSessions() {
     async removeMember(sessionId, userId) {
       return rpc('remove_party_session_member', { p_session_id: sessionId, p_user_id: userId });
     },
+    async setMemberRole(sessionId, userId, role) {
+      return rpc('set_party_session_member_role', { p_session_id: sessionId, p_user_id: userId, p_role: role });
+    },
     async archiveSession(sessionId) {
       return rpc('archive_party_session', { p_session_id: sessionId });
     },
