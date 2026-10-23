@@ -1970,6 +1970,10 @@ h2 {
   margin-bottom: 8px;
 }
 
+.shared-title-short {
+  display: none;
+}
+
 .shared-panel .shared-intro {
   max-width: 72ch;
   margin-bottom: 14px;
@@ -2277,6 +2281,14 @@ h2 {
     font-size: .88rem;
     letter-spacing: .01em;
     white-space: nowrap;
+  }
+
+  .shared-panel:not(.is-open) .shared-title-full {
+    display: none;
+  }
+
+  .shared-panel:not(.is-open) .shared-title-short {
+    display: inline;
   }
 
   .shared-panel:not(.is-open) .shared-dock-tools {
