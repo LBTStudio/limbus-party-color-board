@@ -286,3 +286,25 @@ test('TSV persona keys disambiguate local synced variants that share an official
   assert.match(uppercaseMissingKey.error, /ローカル追加人格キー/);
   assert.equal(uppercaseMissingKey.persona, undefined, 'case-altered local keys must not bypass the namespace guard');
 });
+
+
+test('TSV import preserves 担当者 / PL名 per persona without changing key resolution', () => {
+  const input = [
+    '担当者\t枠\t人格キー\t人格番号\t人格名',
+    'Alice\t1\tn1\t1\t黒雲会組員',
+    'Bob\t2\tn2\t2\t黒雲会若衆',
+  ].join('\n');
+  const result = parsePartySheet(input, personas);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.party.map((entry) => ({ key: entry.key, assignee: entry.assignee })), [
+    { key: 'n1', assignee: 'Alice' },
+    { key: 'n2', assignee: 'Bob' },
+  ]);
+});
+
+test('TSV import bounds assigned names to forty characters', () => {
+  const name = 'x'.repeat(60);
+  const result = parsePartySheet(['担当者\t人格番号', `${name}\t1`].join('\n'), personas);
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.party[0].assignee.length, 40);
+});
