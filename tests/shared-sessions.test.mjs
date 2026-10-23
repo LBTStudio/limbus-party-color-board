@@ -9,7 +9,7 @@ const personas = JSON.parse(read('../data/personas.json')).personas;
 const migration = read('../supabase/migrations/202610230001_shared_party_sessions.sql');
 const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
-const personaSnapshotMigration = read('../supabase/migrations/20261024030000_shared_persona_snapshots.sql');
+const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -418,4 +418,8 @@ test('LBT local persona snapshots are synchronized through authorized shared-ses
   assert.match(personaSnapshotMigration, /revoke all on function public\.apply_party_edit_v2/i);
   assert.match(personaSnapshotMigration, /grant execute on function public\.apply_party_edit_v2.*to authenticated/i);
   assert.doesNotMatch(sharedUi, /同期・創作・手動追加の人格を含む編成は、現在クラウド共有に対応していません/);
+  assert.match(app, /必要な人格データは共有セッションに含めて同期されます/);
+  assert.match(app, /元のLBT保存データは変更しません/);
+  assert.doesNotMatch(app, /URL・クラウド共有には含まれません/);
+  assert.doesNotMatch(app, /追加人格は現在のクラウド共有セッションでは使用できません/);
 });
