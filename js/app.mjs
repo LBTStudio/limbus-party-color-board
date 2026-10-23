@@ -973,6 +973,7 @@ async function boot() {
         renderAll,
         saveState,
         showToast,
+        canShareCurrentParty: () => state.party.every((entry) => !state.map.get(entry.key)?.localOnly),
       });
     } catch (sharedError) {
       console.error('Shared sessions UI failed to initialize', sharedError);
