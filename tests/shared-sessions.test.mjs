@@ -391,3 +391,24 @@ test('mobile refinement keeps the collapsed shared-session dock compact and resp
   assert.match(styles, /env\(safe-area-inset-bottom, 0px\)/);
   assert.match(styles, /\.shared-panel:not\(\.is-open\) > \.section-head \{[\s\S]*?flex-direction: row;/);
 });
+
+
+test('LBT synced and original personas are imported locally and unsupported cloud sharing is guarded', () => {
+  const localImport = read('../js/persona-import.mjs');
+  assert.match(html, /LBT保存データを読み込む/);
+  assert.match(html, /手動で創作人格を追加/);
+  assert.match(html, /id="manual-skill-fields"/);
+  assert.match(app, /discoverLbtPersonaCandidates\(browserStorage\(\), state\.data\.personas\)/);
+  assert.match(app, /saveLocalPersonas\(storage, \[\.\.\.loadLocalPersonas\(storage\), persona\]\)/);
+  assert.match(localImport, /lbt_accounts_index/);
+  assert.match(localImport, /lbt_account_/);
+  assert.match(localImport, /lbt_v46_state/);
+  assert.match(localImport, /state\.syncedManual === true/);
+  assert.match(localImport, /entry\.build/);
+  assert.match(localImport, /entry\.src/);
+  assert.match(app, /canShareCurrentParty: \(\) => state\.party\.every/);
+  assert.match(sharedUi, /bridge\.canShareCurrentParty/);
+  assert.match(sharedUi, /現在クラウド共有に対応していません/);
+  assert.match(app, /containsLocalOnlyPersona/);
+  assert.match(app, /data-action="delete-local-persona"/);
+});
