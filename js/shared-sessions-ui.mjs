@@ -855,6 +855,15 @@ export async function initializeSharedSessionsUi(callbacks) {
     setSharedPanelOpen(nextOpen);
     if (nextOpen && active?.role === 'owner') void refreshAdmin();
   });
+  document.querySelectorAll('a[href="#shared-panel"]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      setSharedPanelOpen(true);
+      $('#shared-panel-toggle').focus();
+      if (active?.role === 'owner') void refreshAdmin();
+      else if (!active) void refreshSessions();
+    });
+  });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
   $('#shared-create').addEventListener('click', () => createSession());
   $('#shared-create-invite').addEventListener('click', () => issueInvite());
