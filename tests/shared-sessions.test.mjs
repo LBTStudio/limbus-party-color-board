@@ -42,10 +42,24 @@ test('shared session tables have RLS enabled and browser roles cannot access the
   assert.equal((migration.match(/set search_path = pg_catalog$/gm) || []).length, 14);
 });
 
+test('SQL migration is syntactically well-formed and applies abuse/resource caps', () => {
+  assert.equal((migration.match(/\bas \$\$/g) || []).length, 14, 'every PL/pgSQL function must open a $ body');
+  assert.equal((migration.match(/^\$\$;$/gm) || []).length, 14, 'every PL/pgSQL function must close its $ body');
+  assert.doesNotMatch(migration, /\bas \$\s*\ndeclare/i, 'single-dollar delimiter typo breaks migration');
+  assert.match(migration, /ACTIVE_SESSION_LIMIT/);
+  assert.match(migration, /SESSION_STORAGE_LIMIT/);
+  assert.match(migration, /ACTIVE_INVITE_LIMIT/);
+  assert.match(migration, /PENDING_REQUEST_LIMIT/);
+  assert.match(migration, /SESSION_MEMBER_LIMIT/);
+  assert.match(migration, /PARTY_EDIT_RATE_LIMIT/);
+  assert.match(migration, /interval '30 days'/i);
+});
+
 test('session creation, invitations, and access requests have per-user abuse limits', () => {
   assert.match(migration, /SESSION_CREATE_RATE_LIMIT/);
   assert.match(migration, /INVITE_CREATE_RATE_LIMIT/);
   assert.match(migration, /ACCESS_REQUEST_RATE_LIMIT/);
+  assert.match(migration, /PARTY_EDIT_RATE_LIMIT/);
   assert.match(migration, /interval '1 hour'/i);
 });
 
