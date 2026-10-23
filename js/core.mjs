@@ -10,7 +10,10 @@ export const SIN_META = {
   嫉妬: { short: '嫉', color: '#b872d9', ink: '#141110', en: 'Envy' },
 };
 
-export const DEFAULT_PARTY = [
+// New boards start empty. Keep the former example party as a test/sample fixture only.
+export const DEFAULT_PARTY = [];
+
+export const SAMPLE_PARTY = [
   { key: 'n48' },
   { key: 'n34' },
   { key: 'n78' },

@@ -1,0 +1,39 @@
+name: Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/app.mjs
+          node --check js/shared-sessions.mjs
+          node --check js/shared-sessions-ui.mjs
+          node --check js/supabase-config.mjs
+          node --check tools/build-supabase-seed.mjs
+
+      - name: Verify generated Supabase persona allowlist
+        run: |
+          npm run build:supabase-seed
+          git diff --exit-code -- supabase/seed-persona-keys.sql
+
+      - name: Run unit tests
+        run: npm test
