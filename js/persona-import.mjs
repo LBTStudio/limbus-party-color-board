@@ -425,7 +425,11 @@ export function saveLocalPersonas(storage, personas) {
     .slice(0, MAX_LOCAL_PERSONAS * 2)
     .map(sanitizeLocalPersona).filter(Boolean)
     .map((persona) => [persona.key, persona])).values()];
-  if (normalizedInput.length > MAX_LOCAL_PERSONAS) throw new Error(`ローカル人格は最大${MAX_LOCAL_PERSONAS}件です。不要な人格を整理してから保存してください。`);
+  if (normalizedInput.length > MAX_LOCAL_PERSONAS) {
+    const error = new Error(`ローカル人格は最大${MAX_LOCAL_PERSONAS}件です。不要な人格を整理してから保存してください。`);
+    error.code = 'LOCAL_PERSONA_LIMIT';
+    throw error;
+  }
   const normalized = normalizedInput;
   try {
     storage.setItem(LOCAL_PERSONA_STORAGE_KEY, JSON.stringify({ version: 1, personas: normalized }));
@@ -451,7 +455,11 @@ export function importLocalPersonas(storage, candidates) {
     byKey.set(result.key, result);
     if (result.sourceRef) bySource.set(result.sourceRef, result);
   }
-  if (byKey.size > MAX_LOCAL_PERSONAS) throw new Error(`ローカル人格は最大${MAX_LOCAL_PERSONAS}件です。不要な人格を整理してから取り込んでください。`);
+  if (byKey.size > MAX_LOCAL_PERSONAS) {
+    const error = new Error(`ローカル人格は最大${MAX_LOCAL_PERSONAS}件です。不要な人格を整理してから取り込んでください。`);
+    error.code = 'LOCAL_PERSONA_LIMIT';
+    throw error;
+  }
   const personas = saveLocalPersonas(storage, [...byKey.values()]);
   return { personas, added, updated };
 }
