@@ -47,7 +47,8 @@ begin
     'revision', s.revision,
     'updated_at', s.updated_at,
     'last_activity_at', s.last_activity_at,
-    'owner_display_name', coalesce(owner_member.display_name, '編成主')
+    'owner_display_name', coalesce(owner_member.display_name, '編成主'),
+    'member_count', (select count(*)::integer from public.session_members count_member where count_member.session_id = s.id)
   ) order by s.updated_at desc), '[]'::jsonb)
   into v_result
   from public.party_sessions s
