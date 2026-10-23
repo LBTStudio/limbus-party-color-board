@@ -31,11 +31,11 @@ test('deleting an added persona protects persisted personal and active shared pa
   assert.ok(deleteStart >= 0 && deleteEnd > deleteStart);
   assert.match(deletion, /window\.sharedPartySession\?\.isActive/);
   assert.match(deletion, /window\.sharedPartySession\.personalPartySnapshot/);
-  assert.match(deletion, /savedPersonalKeys\.includes\(key\)/);
+  assert.match(deletion, /savedPersonalKeys\.some\(\(entry\) =>/);
   assert.match(deletion, /const storedParty = readStored\(\)\?\.party/);
   assert.match(deletion, /persistedPartyKeys\.includes\(key\)/);
   assert.ok(
-    deletion.indexOf('savedPersonalKeys.includes(key)') < deletion.indexOf('saveLocalPersonas('),
+    deletion.indexOf('savedPersonalKeys.some') < deletion.indexOf('saveLocalPersonas('),
     'protect the saved lineup before mutating the local persona library',
   );
   assert.ok(
