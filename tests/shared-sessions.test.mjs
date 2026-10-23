@@ -348,16 +348,17 @@ test('workspace archival is rejected before the RPC when local changes have not 
   assert.match(archive, /未解決の編集がある間は共同編集スペースを終了できません/);
 });
 
-test('workspace creation shares one name while invitees retain their own display name', () => {
-  assert.match(html, /共同編集スペース名（作成者の表示名を兼ねます）/);
-  assert.match(html, /id="shared-session-title" maxlength="40"/);
-  assert.match(html, /作成者はこの名前で参加者一覧に表示されます/);
-  assert.doesNotMatch(html, /id="shared-display-name"/);
-  assert.match(sharedUi, /getApi\(\)\.createSession\(title, title\)/);
+test('workspace name and creator display name are independent fields', () => {
+  assert.match(html, /共同編集スペース名<input class="input" id="shared-session-title" maxlength="80"/);
+  assert.match(html, /自分の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname"/);
+  assert.match(html, /スペース名は編成の名前、表示名は参加者一覧に表示する自分の名前です/);
+  assert.match(sharedUi, /getApi\(\)\.createSession\(title, ownerDisplayName\)/);
+  assert.match(sharedUi, /const ownerDisplayName = String\(\$\('#shared-display-name'\)\.value \|\| ''\)/);
   assert.match(sharedUi, /localStorage\.getItem\('lbt_party_shared_display_name'\)/);
   assert.match(sharedUi, /window\.prompt\('共有セッションで表示する名前を入力してください'/);
-  assert.match(sharedUi, /rememberDisplayName\(provided\.trim\(\)\.slice\(0, 40\)\)/);
-  assert.doesNotMatch(sharedUi, /\$\('#shared-display-name'\)/);
+  assert.match(sharedUi, /getApi\(\)\.requestAccess\(token, provided\.trim\(\)\.slice\(0, 40\)\)/);
+  assert.match(sharedUi, /\$\('#shared-display-name'\)\.addEventListener\('change'/);
+  assert.match(styles, /\.shared-fields \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
 
 test('lifecycle migration tracks live usage and schedules idle cleanup safely', () => {
