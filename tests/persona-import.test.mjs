@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createManualPersona,
+  MAX_LOCAL_PERSONAS,
   discoverLbtPersonaCandidates,
   importLocalPersonas,
   loadLocalPersonas,
@@ -312,6 +313,27 @@ test('malformed local storage records and foreign official keys are not accepted
   assert.throws(() => createManualPersona({ name: '   ' }), /人格名/);
 });
 
+
+test('local persona import enforces the 300-person library limit without partially persisting overflow', () => {
+  const storage = new MemoryStorage();
+  const candidates = Array.from({ length: MAX_LOCAL_PERSONAS + 1 }, (_, index) => ({
+    key: `manual-limit-${index}`,
+    kind: 'custom',
+    variantType: 'manual',
+    name: `上限テスト人格${index}`,
+    hp: 100,
+    san: 45,
+    speed: '1d5',
+    slots: [],
+  }));
+
+  assert.equal(MAX_LOCAL_PERSONAS, 300);
+  assert.throws(
+    () => importLocalPersonas(storage, candidates),
+    (error) => error.code === 'LOCAL_PERSONA_LIMIT' && /最大300件/.test(error.message),
+  );
+  assert.equal(loadLocalPersonas(storage).length, 0, 'failed over-capacity import must not write a partial library');
+});
 
 test('LBT identity keys are namespaced per browser profile and remain stable on repeated discovery', () => {
   const source = lbtSource({ name: '同じ基底人格', no: 7 });
