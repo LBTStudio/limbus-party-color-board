@@ -162,6 +162,12 @@ begin
   if cardinality(p_party_keys) <> (select count(distinct k) from unnest(p_party_keys) as u(k)) then
     raise exception 'DUPLICATE_PERSONA_KEY' using errcode = '22023';
   end if;
+  if exists (
+    select 1 from unnest(p_party_keys) as selected(k)
+    where selected.k is null or char_length(selected.k) > 180
+  ) then
+    raise exception 'INVALID_PERSONA_KEY_LENGTH' using errcode = '22023';
+  end if;
   if p_party_personas is null or jsonb_typeof(p_party_personas) is distinct from 'array' then
     raise exception 'PARTY_PERSONAS_MUST_BE_ARRAY' using errcode = '22023';
   end if;
