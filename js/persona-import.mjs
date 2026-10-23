@@ -258,6 +258,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
       syncRank: null,
       syncMax: false,
     };
+    const owned = Array.isArray(state.roster?.personas) ? state.roster.personas.filter(record) : [];
     const basePersona = (mode, no) => catalog.find((persona) => (
       (mode === 't' ? persona.kind === 'tokui' : persona.kind === 'n' ? persona.kind === 'normal' : false)
       && String(persona.no) === String(no)
@@ -272,19 +273,25 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
         const no = state.personaNo ?? source.no;
         const modeForMap = isCustom ? 'custom' : mode;
         const sourceRef = `${account.id}:identity:${modeForMap}:${no}`;
+        const currentOwnedEntry = owned.find((entry) => String(entry.mode ?? '') === modeForMap
+          && String(entry.no ?? entry.uid ?? '') === String(no));
+        const syncRank = ['0', '00', '000'].includes(String(currentOwnedEntry?.syncRank ?? ''))
+          ? String(currentOwnedEntry.syncRank) : null;
+        const syncMax = currentOwnedEntry?.syncMax === true;
         const candidate = makeCandidate(source, {
           ...baseMeta,
           mode: modeForMap,
           no,
           sourceRef,
           identityKey: `${modeForMap}:${no}`,
+          syncRank,
+          syncMax,
           sourceLabel: isCustom ? '現在のオリジナル人格' : '現在の同期化・手動編集',
         }, catalog);
         addCandidate(candidate);
       }
     }
 
-    const owned = Array.isArray(state.roster?.personas) ? state.roster.personas.filter(record) : [];
     for (const entry of owned.slice(0, 500)) {
       const mode = String(entry.mode ?? '');
       const no = entry.no ?? entry.uid ?? '';
@@ -383,10 +390,12 @@ export function loadLocalPersonas(storage) {
 
 export function saveLocalPersonas(storage, personas) {
   if (!storage || typeof storage.setItem !== 'function') throw new Error('このブラウザではローカル保存を利用できません。');
-  const normalized = [...new Map((Array.isArray(personas) ? personas : [])
+  const normalizedInput = [...new Map((Array.isArray(personas) ? personas : [])
     .slice(0, MAX_LOCAL_PERSONAS * 2)
     .map(sanitizeLocalPersona).filter(Boolean)
-    .map((persona) => [persona.key, persona])).values()].slice(0, MAX_LOCAL_PERSONAS);
+    .map((persona) => [persona.key, persona])).values()];
+  if (normalizedInput.length > MAX_LOCAL_PERSONAS) throw new Error(`ローカル人格は最大${MAX_LOCAL_PERSONAS}件です。不要な人格を整理してから保存してください。`);
+  const normalized = normalizedInput;
   try {
     storage.setItem(LOCAL_PERSONA_STORAGE_KEY, JSON.stringify({ version: 1, personas: normalized }));
   } catch {
