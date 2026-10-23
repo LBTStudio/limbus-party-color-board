@@ -577,7 +577,7 @@ function applyImport() {
 }
 
 function resetParty() {
-  if (!window.confirm('初期編成（4名）に戻しますか？')) return;
+  if (!window.confirm('編成を空に戻しますか？')) return;
   state.party = defaultParty();
   state.selectedSin = null;
   state.partySort = 'default';
@@ -585,7 +585,7 @@ function resetParty() {
   state.resourceSort = 'count-desc';
   saveState();
   renderAll();
-  showToast('初期編成に戻しました。');
+  showToast('編成を空にしました。');
 }
 
 async function copyTsv() {
