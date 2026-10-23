@@ -324,6 +324,19 @@ export function resolvePersona(personas, { name = '', no = '', key = '', kind = 
   return { error: `人格を特定できません（番号: ${no || '空'} / 名前: ${rawName || '空'}）` };
 }
 
+// Prevent spreadsheet applications from evaluating imported/custom persona text as a formula
+// when a copied TSV is pasted into a sheet. The matching parser removes this marker so
+// the tool's own export/import round-trip preserves the original value.
+export function escapeSpreadsheetCell(value) {
+  const cell = String(value ?? '').replace(/\\t/g, ' ').replace(/\\r?\\n/g, ' ').replace(/\\r/g, ' ');
+  return /^[\\s\\uFEFF]*[=+\\-@]/u.test(cell) ? "'" + cell : cell;
+}
+
+function restoreSpreadsheetCell(value) {
+  const cell = String(value ?? '').trim();
+  return cell.replace(/^'(?=[\\s\\uFEFF]*[=+\\-@])/u, '');
+}
+
 function parseDelimited(text, delimiter) {
   const rows = [];
   let row = [];
@@ -410,10 +423,10 @@ export function parsePartySheet(text, personas) {
     if (row.every((cell) => !cell)) continue;
     if (row.some((cell) => /総保有罪悪属性|使い方/u.test(cell))) break;
 
-    const no = noIndex >= 0 ? row[noIndex] : '';
-    const name = nameIndex >= 0 ? row[nameIndex] : '';
-    const key = keyIndex >= 0 ? row[keyIndex] : '';
-    const kind = kindIndex >= 0 ? row[kindIndex] : '';
+    const no = noIndex >= 0 ? restoreSpreadsheetCell(row[noIndex]) : '';
+    const name = nameIndex >= 0 ? restoreSpreadsheetCell(row[nameIndex]) : '';
+    const key = keyIndex >= 0 ? restoreSpreadsheetCell(row[keyIndex]) : '';
+    const kind = kindIndex >= 0 ? restoreSpreadsheetCell(row[kindIndex]) : '';
     if (/^#N\/A$/i.test(no) || /^#N\/A$/i.test(name)) continue;
     if (!key && !no && !name) continue;
 
