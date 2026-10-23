@@ -183,6 +183,10 @@
     </div>
     <button type="button" class="icon-btn" data-close-dialog="picker" aria-label="閉じる">×</button>
   </div>
+  <div class="picker-local-actions" role="group" aria-label="追加人格の登録">
+    <button type="button" id="open-lbt-persona-import" class="btn btn-ghost">LBT保存データを読み込む</button>
+    <button type="button" id="open-manual-persona" class="btn">＋ 手動で創作人格を追加</button>
+  </div>
   <div class="picker-tools">
     <label class="sr-only" for="picker-search">人格を検索</label>
     <input id="picker-search" class="input" type="search" placeholder="名前・番号・キーワードで検索" autocomplete="off">
@@ -190,6 +194,7 @@
       <button type="button" data-picker-mode="all" aria-pressed="true">すべて</button>
       <button type="button" data-picker-mode="normal" aria-pressed="false">通常</button>
       <button type="button" data-picker-mode="tokui" aria-pressed="false">特異</button>
+      <button type="button" data-picker-mode="local" aria-pressed="false">追加人格</button>
     </div>
   </div>
   <div id="picker-list" class="picker-list"></div>
@@ -212,6 +217,60 @@
   <div class="dialog-actions">
     <button type="button" class="btn btn-ghost" data-close-dialog="import-dialog">キャンセル</button>
     <button type="button" id="import-apply" class="btn">取り込む</button>
+  </div>
+</dialog>
+
+
+<dialog id="lbt-import-dialog" class="dialog" aria-labelledby="lbt-import-title">
+  <div class="dialog-head">
+    <div>
+      <p class="kicker">LBT LOCAL SAVE</p>
+      <h2 id="lbt-import-title">同期データ・オリジナル人格を取り込む</h2>
+    </div>
+    <button type="button" class="icon-btn" data-close-dialog="lbt-import-dialog" aria-label="閉じる">×</button>
+  </div>
+  <p id="lbt-import-status" class="hint import-status" role="status" aria-live="polite">このブラウザに保存されたLIMBUS BUILD TERMINALの人格データを探しています。</p>
+  <div id="lbt-import-empty" class="empty import-empty" hidden>
+    <p>読み込める同期・創作人格が見つかりません。</p>
+    <p>同じブラウザプロフィールのLBT保存データを確認するか、「手動で創作人格を追加」から登録してください。</p>
+  </div>
+  <div id="lbt-import-candidates" class="lbt-import-candidates" aria-label="取り込み候補"></div>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-ghost" id="cancel-lbt-import">キャンセル</button>
+    <button type="button" class="btn" id="apply-lbt-import">選択した人格を取り込む</button>
+  </div>
+</dialog>
+
+<dialog id="manual-persona-dialog" class="dialog" aria-labelledby="manual-persona-title">
+  <div class="dialog-head">
+    <div>
+      <p class="kicker">LOCAL ORIGINAL PERSONA</p>
+      <h2 id="manual-persona-title">創作人格を手動で追加</h2>
+    </div>
+    <button type="button" class="icon-btn" data-close-dialog="manual-persona-dialog" aria-label="閉じる">×</button>
+  </div>
+  <p class="hint">連携やLBTの保存データがなくても登録できます。ここで入力した人格は、このブラウザの追加人格ライブラリに保存されます。S0〜S4は色集計に使う5枠です。</p>
+  <div class="manual-persona-form">
+    <div class="manual-persona-fields">
+      <label>人格名<input class="input" id="manual-persona-name" maxlength="100" placeholder="例：自作人格" required></label>
+      <label>HP<input class="input" id="manual-persona-hp" type="number" min="1" max="9999" value="100" required></label>
+      <label>SAN<input class="input" id="manual-persona-san" type="number" min="0" max="9999" value="45" required></label>
+      <label>速度（表示用）<input class="input" id="manual-persona-speed" maxlength="40" value="1d5" placeholder="例：1d5+1"></label>
+      <label>所属（任意）<input class="input" id="manual-persona-affiliation" maxlength="100" placeholder="所属・派閥など"></label>
+      <label>キーワード（読点・カンマ区切り）<input class="input" id="manual-persona-keywords" maxlength="600" placeholder="出血、振動"></label>
+      <label>パッシブ名（任意）<input class="input" id="manual-persona-passive-name" maxlength="100"></label>
+      <label>パッシブ条件（任意）<input class="input" id="manual-persona-passive-cond" maxlength="240"></label>
+    </div>
+    <fieldset class="manual-skill-set">
+      <legend>スキルと罪悪属性</legend>
+      <p class="hint">色を2つ選ぶと二属性スキルとして集計します。名前のない枠は集計対象になりません。</p>
+      <div id="manual-skill-fields" class="manual-skill-fields"></div>
+    </fieldset>
+  </div>
+  <p id="manual-persona-error" class="form-error" role="alert" hidden></p>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-ghost" id="cancel-manual-persona">キャンセル</button>
+    <button type="button" class="btn" id="save-manual-persona">人格を保存して選択へ戻る</button>
   </div>
 </dialog>
 
