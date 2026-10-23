@@ -212,6 +212,7 @@ async function refreshSessions() {
     sessions = Array.isArray(result) ? result : [];
     statusMessage = 'セッション一覧を読み込みました（' + sessions.length + '件）。';
     render();
+    if (active && active.role === 'owner') await refreshAdmin();
   } catch (error) {
     setStatus(error.message || 'セッション一覧を取得できませんでした。');
   }
@@ -272,7 +273,6 @@ async function activateSession(sessionId, prefetched = null) {
   statusMessage = '「' + active.title + '」を開きました。編集の保存と同期状態はこのパネルで確認できます。';
   render();
   await refreshSessions();
-  if (active && active.role === 'owner') await refreshAdmin();
   schedulePoll(1000);
 }
 
@@ -285,6 +285,7 @@ async function refreshAdmin() {
   }
   try {
     admin = await getApi().getAdmin(session.sessionId);
+    session.adminUpdatedAt = Date.now();
     render();
   } catch (error) {
     statusMessage = '参加権限の管理情報を取得できませんでした: ' + error.message;
@@ -343,6 +344,10 @@ async function pollSession() {
       session.revision = Math.max(session.revision, Number(result.revision) || 0);
     }
     render();
+    if (active === session && session.role === 'owner'
+      && Date.now() - (session.adminUpdatedAt || 0) >= 15000) {
+      await refreshAdmin();
+    }
   } catch (error) {
     if (/SESSION_ACCESS_DENIED|42501|permission denied|OWNER_REQUIRED/i.test(String(error.code || '') + ' ' + String(error.message || ''))) {
       session.accessRevoked = true;
