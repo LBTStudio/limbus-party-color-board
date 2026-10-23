@@ -239,4 +239,12 @@ test('TSV persona keys disambiguate local synced variants that share an official
   });
   assert.match(missingNamespacedKey.error, /ローカル追加人格キー/);
   assert.equal(missingNamespacedKey.persona, undefined, 'missing local keys must never fall back to an official identity with a matching name/number');
+
+  const uppercaseMissingKey = resolvePersona(personas, {
+    key: 'LBT-SYNC-UNAVAILABLE123',
+    name: official.name,
+    no: official.no,
+  });
+  assert.match(uppercaseMissingKey.error, /ローカル追加人格キー/);
+  assert.equal(uppercaseMissingKey.persona, undefined, 'case-altered local keys must not bypass the namespace guard');
 });
