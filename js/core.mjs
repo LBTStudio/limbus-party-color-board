@@ -413,6 +413,7 @@ export function parsePartySheet(text, personas) {
   const nameIndex = column(/人格名/u);
   const keyIndex = column(/^人格キー$|^persona\s*key$/iu);
   const kindIndex = column(/^種別$|^人格種別$/u);
+  const assigneeIndex = column(/^(?:担当者|PL名|PL|ユーザー名|ユーザ名)$/iu);
 
   if (noIndex < 0 && nameIndex < 0) {
     return { party: [], errors: ['「人格番号」または「人格名」の列がありません。'] };
@@ -430,6 +431,7 @@ export function parsePartySheet(text, personas) {
     const name = nameIndex >= 0 ? restoreSpreadsheetCell(row[nameIndex]) : '';
     const key = keyIndex >= 0 ? restoreSpreadsheetCell(row[keyIndex]) : '';
     const kind = kindIndex >= 0 ? restoreSpreadsheetCell(row[kindIndex]) : '';
+    const assignee = assigneeIndex >= 0 ? restoreSpreadsheetCell(row[assigneeIndex]).trim().slice(0, 40) : '';
     if (/^#N\/A$/i.test(no) || /^#N\/A$/i.test(name)) continue;
     if (!key && !no && !name) continue;
 
@@ -444,7 +446,7 @@ export function parsePartySheet(text, personas) {
       continue;
     }
 
-    party.push({ key: resolved.persona.key });
+    party.push({ key: resolved.persona.key, ...(assigneeIndex >= 0 ? { assignee } : {}) });
   }
 
   if (party.length === 0 && errors.length === 0) {
