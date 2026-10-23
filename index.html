@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#0e0b09">
 <title>LIMBUS PARTY COLOR BOARD</title>
 <meta name="description" content="LIMBUS BUILD TERMINAL の人格データから、編成と資源色（罪悪属性）を集計・ソートする非公式ツール。">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://esm.sh https://challenges.cloudflare.com; connect-src 'self' https://hobntjcrzybqsiobrpsz.supabase.co wss://hobntjcrzybqsiobrpsz.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e0b09'/%3E%3Cpath d='M8 24V8h4.6v12.2H24V24H8Z' fill='%23c8a84b'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -181,7 +182,8 @@
   </div>
   <p class="hint">任意の編成を貼り付ける場合だけ使います。DBの人格データは自動参照しているため、通常は「＋ 人格を追加」だけで完結します。「人格番号」または「人格名」を含むヘッダー行が必要です。TSV / CSV のどちらでも取り込めます。メンバー名（PL名）などの列は取り込みません。</p>
   <label class="sr-only" for="import-text">TSVまたはCSVの内容</label>
-  <textarea id="import-text" class="input textarea" rows="12" placeholder="人格番号&#9;人格名&#9;..."></textarea>
+  <textarea id="import-text" class="input textarea" rows="12" maxlength="20000" placeholder="人格番号&#9;人格名&#9;..."></textarea>
+  <p class="hint">安全のため最大20,000文字・200行まで取り込めます。</p>
   <p id="import-error" class="form-error" role="alert" hidden></p>
   <div class="dialog-actions">
     <button type="button" class="btn btn-ghost" data-close-dialog="import-dialog">キャンセル</button>
