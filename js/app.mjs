@@ -894,7 +894,14 @@ function deleteLocalPersona(key) {
   const persona = state.localPersonas.find((item) => item.key === key);
   if (!persona) return;
   if (state.party.some((entry) => entry.key === key)) {
-    showToast('編成で使用中の人格です。先に編成から外してください。');
+    showToast('現在の編成で使用中です。先に編成から外してください。');
+    return;
+  }
+  const savedPersonalKeys = window.sharedPartySession?.isActive
+    ? window.sharedPartySession.personalPartySnapshot
+    : null;
+  if (Array.isArray(savedPersonalKeys) && savedPersonalKeys.includes(key)) {
+    showToast('個人編成に保存されている人格です。共同編集を閉じてから削除してください。');
     return;
   }
   if (!window.confirm(`「${persona.name}」をこのブラウザの追加人格ライブラリから削除しますか？`)) return;
