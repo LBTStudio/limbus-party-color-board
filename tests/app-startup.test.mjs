@@ -184,3 +184,36 @@ test('PL-name edit uses the normal persistence and shared-session save path', ()
   assert.match(handler, /canEditParty\(\)/);
   assert.doesNotMatch(handler, /renderAll\(\)/, 'do not replace the input/button while the user is clicking away');
 });
+
+test('persona picker refreshes LBT account sync data and replaces stale official candidates', () => {
+  const openStart = app.indexOf('function openPicker(index)');
+  const openEnd = app.indexOf('function renderLbtImportCandidates()', openStart);
+  const openPicker = app.slice(openStart, openEnd);
+  const syncStart = app.indexOf('function refreshSelectedLbtPersonaData()');
+  const syncEnd = app.indexOf('function syncedIdentityKeysForAccount', syncStart);
+  const syncRefresh = app.slice(syncStart, syncEnd);
+  const pickerStart = app.indexOf('function renderPickerList()');
+  const pickerEnd = app.indexOf('function deleteLocalPersona', pickerStart);
+  const picker = app.slice(pickerStart, pickerEnd);
+  assert.ok(openStart >= 0 && openEnd > openStart);
+  assert.ok(syncStart >= 0 && syncEnd > syncStart);
+  assert.ok(pickerStart >= 0 && pickerEnd > pickerStart);
+  assert.ok(openPicker.indexOf('refreshSelectedLbtPersonaData()') < openPicker.indexOf('renderPickerList()'));
+  assert.match(syncRefresh, /discoverLbtPersonaCandidates\(/);
+  assert.match(syncRefresh, /importLocalPersonas\(/);
+  assert.match(syncRefresh, /localPersonaPickerSignature\(existing\) !== localPersonaPickerSignature\(candidate\)/);
+  assert.match(picker, /syncedIdentityKeysForAccount\(selectedAccount\)/);
+  assert.match(picker, /if \(syncedIdentityKeys\.has\(identityKey\)\) return false/);
+  assert.match(app, /byKey\.delete\(previousKey\)/);
+});
+
+test('persona detail resource summaries show all seven sins including explicit zero counts', () => {
+  const partyStart = app.indexOf('function renderParty()');
+  const partyEnd = app.indexOf('function syncControls()', partyStart);
+  const detail = app.slice(partyStart, partyEnd);
+  assert.match(detail, /const resources = \[\.\.\.SIN_ORDER\]/);
+  assert.match(detail, /counts\[sin\] === 0 \? ' is-zero' : ''/);
+  assert.match(detail, /class="card-resources" aria-label="大罪資源内訳"/);
+  assert.match(styles, /\.res-chip\.is-zero \{/);
+  assert.doesNotMatch(detail, /SIN_ORDER\s*\.filter\(\(sin\) => counts\[sin\] > 0\)/);
+});
