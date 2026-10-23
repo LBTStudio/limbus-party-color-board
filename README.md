@@ -20,7 +20,7 @@ LIMBUS BUILD TERMINAL の人格DBを読み込み、編成の罪悪属性（資�
 
 ## 複数人での共有について
 
-共有セッションの初期実装を追加しました。利用には Supabase の publishable key 設定、匿名ログインの有効化、DB マイグレーションが必要です。手順は [共有セッション導入手順](docs/shared-sessions-setup.md)、設計は [共有セッション設計](docs/shared-sessions-design.md)、障害・不正利用の想定は [失敗想定と対策](docs/shared-sessions-failure-modes.md) を参照してください。DB／キーの設定が完了するまでは既存の個人編成モードを利用できます。
+共有セッションの初期実装を追加しました。公開用 Supabase キーと production 用の設定はこのPRに含めています。実際に利用できるのはPRをマージし、Supabase GitHub Integration の migration・config・seed のデプロイが成功した後です。手順は [共有セッション導入手順](docs/shared-sessions-setup.md)、設計は [共有セッション設計](docs/shared-sessions-design.md)、障害・不正利用の想定は [失敗想定と対策](docs/shared-sessions-failure-modes.md) を参照してください。デプロイが未完了の間も、既存の個人編成モードは利用できます。
 
 ## 集計ルール
 
