@@ -22,5 +22,13 @@ jobs:
         with:
           node-version: 22
 
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/app.mjs
+          node --check js/shared-sessions.mjs
+          node --check js/shared-sessions-ui.mjs
+          node --check js/supabase-config.mjs
+          node --check tools/build-supabase-seed.mjs
+
       - name: Run unit tests
         run: npm test
