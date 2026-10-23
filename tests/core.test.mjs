@@ -195,4 +195,11 @@ test('TSV persona keys disambiguate local synced variants that share an official
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.party, [{ key: synced.key }]);
   assert.equal(resolvePersona([...personas, synced], { key: synced.key, name: official.name }).persona.variantType, 'sync');
+
+  const missingLocalVariant = parsePartySheet([
+    '枠\t人格キー\t人格番号\t人格名\t種別',
+    '1\tunavailable-local-key\t1\t${official.name}\t同期',
+  ].join('\n'), personas);
+  assert.equal(missingLocalVariant.party.length, 0, 'do not silently map a missing synced variant to the official base persona');
+  assert.match(missingLocalVariant.errors.join(' '), /人格を特定できません/);
 });
