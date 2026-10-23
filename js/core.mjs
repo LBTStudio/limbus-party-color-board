@@ -22,6 +22,10 @@ export const SAMPLE_PARTY = [
 
 export const MAX_PARTY = 6;
 
+// Protect the CSV/TSV parser from accidentally or intentionally oversized pastes.
+export const MAX_IMPORT_CHARS = 20_000;
+export const MAX_IMPORT_ROWS = 200;
+
 export function personaKindLabel(persona) {
   return persona.kind === 'tokui' ? '特異' : '通常';
 }
@@ -315,10 +319,16 @@ function findHeader(rows) {
 export function parsePartySheet(text, personas) {
   const source = String(text ?? '');
   if (!source.trim()) return { party: [], errors: ['貼り付け内容が空です。'] };
+  if (source.length > MAX_IMPORT_CHARS) {
+    return { party: [], errors: ['貼り付け内容が長すぎます。最大20,000文字まで取り込めます。'] };
+  }
 
   const firstLine = source.split(/\r?\n/).find((line) => line.trim()) ?? '';
   const delimiter = firstLine.includes('\t') ? '\t' : ',';
   const rows = parseDelimited(source, delimiter);
+  if (rows.length > MAX_IMPORT_ROWS) {
+    return { party: [], errors: ['行数が多すぎます。最大200行まで取り込めます。'] };
+  }
   const headerIndex = findHeader(rows);
   if (headerIndex < 0) {
     return { party: [], errors: ['「人格番号」または「人格名」を含むヘッダー行が見つかりません。'] };
