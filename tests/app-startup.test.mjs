@@ -193,7 +193,7 @@ test('persona picker refreshes LBT sync data and keeps the original catalog iden
   const openEnd = app.indexOf('function renderLbtImportCandidates()', openStart);
   const openPicker = app.slice(openStart, openEnd);
   const syncStart = app.indexOf('function refreshSelectedLbtPersonaData()');
-  const syncEnd = app.indexOf('function syncedIdentityKeysForAccount', syncStart);
+  const syncEnd = app.indexOf('function personaSnapshotForShare', syncStart);
   const syncRefresh = app.slice(syncStart, syncEnd);
   const pickerStart = app.indexOf('function renderPickerList()');
   const pickerEnd = app.indexOf('function deleteLocalPersona', pickerStart);
