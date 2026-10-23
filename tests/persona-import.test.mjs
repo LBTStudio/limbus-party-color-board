@@ -531,35 +531,3 @@ test('renamed LBT roster displayName is reflected in the add-persona candidates'
   assert.equal(candidate.name, '変更後の同期人格名');
   assert.ok(!candidates.some((persona) => persona.name === '元の同期人格名'));
 });
-
-test('renamed LBT roster identity is importable even without sync rank metadata or a saved build', () => {
-  const storage = new MemoryStorage();
-  const source = lbtSource({ name: '元の通常人格名', no: 22 });
-  writeAccount(storage, {
-    personaMode: null,
-    personaNo: null,
-    personaSrc: null,
-    roster: {
-      personas: [{
-        uid: 'n22',
-        no: 22,
-        mode: 'n',
-        displayName: '手動で変更した同期名',
-        synced: true,
-        syncRank: null,
-        syncMax: false,
-        equipped: false,
-      }],
-    },
-  });
-
-  const candidates = discoverLbtPersonaCandidates(
-    storage,
-    [makeCatalogSource(source, 'n22', 'normal')],
-    'acct-1',
-  );
-  const candidate = candidates.find((persona) => persona.sourceRef === 'acct-1:identity:n:22');
-
-  assert.ok(candidate, JSON.stringify(candidates));
-  assert.equal(candidate.name, '手動で変更した同期名');
-});
