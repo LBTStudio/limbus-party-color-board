@@ -11,6 +11,7 @@ const forwardMigration = read('../supabase/migrations/202610230002_serialize_sha
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const partyCapacityMigration = read('../supabase/migrations/20261023213614_allow_twenty_personas_per_party.sql');
+const partyAssignmentMigration = read('../supabase/migrations/20261024000000_party_assignees_and_resistances.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -508,8 +509,9 @@ test('untrusted persona fields are escaped before template-based HTML insertion'
     escapeHtml(payload),
     '&lt;/dd&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
   );
-  assert.ok(app.includes('<dd>${escapeHtml(persona.hp)}</dd>'));
-  assert.ok(app.includes('<dd>${escapeHtml(persona.san)}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resSlash || \'普通\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resPierce || \'普通\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resBlunt || \'普通\')}</dd>'));
   assert.equal((app.match(/escapeHtml\(personaNumberLabel\(persona\)\)/g) || []).length, 2);
 });
 
@@ -636,7 +638,7 @@ test('LBT local persona snapshots are synchronized through authorized shared-ses
   assert.match(app, /currentPartySnapshotSize/);
   assert.match(sharedUi, /party_personas/);
   assert.match(sharedUi, /samePartyState/);
-  assert.match(client, /rpc\('apply_party_edit_v2'/);
+  assert.match(client, /rpc\('apply_party_edit_v3'/);
   assert.match(personaSnapshotMigration, /add column if not exists party_personas jsonb/i);
   assert.match(personaSnapshotMigration, /create or replace function public\.apply_party_edit_v2/i);
   assert.match(personaSnapshotMigration, /jsonb_array_length\(p_party_personas\) > 6/i);
@@ -651,4 +653,25 @@ test('LBT local persona snapshots are synchronized through authorized shared-ses
   assert.match(app, /元のLBT保存データは変更しません/);
   assert.doesNotMatch(app, /URL・クラウド共有には含まれません/);
   assert.doesNotMatch(app, /追加人格は現在のクラウド共有セッションでは使用できません/);
+});
+
+
+test('party assignee names are authorized, bounded, sanitized, and returned with shared snapshots', () => {
+  assert.match(partyAssignmentMigration, /add column if not exists party_assignees jsonb not null default '\{\}'::jsonb/i);
+  assert.match(partyAssignmentMigration, /'party_assignees',v_session\.party_assignees/i);
+  assert.match(partyAssignmentMigration, /create or replace function public\.apply_party_edit_v3/i);
+  assert.match(partyAssignmentMigration, /jsonb_typeof\(p_party_assignees\) is distinct from 'object'/i);
+  assert.match(partyAssignmentMigration, /char_length\(v_assignee\) > 40/i);
+  assert.match(partyAssignmentMigration, /v_key = any\(p_party_keys\)/i);
+  assert.match(partyAssignmentMigration, /revoke all on function public\.apply_party_edit_v3/i);
+  assert.match(partyAssignmentMigration, /grant execute on function public\.apply_party_edit_v3.*to authenticated/i);
+  assert.match(partyAssignmentMigration, /'resSlash'/);
+  assert.match(partyAssignmentMigration, /'resPierce'/);
+  assert.match(partyAssignmentMigration, /'resBlunt'/);
+  assert.match(partyAssignmentMigration, /cardinality\(p_party_keys\) > 20/i);
+  assert.match(partyAssignmentMigration, /PARTY_MUST_HAVE_ZERO_TO_TWENTY_PERSONAS/);
+  assert.match(partyAssignmentMigration, /v_role not in \('owner','editor'\)/i);
+  assert.match(sharedUi, /currentAssignees\(\)/);
+  assert.match(sharedUi, /lastSavedAssignees/);
+  assert.match(sharedUi, /party_assignees/);
 });
