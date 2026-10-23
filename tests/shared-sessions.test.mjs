@@ -9,6 +9,7 @@ const personas = JSON.parse(read('../data/personas.json')).personas;
 const migration = read('../supabase/migrations/202610230001_shared_party_sessions.sql');
 const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
+const personaSnapshotMigration = read('../supabase/migrations/20261024030000_shared_persona_snapshots.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -393,22 +394,28 @@ test('mobile refinement keeps the collapsed shared-session dock compact and resp
 });
 
 
-test('LBT synced and original personas are imported locally and unsupported cloud sharing is guarded', () => {
+test('LBT local persona snapshots are synchronized through authorized shared-session RPCs', () => {
   const localImport = read('../js/persona-import.mjs');
   assert.match(html, /LBT保存データを読み込む/);
   assert.match(html, /手動で創作人格を追加/);
-  assert.match(html, /id="manual-skill-fields"/);
-  assert.match(app, /discoverLbtPersonaCandidates\(browserStorage\(\), state\.data\.personas\)/);
-  assert.match(app, /saveLocalPersonas\(storage, \[\.\.\.loadLocalPersonas\(storage\), persona\]\)/);
   assert.match(localImport, /lbt_accounts_index/);
   assert.match(localImport, /lbt_account_/);
   assert.match(localImport, /lbt_v46_state/);
-  assert.match(localImport, /state\.syncedManual === true/);
-  assert.match(localImport, /entry\.build/);
-  assert.match(localImport, /entry\.src/);
-  assert.match(app, /canShareCurrentParty: \(\) => state\.party\.every/);
-  assert.match(sharedUi, /bridge\.canShareCurrentParty/);
-  assert.match(sharedUi, /現在クラウド共有に対応していません/);
-  assert.match(app, /containsLocalOnlyPersona/);
-  assert.match(app, /data-action="delete-local-persona"/);
+  assert.match(app, /personaSnapshotForShare/);
+  assert.match(app, /getPartyPersonas: getShareablePartyPersonas/);
+  assert.match(app, /applySharedPartySnapshot/);
+  assert.match(app, /currentPartySnapshotSize/);
+  assert.match(sharedUi, /party_personas/);
+  assert.match(sharedUi, /samePartyState/);
+  assert.match(client, /rpc\('apply_party_edit_v2'/);
+  assert.match(personaSnapshotMigration, /add column if not exists party_personas jsonb/i);
+  assert.match(personaSnapshotMigration, /create or replace function public\.apply_party_edit_v2/i);
+  assert.match(personaSnapshotMigration, /jsonb_array_length\(p_party_personas\) > 6/i);
+  assert.match(personaSnapshotMigration, /octet_length\(p_party_personas::text\) > 60000/i);
+  assert.match(personaSnapshotMigration, /v_role not in \('owner','editor'\)/i);
+  assert.match(personaSnapshotMigration, /UNKNOWN_PERSONA_KEY/);
+  assert.match(personaSnapshotMigration, /party_personas',v_session\.party_personas/i);
+  assert.match(personaSnapshotMigration, /revoke all on function public\.apply_party_edit_v2/i);
+  assert.match(personaSnapshotMigration, /grant execute on function public\.apply_party_edit_v2.*to authenticated/i);
+  assert.doesNotMatch(sharedUi, /同期・創作・手動追加の人格を含む編成は、現在クラウド共有に対応していません/);
 });

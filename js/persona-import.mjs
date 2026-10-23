@@ -1,6 +1,7 @@
 import { SIN_ORDER, parseSpeedAverage } from './core.mjs';
 
 export const LOCAL_PERSONA_STORAGE_KEY = 'lbt_party_color_board_local_personas_v1';
+const LOCAL_PERSONA_NAMESPACE_KEY = 'lbt_party_color_board_installation_id_v1';
 const LBT_ACCOUNTS_INDEX_KEY = 'lbt_accounts_index';
 const LBT_ACTIVE_ACCOUNT_KEY = 'lbt_account_active';
 const LBT_LEGACY_STATE_KEY = 'lbt_v46_state';
@@ -40,6 +41,27 @@ function safeGet(storage, key) {
   } catch {
     return null;
   }
+}
+
+function localPersonaNamespace(storage) {
+  const existing = text(safeGet(storage, LOCAL_PERSONA_NAMESPACE_KEY), 100);
+  if (/^[A-Za-z0-9_-]{16,100}$/.test(existing)) return existing;
+  let value = '';
+  try {
+    value = globalThis.crypto?.randomUUID?.().replaceAll('-', '') || '';
+  } catch {
+    value = '';
+  }
+  if (!/^[A-Za-z0-9_-]{16,100}$/.test(value)) {
+    value = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+  }
+  try {
+    storage?.setItem?.(LOCAL_PERSONA_NAMESPACE_KEY, value);
+  } catch {
+    // If storage is blocked, use an ephemeral namespace; the caller will keep the
+    // imported candidate in memory and must not claim that it is persistently saved.
+  }
+  return value;
 }
 
 function hashText(value) {
@@ -189,10 +211,17 @@ function makeCandidate(source, metadata, catalog) {
   const sourceRef = text(metadata.sourceRef, 240);
   const normalized = normalizedPersonaFields({ ...source, kind });
   if (!normalized.name) return null;
-  const localKey = `${original ? 'lbt-original' : 'lbt-sync'}-${hashText(sourceRef || JSON.stringify(normalized))}`;
+  const namespace = text(metadata.namespace, 100) || 'ephemeral';
   const syncRank = ['0', '00', '000'].includes(String(metadata.syncRank ?? ''))
     ? String(metadata.syncRank) : null;
   const syncMax = metadata.syncMax === true;
+  // LBT's account IDs (e.g. "acct-1") are local and repeat across devices.
+  // Include a per-browser namespace plus the imported data in the initial key so
+  // separate users can share different edits of the same base identity without
+  // key collisions. Re-import matching sourceRef preserves the existing key.
+  const localKey = `${original ? 'lbt-original' : 'lbt-sync'}-${hashText(
+    `${namespace}:${sourceRef}:${JSON.stringify(normalized)}:${syncRank || ''}:${syncMax}`
+  )}`;
   const syncLabel = syncRank ? `同期${syncRank}` : (syncMax ? '同期ランク未設定' : '同期化データ');
   return {
     key: localKey,
@@ -243,6 +272,7 @@ function readAccountStates(storage) {
 
 export function discoverLbtPersonaCandidates(storage, catalog = []) {
   const accounts = readAccountStates(storage);
+  const namespace = localPersonaNamespace(storage);
   const byKey = new Map();
   const sourceRefs = new Set();
   const addCandidate = (candidate) => {
@@ -254,6 +284,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
     const state = account.state;
     const baseMeta = {
       accountName: account.name,
+      namespace,
       identityKey: '',
       syncRank: null,
       syncMax: false,
@@ -337,7 +368,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = []) {
         if (!base) continue;
         const candidate = {
           ...base,
-          key: `lbt-sync-${hashText(sourceRef + ':' + syncRank + ':' + syncMax)}`,
+          key: `lbt-sync-${hashText(`${namespace}:${sourceRef}:${JSON.stringify(base)}:${syncRank || ''}:${syncMax}`)}`,
           variantType: 'sync',
           localOnly: true,
           originType: 'lbt-sync',

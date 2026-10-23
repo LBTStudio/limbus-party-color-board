@@ -39,8 +39,37 @@ function sameKeys(a, b) {
     && a.length === b.length && a.every((key, index) => key === b[index]);
 }
 
+function stableValue(value) {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableValue(value[key])]));
+}
+
+function personaSignature(personas) {
+  return JSON.stringify(stableValue(Array.isArray(personas) ? personas : []));
+}
+
+function samePartyState(keysA, personasA, keysB, personasB) {
+  return sameKeys(keysA, keysB) && personaSignature(personasA) === personaSignature(personasB);
+}
+
 function currentKeys() {
   return bridge.getPartyKeys();
+}
+
+function currentPersonas() {
+  return typeof bridge.getPartyPersonas === 'function' ? bridge.getPartyPersonas() : [];
+}
+
+function remotePersonas(snapshot) {
+  return Array.isArray(snapshot?.party_personas) ? snapshot.party_personas : [];
+}
+
+function shareabilityError() {
+  if (typeof bridge.canShareCurrentParty !== 'function') return '';
+  const result = bridge.canShareCurrentParty();
+  if (result === true) return '';
+  return typeof result === 'string' ? result : '共有できない人格データが編成に含まれています。';
 }
 
 function canEdit() {
@@ -258,10 +287,10 @@ async function refreshSessions() {
 }
 
 async function createSession() {
-  if (typeof bridge.canShareCurrentParty === 'function' && !bridge.canShareCurrentParty()) {
-    const message = '同期・創作・手動追加の人格を含む編成は、現在クラウド共有に対応していません。公式DBの人格だけの編成にするか、個人編成として利用してください。';
-    setStatus(message);
-    bridge.showToast(message);
+  const shareError = shareabilityError();
+  if (shareError) {
+    setStatus(shareError);
+    bridge.showToast(shareError);
     setSharedPanelOpen(true);
     return;
   }
@@ -286,7 +315,7 @@ async function createSession() {
 
 async function activateSession(sessionId, prefetched = null) {
   if (active && (active.saveBusy || active.retry || active.incomingState
-    || !sameKeys(currentKeys(), active.lastSavedKeys))) {
+    || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas))) {
     throw new Error('未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。');
   }
   const snapshot = prefetched && Array.isArray(prefetched.party_keys)
@@ -303,6 +332,7 @@ async function activateSession(sessionId, prefetched = null) {
     role: snapshot.role || 'viewer',
     revision: Number(snapshot.revision) || 0,
     lastSavedKeys: [...snapshot.party_keys],
+    lastSavedPersonas: remotePersonas(snapshot),
     status: 'saved',
     saveBusy: false,
     retry: null,
@@ -319,7 +349,7 @@ async function activateSession(sessionId, prefetched = null) {
   inviteUrl = '';
   setSharedPanelOpen(true);
   setRoute('session=' + active.sessionId);
-  bridge.setPartyKeys(snapshot.party_keys);
+  bridge.setPartyKeys(snapshot.party_keys, remotePersonas(snapshot));
   statusMessage = '「' + active.title + '」をクラウドから開きました。保存・同期状態はこのパネルで確認できます。';
   render();
   await refreshSessions();
@@ -396,22 +426,26 @@ async function pollSession() {
     if (result.role) session.role = result.role;
     if (previousRole !== session.role) bridge.renderAll();
     const remoteKeys = Array.isArray(result.party_keys) ? result.party_keys : null;
+    const incomingPersonas = remotePersonas(result);
     if (remoteKeys && Number(result.revision) > session.revision) {
       const localKeys = currentKeys();
-      if (sameKeys(localKeys, remoteKeys)) {
+      const localPersonas = currentPersonas();
+      if (samePartyState(localKeys, localPersonas, remoteKeys, incomingPersonas)) {
         session.revision = Number(result.revision);
         session.lastSavedKeys = [...remoteKeys];
+        session.lastSavedPersonas = incomingPersonas;
         session.status = 'saved';
         session.retry = null;
         session.incomingState = null;
         session.localDraft = null;
         statusMessage = '同期済み · revision ' + session.revision;
         bridge.renderAll();
-      } else if (sameKeys(localKeys, session.lastSavedKeys) && !session.retry && !session.saveBusy) {
+      } else if (samePartyState(localKeys, localPersonas, session.lastSavedKeys, session.lastSavedPersonas)
+        && !session.retry && !session.saveBusy) {
         applySnapshot(result);
       } else {
         session.incomingState = result;
-        session.localDraft = localKeys;
+        session.localDraft = { keys: localKeys, personas: localPersonas };
         session.status = 'conflict';
         statusMessage = '別の利用者が先に編集を保存しました。採用する編成を選択してください。';
         bridge.renderAll();
@@ -455,22 +489,33 @@ function applySnapshot(snapshot) {
   active.title = snapshot.title || active.title;
   active.role = snapshot.role || active.role;
   active.lastSavedKeys = [...snapshot.party_keys];
+  active.lastSavedPersonas = remotePersonas(snapshot);
   active.retry = null;
   active.incomingState = null;
   active.localDraft = null;
   active.status = 'saved';
   statusMessage = '他の利用者の編集を同期しました · revision ' + active.revision;
-  bridge.setPartyKeys(snapshot.party_keys);
+  bridge.setPartyKeys(snapshot.party_keys, active.lastSavedPersonas);
   render();
 }
 
 function onPartyChanged() {
   if (!active || !canEdit() || active.incomingState || active.retry || active.saveBusy) return;
   const keys = currentKeys();
-  if (sameKeys(keys, active.lastSavedKeys)) return;
+  const personas = currentPersonas();
+  if (samePartyState(keys, personas, active.lastSavedKeys, active.lastSavedPersonas)) return;
+  const shareError = shareabilityError();
+  if (shareError) {
+    active.status = 'unsaved';
+    statusMessage = shareError;
+    render();
+    bridge.showToast(shareError);
+    return;
+  }
   active.saveBusy = true;
   const operation = {
     keys: [...keys],
+    personas,
     expectedRevision: active.revision,
     operationId: crypto.randomUUID(),
     label: 'party_update',
@@ -491,13 +536,14 @@ async function sendSave(session, operation) {
       operation.expectedRevision,
       operation.operationId,
       operation.keys,
+      operation.personas,
       operation.label,
     );
     if (active !== session) return;
     if (result.status === 'conflict') {
       session.revision = Number(result.revision) || session.revision;
       session.incomingState = result;
-      session.localDraft = currentKeys();
+      session.localDraft = { keys: currentKeys(), personas: currentPersonas() };
       session.retry = null;
       session.status = 'conflict';
       statusMessage = '保存競合を検出しました。サーバー版かローカル版を選択してください。';
@@ -507,6 +553,7 @@ async function sendSave(session, operation) {
     }
     session.revision = Number(result.revision) || session.revision;
     session.lastSavedKeys = Array.isArray(result.party_keys) ? [...result.party_keys] : [...operation.keys];
+    session.lastSavedPersonas = remotePersonas(result);
     session.retry = null;
     session.status = 'saved';
     session.title = result.title || session.title;
@@ -522,7 +569,8 @@ async function sendSave(session, operation) {
     if (active === session) {
       session.saveBusy = false;
       render();
-      if (!session.retry && !session.incomingState && !sameKeys(currentKeys(), session.lastSavedKeys)) {
+      if (!session.retry && !session.incomingState
+        && !samePartyState(currentKeys(), currentPersonas(), session.lastSavedKeys, session.lastSavedPersonas)) {
         onPartyChanged();
       }
     }
@@ -545,16 +593,17 @@ function acceptRemote() {
 }
 
 function reapplyLocal() {
-  if (!active || !active.incomingState || !Array.isArray(active.localDraft)) return;
+  if (!active || !active.incomingState || !active.localDraft || !Array.isArray(active.localDraft.keys)) return;
   const session = active;
   session.revision = Number(session.incomingState.revision) || session.revision;
   session.lastSavedKeys = [...(session.incomingState.party_keys || [])];
+  session.lastSavedPersonas = remotePersonas(session.incomingState);
   session.incomingState = null;
-  const draft = [...session.localDraft];
+  const draft = { keys: [...session.localDraft.keys], personas: session.localDraft.personas || [] };
   session.localDraft = null;
   session.retry = null;
   session.status = 'saved';
-  bridge.setPartyKeys(draft);
+  bridge.setPartyKeys(draft.keys, draft.personas);
   statusMessage = 'ローカル編成を最新 revision に対して再適用しています…';
   render();
   onPartyChanged();
@@ -627,7 +676,8 @@ function leaveSession() {
     setStatus('保存処理中です。完了してから共有セッションを閉じてください。');
     return;
   }
-  if (active && (active.retry || active.incomingState || !sameKeys(currentKeys(), active.lastSavedKeys))) {
+  if (active && (active.retry || active.incomingState
+    || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas))) {
     if (!window.confirm('サーバーに未保存、または競合中の編集があります。破棄して個人編成に戻りますか？')) return;
   }
   stopPolling();

@@ -311,3 +311,36 @@ test('malformed local storage records and foreign official keys are not accepted
   assert.equal(sanitizeLocalPersona({ key: 'n1', name: '別人格', kind: 'custom' }), null);
   assert.throws(() => createManualPersona({ name: '   ' }), /人格名/);
 });
+
+
+test('LBT identity keys are namespaced per browser profile and remain stable on repeated discovery', () => {
+  const source = lbtSource({ name: '同じ基底人格', no: 7 });
+  const save = {
+    schemaVersion: 5,
+    charName: 'アカウント1',
+    personaMode: 'n',
+    personaNo: 7,
+    personaSrc: source,
+    syncedManual: true,
+    hp: '120',
+    san: '50',
+    speed: '1d6',
+    roster: { personas: [] },
+  };
+  const firstStorage = new MemoryStorage();
+  const secondStorage = new MemoryStorage();
+  writeAccount(firstStorage, save, '同じアカウント名');
+  writeAccount(secondStorage, save, '同じアカウント名');
+  const catalog = [makeCatalogSource(source, 'n7', 'normal')];
+
+  const first = discoverLbtPersonaCandidates(firstStorage, catalog)[0];
+  const second = discoverLbtPersonaCandidates(secondStorage, catalog)[0];
+  const firstAgain = discoverLbtPersonaCandidates(firstStorage, catalog)[0];
+
+  assert.ok(first && second);
+  assert.equal(first.sourceRef, second.sourceRef, 'local LBT account IDs can repeat on different devices');
+  assert.notEqual(first.key, second.key, 'different browser profiles need disjoint local identity keys');
+  assert.equal(first.key, firstAgain.key, 'reopening the import dialog should not change a local key');
+  assert.ok(firstStorage.getItem('lbt_party_color_board_installation_id_v1'));
+  assert.ok(secondStorage.getItem('lbt_party_color_board_installation_id_v1'));
+});
