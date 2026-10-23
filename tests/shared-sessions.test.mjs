@@ -198,30 +198,54 @@ test('per-session resource caps are protected by parent-row locks', () => {
 });
 
 
-test('forward migration updates already-deployed resource-cap RPCs', () => {
+test('forward migration updates already-deployed resource-cap RPCs and serializes limits', () => {
   assert.match(forwardMigration, /create index if not exists session_access_requests_decided_by_idx/i);
-  for (const name of ['create_party_invite', 'request_party_access', 'decide_party_access_request']) {
+  assert.equal((forwardMigration.match(/\bas \$\$/g) || []).length, 5);
+  assert.equal((forwardMigration.match(/^\$\$;$/gm) || []).length, 5);
+
+  const names = [
+    'create_party_session',
+    'create_party_invite',
+    'request_party_access',
+    'apply_party_edit',
+    'decide_party_access_request',
+  ];
+  for (const name of names) {
     assert.match(forwardMigration, new RegExp('create or replace function public\\.' + name + '\\(', 'i'));
   }
-  assert.equal((forwardMigration.match(/\bas \$\$/g) || []).length, 3);
-  assert.equal((forwardMigration.match(/^\$\$;$/gm) || []).length, 3);
 
-  const inviteStart = forwardMigration.indexOf('create or replace function public.create_party_invite');
-  const inviteEnd = forwardMigration.indexOf('create or replace function public.request_party_access');
-  const invite = forwardMigration.slice(inviteStart, inviteEnd);
+  const functionBody = (name) => {
+    const start = forwardMigration.indexOf('create or replace function public.' + name);
+    assert.ok(start >= 0, name + ' exists in the forward migration');
+    const next = forwardMigration.indexOf('create or replace function public.', start + 1);
+    return forwardMigration.slice(start, next < 0 ? undefined : next);
+  };
+
+  const rateLimits = [
+    ['create_party_session', 'SESSION_CREATE_RATE_LIMIT'],
+    ['create_party_invite', 'INVITE_CREATE_RATE_LIMIT'],
+    ['request_party_access', 'ACCESS_REQUEST_RATE_LIMIT'],
+    ['apply_party_edit', 'PARTY_EDIT_RATE_LIMIT'],
+  ];
+  for (const [name, limit] of rateLimits) {
+    const body = functionBody(name);
+    const advisoryLock = body.indexOf('pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0))');
+    const limitCheck = body.indexOf(limit);
+    assert.ok(advisoryLock >= 0 && limitCheck > advisoryLock, name + ' locks before checking per-user rate limits');
+  }
+
+  const invite = functionBody('create_party_invite');
   assert.ok(invite.indexOf('for update') >= 0);
   assert.ok(invite.indexOf('for update') < invite.indexOf('ACTIVE_INVITE_LIMIT'));
 
-  const requestStart = forwardMigration.indexOf('create or replace function public.request_party_access');
-  const requestEnd = forwardMigration.indexOf('create or replace function public.decide_party_access_request');
-  const request = forwardMigration.slice(requestStart, requestEnd);
+  const request = functionBody('request_party_access');
   assert.ok(request.indexOf('for update') >= 0);
   assert.ok(request.indexOf('for update') < request.indexOf('PENDING_REQUEST_LIMIT'));
   assert.ok(request.indexOf('for update') < request.indexOf('insert into public.session_access_requests'));
 
-  const decide = forwardMigration.slice(requestEnd);
-  const firstLock = decide.indexOf('for update');
-  const secondLock = decide.indexOf('for update', firstLock + 1);
-  assert.ok(firstLock >= 0 && secondLock > firstLock);
-  assert.ok(secondLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
+  const decide = functionBody('decide_party_access_request');
+  const firstRowLock = decide.indexOf('for update');
+  const secondRowLock = decide.indexOf('for update', firstRowLock + 1);
+  assert.ok(firstRowLock >= 0 && secondRowLock > firstRowLock);
+  assert.ok(secondRowLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
 });
