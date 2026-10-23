@@ -273,8 +273,75 @@ function readAccountStates(storage) {
   return states;
 }
 
-export function discoverLbtPersonaCandidates(storage, catalog = []) {
-  const accounts = readAccountStates(storage);
+/**
+ * Return the account labels and owned-persona index required by the picker.
+ * Only identity keys and catalog keys are returned; raw LBT save objects stay
+ * inside this module and are never handed to the UI.
+ */
+export function discoverLbtAccounts(storage, catalog = []) {
+  const catalogByIdentity = new Map();
+  for (const persona of Array.isArray(catalog) ? catalog : []) {
+    const mode = persona?.kind === 'normal' ? 'n' : persona?.kind === 'tokui' ? 't' : '';
+    const no = text(persona?.no, 80);
+    if (mode && no && text(persona?.key, 180)) {
+      catalogByIdentity.set(`${mode}:${no}`, text(persona.key, 180));
+    }
+  }
+
+  return readAccountStates(storage).map((account) => {
+    const identityKeys = new Set();
+    const owned = Array.isArray(account.state.roster?.personas)
+      ? account.state.roster.personas.filter(record).slice(0, 500)
+      : [];
+    for (const entry of owned) {
+      const mode = text(entry.mode, 12);
+      const no = text(entry.no ?? entry.uid, 80);
+      if (['n', 't', 'custom'].includes(mode) && no) identityKeys.add(`${mode}:${no}`);
+    }
+    // A currently equipped identity is owned/current even if an older save is
+    // missing its corresponding roster row.
+    const currentMode = text(account.state.personaMode, 12);
+    const currentNo = text(account.state.personaNo, 80);
+    if (record(account.state.personaSrc) && ['n', 't', 'custom'].includes(currentMode) && currentNo) {
+      identityKeys.add(`${currentMode}:${currentNo}`);
+    }
+
+    const ownedKeys = [...identityKeys]
+      .map((key) => catalogByIdentity.get(key))
+      .filter(Boolean);
+    return {
+      id: account.id,
+      name: account.name,
+      active: account.active,
+      ownedKeys: [...new Set(ownedKeys)],
+      ownedIdentityKeys: [...identityKeys],
+      ownedCount: new Set(ownedKeys).size,
+    };
+  });
+}
+
+/** Whether a picker candidate belongs to an LBT account's owned roster. */
+export function isPersonaOwnedByLbtAccount(persona, account) {
+  if (!persona || !account || !text(account.id, 120)) return false;
+  if (!persona.localOnly) {
+    return Array.isArray(account.ownedKeys) && account.ownedKeys.includes(persona.key);
+  }
+  // Board-authored manual personas and shared snapshots do not carry an LBT
+  // source reference, so they remain selectable even in an owned-only view.
+  if (!persona.sourceRef) return true;
+  const prefix = `${text(account.id, 120)}:identity:`;
+  return persona.sourceRef.startsWith(prefix)
+    && Boolean(persona.sourceIdentityKey)
+    && Array.isArray(account.ownedIdentityKeys)
+    && account.ownedIdentityKeys.includes(persona.sourceIdentityKey);
+}
+
+export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = null) {
+  const requestedAccountId = text(accountId, 120);
+  const availableAccounts = readAccountStates(storage);
+  const accounts = requestedAccountId
+    ? availableAccounts.filter((account) => account.id === requestedAccountId)
+    : availableAccounts;
   const namespace = localPersonaNamespace(storage);
   const byKey = new Map();
   const sourceRefs = new Set();
