@@ -19,6 +19,7 @@ import {
   discoverLbtPersonaCandidates,
   importLocalPersonas,
   loadLocalPersonas,
+  sanitizeLocalPersona,
   saveLocalPersonas,
 } from './persona-import.mjs';
 
@@ -63,6 +64,61 @@ function refreshPersonaPool(localPersonas = state.localPersonas) {
   state.localPersonas = Array.isArray(localPersonas) ? localPersonas : [];
   state.personas = [...state.data.personas, ...state.localPersonas];
   state.map = makePersonaMap(state.personas);
+}
+
+function personaSnapshotForShare(persona) {
+  if (!persona?.localOnly) return null;
+  return {
+    key: persona.key,
+    kind: persona.kind,
+    variantType: persona.variantType,
+    originType: persona.originType,
+    sourceLabel: persona.sourceLabel,
+    syncRank: persona.syncRank,
+    syncMax: persona.syncMax === true,
+    no: persona.no,
+    name: persona.name,
+    hp: persona.hp,
+    san: persona.san,
+    speed: persona.speed,
+    speedAvg: persona.speedAvg,
+    keywords: [...(persona.keywords || [])],
+    affiliation: persona.affiliation || '',
+    passiveName: persona.passiveName || '',
+    passiveCond: persona.passiveCond || '',
+    slots: (persona.slots || []).map((slot, index) => ({
+      rank: `S${index}`,
+      name: slot.name || '',
+      type: slot.type || '',
+      colors: [...(slot.colors || [])],
+    })),
+  };
+}
+
+function getShareablePartyPersonas() {
+  return state.party.map((entry) => personaSnapshotForShare(state.map.get(entry.key))).filter(Boolean);
+}
+
+function applySharedPartySnapshot(keys, sharedPersonas = []) {
+  const selectedKeys = new Set(Array.isArray(keys) ? keys : []);
+  const incoming = (Array.isArray(sharedPersonas) ? sharedPersonas : [])
+    .filter((persona) => selectedKeys.has(persona?.key))
+    .map(sanitizeLocalPersona)
+    .filter(Boolean);
+  const byKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
+  for (const persona of incoming) byKey.set(persona.key, persona);
+  let nextLocal = [...byKey.values()];
+  try {
+    nextLocal = saveLocalPersonas(browserStorage(), nextLocal);
+  } catch {
+    // Keep the remote snapshot in memory so a temporary quota/permissions problem
+    // does not blank a shared session; the next explicit import/save can persist it.
+  }
+  refreshPersonaPool(nextLocal);
+  state.party = sanitizeParty(keys) || [];
+  const missing = (Array.isArray(keys) ? keys : []).filter((key) => !state.map.has(key));
+  if (missing.length) showToast('共有編成の一部人格データを読み込めませんでした。再同期してください。');
+  renderAll();
 }
 
 function readStored() {
@@ -759,11 +815,10 @@ function renderPickerList() {
 
   $('#picker-list').innerHTML = results.map((persona) => {
     const alreadySelected = selectedKeys.has(persona.key) && persona.key !== currentKey;
-    const localOnlyBlocked = Boolean(persona.localOnly && window.sharedPartySession?.isActive);
-    const disabled = alreadySelected || localOnlyBlocked;
+    const disabled = alreadySelected;
     const colors = [...new Set(persona.slots.flatMap((slot) => slot.colors))];
     const keywords = persona.keywords.length > 0 ? persona.keywords.join('・') : (persona.affiliation || '—');
-    const stateLabel = alreadySelected ? '編成済み' : (localOnlyBlocked ? '共有編成では未対応' : '');
+    const stateLabel = alreadySelected ? '編成済み' : '';
     const sourceBadge = persona.localOnly
       ? `<span class="persona-source-badge">${escapeHtml(persona.sourceLabel || personaKindLabel(persona))}</span>`
       : '';
@@ -817,10 +872,6 @@ function choosePersona(key) {
   if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   const persona = state.map.get(key);
   if (!persona) return;
-  if (persona.localOnly && window.sharedPartySession?.isActive) {
-    showToast('LBT同期・創作人格は現在クラウド共有セッションに未対応です。個人編成に戻ると選択できます。');
-    return;
-  }
   const existingIndex = state.party.findIndex((entry) => entry.key === key);
   if (existingIndex >= 0 && existingIndex !== state.pickerIndex) {
     showToast('その人格はすでに編成されています。');
@@ -983,14 +1034,18 @@ async function boot() {
       const { initializeSharedSessionsUi } = await import('./shared-sessions-ui.mjs');
       await initializeSharedSessionsUi({
         getPartyKeys: () => state.party.map((entry) => entry.key),
-        setPartyKeys: (keys) => {
-          state.party = sanitizeParty(keys) || [];
-          renderAll();
-        },
+        setPartyKeys: (keys, sharedPersonas = []) => applySharedPartySnapshot(keys, sharedPersonas),
+        getPartyPersonas: getShareablePartyPersonas,
         renderAll,
         saveState,
         showToast,
-        canShareCurrentParty: () => state.party.every((entry) => !state.map.get(entry.key)?.localOnly),
+        canShareCurrentParty: () => {
+          const snapshots = getShareablePartyPersonas();
+          const size = new TextEncoder().encode(JSON.stringify(snapshots)).length;
+          return size <= 48000
+            ? true
+            : '同期・創作人格の共有データが大きすぎます。不要なスキル枠や人格を整理してから共有してください。';
+        },
       });
     } catch (sharedError) {
       console.error('Shared sessions UI failed to initialize', sharedError);
