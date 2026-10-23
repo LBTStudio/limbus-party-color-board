@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   DEFAULT_PARTY,
+  SAMPLE_PARTY,
   SIN_ORDER,
   aggregate,
   countColor,
@@ -42,8 +43,15 @@ test('dual-color derived slots are preserved', () => {
   assert.equal(countColor(persona, '傲慢'), 4);
 });
 
-test('default party reproduces the sample totals', () => {
-  const result = aggregate(DEFAULT_PARTY, map);
+test('empty default party starts with zero resources', () => {
+  assert.deepEqual(DEFAULT_PARTY, []);
+  const result = aggregate(SAMPLE_PARTY, map);
+  assert.equal(result.grandTotal, 0);
+  assert.deepEqual(result.totals, Object.fromEntries(SIN_ORDER.map((sin) => [sin, 0])));
+});
+
+test('sample party fixture reproduces the historical sample totals', () => {
+  const result = aggregate(SAMPLE_PARTY, map);
   assert.deepEqual(result.totals, {
     憤怒: 1,
     色欲: 1,
@@ -65,10 +73,10 @@ test('default party reproduces the sample totals', () => {
   assert.equal(result.grandTotal, 20);
 });
 
-test('default party keeps only anonymous persona keys', () => {
-  assert.deepEqual(DEFAULT_PARTY.map((entry) => entry.key), ['n48', 'n34', 'n78', 'n49']);
-  assert.ok(DEFAULT_PARTY.every((entry) => Object.keys(entry).length === 1 && entry.key));
-  assert.deepEqual(DEFAULT_PARTY.map((entry) => map.get(entry.key)?.name), [
+test('sample fixture keeps only anonymous persona keys', () => {
+  assert.deepEqual(SAMPLE_PARTY.map((entry) => entry.key), ['n48', 'n34', 'n78', 'n49']);
+  assert.ok(SAMPLE_PARTY.every((entry) => Object.keys(entry).length === 1 && entry.key));
+  assert.deepEqual(SAMPLE_PARTY.map((entry) => map.get(entry.key)?.name), [
     '黒獣-卯',
     '北部ヂェーヴィチ協会4課フィクサー',
     'LCEE.G.O:提灯',
@@ -87,7 +95,7 @@ test('resource sorting puts the dominant color first', () => {
 });
 
 test('sorting by a selected color promotes the identities that provide it', () => {
-  const sorted = sortParty(DEFAULT_PARTY, 'color', '憤怒', map);
+  const sorted = sortParty(SAMPLE_PARTY, 'color', '憤怒', map);
   assert.equal(sorted[0].key, 'n34');
   assert.equal(countColor(map.get('n34'), '憤怒'), 1);
   assert.equal(countColor(map.get('n48'), '憤怒'), 0);
