@@ -49,7 +49,7 @@ const state = {
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
-const $ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 function browserStorage() {
   try {
@@ -210,7 +210,7 @@ function bindEvents() {
   });
 
   document.addEventListener('click', handleClick);
-  for (const dialog of $('dialog')) {
+  for (const dialog of $$('dialog')) {
     dialog.addEventListener('click', (event) => {
       if (event.target !== dialog) return;
       if (dialog.id === 'lbt-import-dialog') closeLbtPersonaImport();
