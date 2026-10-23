@@ -598,7 +598,13 @@ test('saved LBT roster build overrides an older current-persona snapshot for the
 
   assert.equal(sameIdentity.length, 1, 'the current state and saved roster build must not produce duplicate variants');
   assert.equal(sameIdentity[0].name, '同期後の人格名');
-  assert.equal(sameIdentity[0].slots[0].name, '同期後のスキル名');
+  assert.equal(sameIdentity[0].slots[0].name, '同期後のスキル名', JSON.stringify({
+    sourceLabel: sameIdentity[0].sourceLabel,
+    priority: sameIdentity[0]._sourceSelectionPriority,
+    hp: sameIdentity[0].hp,
+    speed: sameIdentity[0].speed,
+    passiveName: sameIdentity[0].passiveName,
+  }));
   assert.equal(sameIdentity[0].slots[0].type, '貫通反撃');
   assert.deepEqual(sameIdentity[0].slots[0].colors, ['嫉妬']);
   assert.equal(sameIdentity[0].passiveName, '同期後パッシブ');
