@@ -12,6 +12,7 @@ const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_se
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
+const memberCountMigration = read('../supabase/migrations/20261024212000_add_member_count_to_workspace_list.sql');
 const sessionCreationRateLimitMigration = read('../supabase/migrations/20261023205650_persist_session_creation_rate_limits.sql');
 const sessionCreationRateLimitBackfillMigration = read('../supabase/migrations/20261023205738_backfill_existing_session_creation_limits.sql');
 const legacyManualArchivePurgeMigration = read('../supabase/migrations/20261023210309_purge_preexisting_manual_archives.sql');
@@ -301,6 +302,24 @@ test('closed-session status is only disclosed to a user related to that session'
   assert.match(fn, /set search_path = pg_catalog/i);
   assert.match(closedSessionAccessMigration, /revoke all on function public\.check_my_party_access\(uuid\) from public, anon/i);
   assert.match(closedSessionAccessMigration, /grant execute on function public\.check_my_party_access\(uuid\) to authenticated/i);
+});
+
+test('workspace list shows owner attribution and current members out of the existing 20-person cap', () => {
+  const start = memberCountMigration.indexOf('create or replace function public.list_my_party_sessions()');
+  const end = memberCountMigration.indexOf('revoke all on function public.list_my_party_sessions()', start);
+  const fn = memberCountMigration.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(fn, /'owner_display_name', coalesce\(owner_member\.display_name, '編成主'\)/);
+  assert.match(fn, /'member_count', \(select count\(\*\)::integer from public\.session_members/);
+  assert.match(fn, /join public\.session_members m on m\.session_id = s\.id and m\.user_id = v_user_id/);
+  assert.match(fn, /where s\.archived_at is null/);
+  assert.match(memberCountMigration, /revoke all on function public\.list_my_party_sessions\(\) from public, anon/i);
+  assert.match(memberCountMigration, /grant execute on function public\.list_my_party_sessions\(\) to authenticated/i);
+  assert.match(sharedUi, /memberCount \+ '\/20名'/);
+  assert.match(sharedUi, /参加者（' \+ members\.length \+ '\/20名）/);
+  assert.match(html, /発行者を含め最大20名まで参加できます/);
+  assert.match(forwardMigration, /count\(\*\)[\s\S]*?>= 20 then/);
+  assert.match(forwardMigration, /for update/);
 });
 
 test('shared session lifecycle clearly separates browser-local and cloud data', () => {
