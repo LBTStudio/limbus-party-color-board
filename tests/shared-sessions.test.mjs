@@ -347,3 +347,19 @@ test('GitHub Actions dependencies are pinned and upstream data updates require r
   assert.ok(!updateWorkflow.includes('git push origin main'));
   assert.ok(updateWorkflow.includes('git push --force origin "HEAD:${BRANCH_NAME}"'));
 });
+
+
+test('main board is prioritized and infrequent operations are grouped', () => {
+  const toolbarStart = html.indexOf('<section class="panel controls"');
+  const resourcesStart = html.indexOf('<section class="panel resource-section"');
+  const matrixStart = html.indexOf('<section class="panel" aria-labelledby="matrix-title"');
+  const personaStart = html.indexOf('<section class="panel" aria-labelledby="party-title"');
+  const sharingStart = html.indexOf('<section class="panel shared-panel" id="shared-panel"');
+  assert.ok(toolbarStart >= 0 && resourcesStart > toolbarStart);
+  assert.ok(matrixStart > resourcesStart && personaStart > matrixStart);
+  assert.ok(sharingStart > personaStart, 'sharing controls should not displace the primary lineup workflow');
+  assert.ok(html.includes('<details class="toolbar-more">'));
+  assert.ok(html.includes('href="#shared-panel">共有編成・同期へ</a>'));
+  assert.ok(html.includes('<details class="shared-info">'));
+  assert.ok(sharedUi.includes("$('#shared-panel')?.scrollIntoView({ behavior: 'auto', block: 'start' })"));
+});
