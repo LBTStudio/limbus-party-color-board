@@ -162,9 +162,9 @@
     <div id="shared-captcha-widget" class="shared-captcha" aria-label="不正利用防止の確認" hidden></div>
     <p id="shared-captcha-hint" class="hint" hidden>初回の共同編集機能利用では、不正利用防止の確認が必要です。</p>
     <div class="shared-fields">
-      <label for="shared-display-name">参加時の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname" value="参加者"></label>
-      <label for="shared-session-title">共同編集スペースの名前<input class="input" id="shared-session-title" maxlength="80" placeholder="例：第1グループの攻略編成"></label>
+      <label for="shared-session-title">共同編集スペース名（作成者の表示名を兼ねます）<input class="input" id="shared-session-title" maxlength="40" placeholder="例：第1グループの攻略編成"></label>
     </div>
+    <p class="hint shared-name-note">作成者はこの名前で参加者一覧に表示されます。招待リンクから参加する人は、リンクを開いたときに自分の表示名を入力します。</p>
     <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create">＋ 共同編集スペースを作成</button><button type="button" class="btn btn-ghost" id="shared-refresh">クラウドから一覧を更新</button></div>
     <div id="shared-session-list" class="shared-list" aria-label="共同編集スペース一覧"></div>
     <div id="shared-access-waiting" class="shared-subpanel" hidden><h3>参加承認待ち</h3><p id="shared-access-message" class="hint">発行者の承認を待っています。</p><button type="button" class="btn btn-ghost" id="shared-check-access">承認状態を確認</button></div>
