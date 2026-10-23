@@ -269,10 +269,9 @@ export function resolvePersona(personas, { name = '', no = '', key = '', kind = 
 
   let numberMatches = [];
   if (numeric !== null) {
-    numberMatches = [
-      personas.find((persona) => persona.kind === 'normal' && persona.no === numeric),
-      personas.find((persona) => persona.kind === 'tokui' && persona.no === numeric - 110),
-    ].filter(Boolean);
+    numberMatches = personas.filter((persona) => matchesKind(persona)
+      && ((persona.kind === 'normal' && persona.no === numeric)
+        || (persona.kind === 'tokui' && persona.no === numeric - 110)));
   }
 
   if (nameMatches.length === 1 && numberMatches.length === 1) {
