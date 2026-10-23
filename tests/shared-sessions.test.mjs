@@ -613,14 +613,14 @@ test('mobile refinement keeps the collapsed shared-session dock compact and resp
 test('party capacity is twenty across the client and deployed RPC migrations', () => {
   assert.equal(MAX_PARTY, 20);
   assert.match(html, /最大20人/);
-  assert.match(partyCapacityMigration, /create or replace function public\\.apply_party_edit\\(/i);
-  assert.match(partyCapacityMigration, /create or replace function public\\.apply_party_edit_v2\\(/i);
-  assert.match(partyCapacityMigration, /cardinality\\(p_party_keys\\) > 20/i);
+  assert.match(partyCapacityMigration, /create or replace function public\.apply_party_edit\(/i);
+  assert.match(partyCapacityMigration, /create or replace function public\.apply_party_edit_v2\(/i);
+  assert.match(partyCapacityMigration, /cardinality\(p_party_keys\) > 20/i);
   assert.match(partyCapacityMigration, /PARTY_MUST_HAVE_ZERO_TO_TWENTY_PERSONAS/);
-  assert.match(partyCapacityMigration, /jsonb_array_length\\(p_party_personas\\) > 20/i);
-  assert.match(partyCapacityMigration, /octet_length\\(p_party_personas::text\\) > 60000/i);
-  assert.match(partyCapacityMigration, /revoke all on function public\\.apply_party_edit_v2/i);
-  assert.match(partyCapacityMigration, /grant execute on function public\\.apply_party_edit_v2.*to authenticated/i);
+  assert.match(partyCapacityMigration, /jsonb_array_length\(p_party_personas\) > 20/i);
+  assert.match(partyCapacityMigration, /octet_length\(p_party_personas::text\) > 60000/i);
+  assert.match(partyCapacityMigration, /revoke all on function public\.apply_party_edit_v2/i);
+  assert.match(partyCapacityMigration, /grant execute on function public\.apply_party_edit_v2.*to authenticated/i);
 });
 
 test('LBT local persona snapshots are synchronized through authorized shared-session RPCs', () => {
