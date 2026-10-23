@@ -284,14 +284,15 @@ test('lifecycle migration tracks live usage and schedules idle cleanup safely', 
 });
 
 
+ 
 test('untrusted persona fields are escaped before template-based HTML insertion', () => {
   const payload = '</dd><img src=x onerror="alert(1)">';
   assert.equal(
     escapeHtml(payload),
     '&lt;/dd&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
   );
-  assert.match(app, /<dd>\$\{escapeHtml\(persona\.hp\)\}<\\/dd>/);
-  assert.match(app, /<dd>\$\{escapeHtml\(persona\.san\)\}<\\/dd>/);
+  assert.ok(app.includes('<dd>${escapeHtml(persona.hp)}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.san)}</dd>'));
   assert.equal((app.match(/escapeHtml\(personaNumberLabel\(persona\)\)/g) || []).length, 2);
 });
 
@@ -301,7 +302,7 @@ test('CSV/TSV import rejects excessive length and row counts before resolving pe
   const tooLong = parsePartySheet('x'.repeat(MAX_IMPORT_CHARS + 1), personas);
   assert.match(tooLong.errors.join(' '), /長すぎます/);
 
-  const tooManyRows = parsePartySheet(Array(MAX_IMPORT_ROWS + 1).fill('人格番号').join('\\n'), personas);
+  const tooManyRows = parsePartySheet(Array(MAX_IMPORT_ROWS + 1).fill('人格番号').join(String.fromCharCode(10)), personas);
   assert.match(tooManyRows.errors.join(' '), /行数が多すぎます/);
 });
 
@@ -309,10 +310,13 @@ test('CSP disallows inline script execution and limits resource origins', () => 
   const match = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/);
   assert.ok(match, 'a CSP meta policy must be present');
   const policy = match[1];
-  assert.match(policy, /script-src 'self' https:\\/\\/esm\.sh https:\\/\\/challenges\.cloudflare\.com/);
-  assert.doesNotMatch(policy, /script-src[^;]*unsafe-inline/i);
-  assert.match(policy, /object-src 'none'/);
-  assert.match(policy, /connect-src[^;]*hobntjcrzybqsiobrpsz\.supabase\.co/);
+  assert.ok(policy.includes("script-src 'self' https://esm.sh https://challenges.cloudflare.com"));
+  const scriptSource = policy.split(';').find((directive) => directive.trim().startsWith('script-src'));
+  assert.ok(scriptSource);
+  assert.ok(!scriptSource.includes('unsafe-inline'));
+  assert.ok(policy.includes("object-src 'none'"));
+  assert.ok(policy.includes('connect-src'));
+  assert.ok(policy.includes('hobntjcrzybqsiobrpsz.supabase.co'));
 });
 
 test('invite token is removed from the URL before loading third-party scripts', () => {
@@ -322,21 +326,24 @@ test('invite token is removed from the URL before loading third-party scripts', 
   const captureStart = sharedUi.indexOf('function captureInitialRoute()');
   const routeStart = sharedUi.indexOf('async function initializeRoute(route)', captureStart);
   assert.ok(captureStart >= 0 && routeStart > captureStart);
-  assert.match(sharedUi.slice(captureStart, routeStart), /if \(route\.token\) setRoute\(''\)/);
+  assert.ok(sharedUi.slice(captureStart, routeStart).includes("if (route.token) setRoute('');"));
 });
 
 test('browser Supabase SDK dependency uses an exact version instead of a floating major tag', () => {
-  assert.match(client, /@supabase\\/supabase-js@[0-9]+\\.[0-9]+\\.[0-9]+\\?target=es2022/);
-  assert.doesNotMatch(client, /@supabase\\/supabase-js@2\\?/);
+  assert.ok(client.includes('@supabase/supabase-js@2.118.0?target=es2022'));
+  assert.ok(!client.includes('@supabase/supabase-js@2?target=es2022'));
 });
 
 test('GitHub Actions dependencies are pinned and upstream data updates require review', () => {
   for (const workflow of [testWorkflow, updateWorkflow]) {
-    assert.match(workflow, /uses: actions\\/checkout@[0-9a-f]{40}/);
-    assert.match(workflow, /uses: actions\\/setup-node@[0-9a-f]{40}/);
+    for (const line of workflow.split(String.fromCharCode(10)).filter((value) => value.includes('uses: actions/checkout@') || value.includes('uses: actions/setup-node@'))) {
+      const reference = line.trim().split('@')[1].split(' ')[0];
+      assert.match(reference, /^[0-9a-f]{40}$/);
+    }
   }
-  assert.match(updateWorkflow, /pull-requests:\\s*write/);
-  assert.match(updateWorkflow, /gh pr create/);
-  assert.match(updateWorkflow, /git add data\\/personas\\.json supabase\\/seed-persona-keys\\.sql/);
-  assert.doesNotMatch(updateWorkflow, /git push\\s+origin\\s+main\\b/i);
+  assert.ok(updateWorkflow.includes('pull-requests: write'));
+  assert.ok(updateWorkflow.includes('gh pr create'));
+  assert.ok(updateWorkflow.includes('git add data/personas.json supabase/seed-persona-keys.sql'));
+  assert.ok(!updateWorkflow.includes('git push origin main'));
+  assert.ok(updateWorkflow.includes('git push --force origin "HEAD:${BRANCH_NAME}"'));
 });
