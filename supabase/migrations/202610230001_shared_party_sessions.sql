@@ -490,6 +490,12 @@ declare
   v_role text;
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
+  if exists (
+    select 1 from public.party_sessions s
+    where s.id=p_session_id and s.archived_at is not null
+  ) then
+    return jsonb_build_object('status','closed','session_id',p_session_id);
+  end if;
   select m.role into v_role from public.session_members m
     where m.session_id=p_session_id and m.user_id=v_user_id;
   if found then return jsonb_build_object('status','approved','session_id',p_session_id,'role',v_role); end if;
