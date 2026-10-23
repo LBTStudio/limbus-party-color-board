@@ -3,12 +3,29 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './supabase-config.mjs';
 const PLACEHOLDER_KEY = 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY';
 let clientPromise;
 
+function isPrivilegedKey(key) {
+  const value = String(key || '').trim();
+  const lower = value.toLowerCase();
+  if (lower.startsWith('sb_secret_') || lower.includes('service_role') || lower.includes('secret')) return true;
+  // Legacy anon/service_role keys are JWTs. Reject a privileged role if one was pasted by mistake.
+  const payload = value.split('.')[1];
+  if (!payload || typeof atob !== 'function') return false;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '='));
+    const decoded = JSON.parse(json);
+    return decoded.role === 'service_role' || decoded.role === 'supabase_admin';
+  } catch {
+    return false;
+  }
+}
+
 export function isSharedSessionsConfigured() {
   return Boolean(
     /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)
     && SUPABASE_PUBLISHABLE_KEY
     && SUPABASE_PUBLISHABLE_KEY !== PLACEHOLDER_KEY
-    && !SUPABASE_PUBLISHABLE_KEY.toLowerCase().includes('secret'),
+    && !isPrivilegedKey(SUPABASE_PUBLISHABLE_KEY),
   );
 }
 
