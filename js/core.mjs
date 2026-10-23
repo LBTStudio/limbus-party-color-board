@@ -328,13 +328,13 @@ export function resolvePersona(personas, { name = '', no = '', key = '', kind = 
 // when a copied TSV is pasted into a sheet. The matching parser removes this marker so
 // the tool's own export/import round-trip preserves the original value.
 export function escapeSpreadsheetCell(value) {
-  const cell = String(value ?? '').replace(/\\t/g, ' ').replace(/\\r?\\n/g, ' ').replace(/\\r/g, ' ');
-  return /^[\\s\\uFEFF]*[=+\\-@]/u.test(cell) ? "'" + cell : cell;
+  const cell = String(value ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ').replace(/\r/g, ' ');
+  return /^[\s\uFEFF]*[=+\-@]/u.test(cell) ? "'" + cell : cell;
 }
 
 function restoreSpreadsheetCell(value) {
   const cell = String(value ?? '').trim();
-  return cell.replace(/^'(?=[\\s\\uFEFF]*[=+\\-@])/u, '');
+  return cell.replace(/^'(?=[\s\uFEFF]*[=+\-@])/u, '');
 }
 
 function parseDelimited(text, delimiter) {
@@ -359,7 +359,7 @@ function parseDelimited(text, delimiter) {
       continue;
     }
 
-    if (character === '"') {
+    if (character === '"' && field === '') {
       quoted = true;
     } else if (character === delimiter) {
       row.push(field);
@@ -373,6 +373,8 @@ function parseDelimited(text, delimiter) {
       field += character;
     }
   }
+
+  if (quoted) return null;
 
   if (field !== '' || row.length > 0) {
     row.push(field);
@@ -396,6 +398,7 @@ export function parsePartySheet(text, personas) {
   const firstLine = source.split(/\r?\n/).find((line) => line.trim()) ?? '';
   const delimiter = firstLine.includes('\t') ? '\t' : ',';
   const rows = parseDelimited(source, delimiter);
+  if (!rows) return { party: [], errors: ['引用符が閉じていないセルがあります。引用符の対応を確認してください。'] };
   if (rows.length > MAX_IMPORT_ROWS) {
     return { party: [], errors: ['行数が多すぎます。最大200行まで取り込めます。'] };
   }
