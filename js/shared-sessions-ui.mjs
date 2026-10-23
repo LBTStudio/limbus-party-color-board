@@ -174,7 +174,7 @@ function renderAdmin(data) {
       makeActionButton('却下', 'shared-deny', { requestId: item.request_id }),
     ],
   )));
-  membersRoot.replaceChildren(adminSection('参加者', members, '参加者はいません。', (item) => adminItem(
+  membersRoot.replaceChildren(adminSection('参加者（' + members.length + '/20名）', members, '参加者はいません。', (item) => adminItem(
     item.display_name,
     roleLabel(item.role) + ' · ID ' + String(item.user_id).slice(0, 8),
     item.role === 'owner' ? [] : [
@@ -254,7 +254,12 @@ function render() {
     const row = node('div', 'shared-session-item');
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
-    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)));
+    const memberCount = Number(item.member_count);
+    const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
+      ? memberCount + '/20名'
+      : '人数取得中';
+    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
+      + ' · ' + memberCountLabel));
     text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
     const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
     text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
