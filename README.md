@@ -45,7 +45,7 @@ node tools/build-data.mjs --db ../LIMBUS_BUILD_TERMINAL/data/db.json
 
 ## 開発
 
-Node.js 22 以降を想定しています。依存パッケージはありません。
+Node.js 22 以降を想定しています。集計・取り込みは npm 依存パッケージなしで動きます。共有セッション機能を使う場合は、ブラウザが Supabase JS SDK を ESM CDN から読み込むため、インターネット接続が必要です。
 
 ```sh
 npm test          # 集計・取り込み・並べ替えのテスト
