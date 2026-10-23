@@ -45,7 +45,7 @@ test('dual-color derived slots are preserved', () => {
 
 test('empty default party starts with zero resources', () => {
   assert.deepEqual(DEFAULT_PARTY, []);
-  const result = aggregate(SAMPLE_PARTY, map);
+  const result = aggregate(DEFAULT_PARTY, map);
   assert.equal(result.grandTotal, 0);
   assert.deepEqual(result.totals, Object.fromEntries(SIN_ORDER.map((sin) => [sin, 0])));
 });
@@ -85,7 +85,7 @@ test('sample fixture keeps only anonymous persona keys', () => {
 });
 
 test('resource sorting puts the dominant color first', () => {
-  const result = aggregate(DEFAULT_PARTY, map);
+  const result = aggregate(SAMPLE_PARTY, map);
   const sorted = sortResources(result.totals, result.personaCounts, 'count-desc');
   assert.equal(sorted[0].sin, '暴食');
   assert.equal(sorted[0].total, 10);
