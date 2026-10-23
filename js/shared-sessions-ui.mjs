@@ -969,7 +969,10 @@ export async function initializeSharedSessionsUi(callbacks) {
     });
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
-  $('#shared-display-name').addEventListener('change', () => rememberDisplayName());
+  $('#shared-display-name').addEventListener('change', () => {
+    const value = String($('#shared-display-name').value || '').trim().slice(0, 40);
+    if (value) rememberDisplayName(value);
+  });
   $('#shared-create').addEventListener('click', () => createSession());
   $('#shared-create-invite').addEventListener('click', () => issueInvite());
   $('#shared-copy-invite').addEventListener('click', () => copyInvite());
