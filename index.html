@@ -219,11 +219,10 @@
   <div class="picker-tools">
     <label class="sr-only" for="picker-search">人格を検索</label>
     <input id="picker-search" class="input" type="search" placeholder="名前・番号・キーワードで検索" autocomplete="off">
-    <div class="segmented" role="group" aria-label="人格種別">
+    <div class="segmented" role="group" aria-label="人格データの種類">
       <button type="button" data-picker-mode="all" aria-pressed="true">すべて</button>
-      <button type="button" data-picker-mode="normal" aria-pressed="false">通常</button>
-      <button type="button" data-picker-mode="tokui" aria-pressed="false">特異</button>
-      <button type="button" data-picker-mode="local" aria-pressed="false">追加人格</button>
+      <button type="button" data-picker-mode="sync" aria-pressed="false">同期</button>
+      <button type="button" data-picker-mode="original" aria-pressed="false">オリ</button>
     </div>
   </div>
   <div id="picker-list" class="picker-list"></div>
