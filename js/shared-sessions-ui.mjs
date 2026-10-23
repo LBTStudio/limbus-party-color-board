@@ -167,7 +167,12 @@ function setSharedPanelOpen(open, { focusRequests = false } = {}) {
   if (label) label.textContent = sharedPanelOpen ? '管理を閉じる' : '管理を開く';
   if (mark) mark.textContent = sharedPanelOpen ? '−' : '＋';
   if (sharedPanelOpen && focusRequests) {
-    $('#shared-requests h3')?.focus({ preventScroll: true });
+    const requestHeading = $('#shared-requests h3');
+    if (requestHeading) {
+      requestHeading.tabIndex = -1;
+      requestHeading.scrollIntoView({ behavior: 'auto', block: 'start' });
+      requestHeading.focus({ preventScroll: true });
+    }
   }
 }
 
