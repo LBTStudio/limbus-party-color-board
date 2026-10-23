@@ -601,6 +601,7 @@ test('saved LBT roster build overrides an older current-persona snapshot for the
   assert.equal(sameIdentity[0].slots[0].name, '同期後のスキル名', JSON.stringify({
     sourceLabel: sameIdentity[0].sourceLabel,
     priority: sameIdentity[0]._sourceSelectionPriority,
+    debug: sameIdentity[0]._debugSelection,
     hp: sameIdentity[0].hp,
     speed: sameIdentity[0].speed,
     passiveName: sameIdentity[0].passiveName,
