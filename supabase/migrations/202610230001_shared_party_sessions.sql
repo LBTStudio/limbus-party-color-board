@@ -654,6 +654,33 @@ begin
 end;
 $$;
 
+create or replace function public.set_party_session_member_role(p_session_id uuid, p_user_id uuid, p_role text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $
+declare
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
+  if p_role not in ('editor','viewer') then
+    raise exception 'ROLE_MUST_BE_EDITOR_OR_VIEWER' using errcode = '22023';
+  end if;
+  if not exists (
+    select 1 from public.party_sessions s
+    where s.id=p_session_id and s.owner_user_id=v_user_id and s.archived_at is null
+  ) then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
+  if p_user_id=v_user_id then raise exception 'CANNOT_CHANGE_OWNER_ROLE' using errcode = '22023'; end if;
+
+  update public.session_members m
+    set role=p_role
+    where m.session_id=p_session_id and m.user_id=p_user_id and m.role <> 'owner';
+  if not found then raise exception 'MEMBER_NOT_FOUND' using errcode = 'P0002'; end if;
+  return jsonb_build_object('status','updated','role',p_role);
+end;
+$;
+
 create or replace function public.remove_party_session_member(p_session_id uuid, p_user_id uuid)
 returns jsonb
 language plpgsql
@@ -704,6 +731,7 @@ revoke all on function public.poll_party_session(uuid,bigint) from public, anon;
 revoke all on function public.apply_party_edit(uuid,bigint,uuid,text[],text) from public, anon;
 revoke all on function public.list_party_session_admin(uuid) from public, anon;
 revoke all on function public.decide_party_access_request(uuid,text,text) from public, anon;
+revoke all on function public.set_party_session_member_role(uuid,uuid,text) from public, anon;
 revoke all on function public.remove_party_session_member(uuid,uuid) from public, anon;
 revoke all on function public.archive_party_session(uuid) from public, anon;
 
@@ -717,5 +745,6 @@ grant execute on function public.poll_party_session(uuid,bigint) to authenticate
 grant execute on function public.apply_party_edit(uuid,bigint,uuid,text[],text) to authenticated;
 grant execute on function public.list_party_session_admin(uuid) to authenticated;
 grant execute on function public.decide_party_access_request(uuid,text,text) to authenticated;
+grant execute on function public.set_party_session_member_role(uuid,uuid,text) to authenticated;
 grant execute on function public.remove_party_session_member(uuid,uuid) to authenticated;
 grant execute on function public.archive_party_session(uuid) to authenticated;
