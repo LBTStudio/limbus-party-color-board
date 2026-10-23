@@ -2,23 +2,19 @@
 
 このリポジトリには共有編成のフロントエンドと SQL マイグレーションを追加しています。**接続設定が入るまでは公開サイトで共有機能は動作しません**。Supabase の secret / service role key はブラウザへ絶対に置かないでください。
 
-## 1. ブラウザ用 publishable key を設定
+## 1. ブラウザ用 publishable key
 
-1. Supabase Dashboard で対象プロジェクト `hobntjcrzybqsiobrpsz` を開く。
-2. Project Settings → API Keys（または Project Overview の Connect）で **Publishable key** をコピーする。古いプロジェクトでは `anon` key が表示される場合がある。
-3. `js/supabase-config.mjs` の `SUPABASE_PUBLISHABLE_KEY` の値を置き換える。`SUPABASE_URL` はこのプロジェクトの URL として設定済み。
-4. 変更をリポジトリへ push する。これはブラウザで公開されるキーなので、公開してはいけない secret / service_role key とは異なる。実際のデータアクセスはこの実装の RPC 権限チェックで制限される。
+この PR の `js/supabase-config.mjs` には、プロジェクトの Dashboard に表示されている `sb_publishable_...` キーを設定済みです。通常、追加操作は不要です。念のため、対象プロジェクトの Project Settings → API Keys と一致することを確認してください。
 
-**原則として `sb_publishable_...` を使ってください。** `anon` key は旧形式で、プロジェクトが新しい key をまだ用意していない場合の互換用です。`sb_secret_...`、`service_role` は入力しないでください。[Supabase API keys の公式説明](https://supabase.com/docs/guides/getting-started/api-keys)
-
+このキーはブラウザに配信される公開キーであり、公開リポジトリに置いて問題ありません。実際のアクセス権は RLS とサーバー側 RPC で制御します。**`sb_secret_...` や旧形式の `service_role` キーは、ブラウザ設定や公開リポジトリに絶対に置かないでください。** [Supabase API keys の公式説明](https://supabase.com/docs/guides/getting-started/api-keys)
 ## 2. DB マイグレーションを適用
 
 次のどちらか一方を選ぶ。
 
-- **GitHub Integration で自動適用する場合:** Project Settings → Integrations → GitHub Integration でこのリポジトリを選択し、Working directory を `.` にして、Deploy to production を有効にする。Production branch（通常は `main`）へ PR をマージすると、未適用の migration が実行される。Supabase の [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
+- **GitHub Integration で自動適用する場合（推奨）:** リポジトリ連携済みとのことなので、Project Settings → Integrations → GitHub Integration で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認する。このリポジトリの `supabase/config.toml` には `[remotes.main]`、匿名ログイン設定、人格キーseedのパスを追加済み。PRを `main` にマージした後、Supabase Dashboardのデプロイ履歴で migration・config・seed の各ステップが成功したことを確認する。Supabaseの [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
 - **手動で適用する場合:** 自動デプロイが未設定なら、Dashboard → SQL Editor から `supabase/migrations/202610230001_shared_party_sessions.sql` 全体を開いて実行する。
 
-この PR の確認時点では GitHub Integration 画面にリポジトリ選択の案内が表示されていました。接続済みの場合は上の設定が有効かを確認する。手動実行と自動適用を同時に進めると migration 履歴の確認が必要になるため、どちらの経路で適用したか記録する。
+GitHub Integration が `supabase/config.toml` の設定を本番にも適用するには、対象の本番ブランチに対応する `[remotes.main]` の指定が必要です。seed は migration の後に実行されます。手動実行と自動適用を併用しないでください。公式仕様は [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照してください。
 
 - セッション、参加者、招待、アクセス申請、編集履歴、許可済み人格キーのテーブル
 - ブラウザからの直接テーブルアクセスを禁止する権限と RLS
