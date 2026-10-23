@@ -40,9 +40,9 @@ function lbtSource({ name = '基準人格', no = 1, custom = false, colors = SIN
     hp: 100,
     san: 40,
     speed: '1d5',
-    res_slash: '普通',
+    res_slash: '抵抗',
     res_pierce: '普通',
-    res_blunt: '普通',
+    res_blunt: '弱点',
     passive_name: `${name}のパッシブ`,
     passive_cond: '憤怒x2 保有',
     passive_always: '',
@@ -256,6 +256,9 @@ test('LBT save discovery extracts the current synced build, saved build differen
   assert.equal(current.hp, 125);
   assert.equal(current.san, 55);
   assert.equal(current.speed, '1d7');
+  assert.equal(current.resSlash, '抵抗');
+  assert.equal(current.resPierce, '普通');
+  assert.equal(current.resBlunt, '弱点');
   assert.equal(current.passiveName, '編集パッシブ');
   assert.equal(current.passiveCond, '嫉妬x1');
   assert.equal(current.slots[0].name, '変更されたS0');
