@@ -361,11 +361,17 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
     : availableAccounts;
   const namespace = localPersonaNamespace(storage);
   const byKey = new Map();
-  const sourceRefs = new Set();
+  const sourceKeys = new Map();
   const addCandidate = (candidate) => {
-    if (!candidate || (candidate.sourceRef && sourceRefs.has(candidate.sourceRef))) return;
+    if (!candidate) return;
+    const sourceRef = candidate.sourceRef;
+    const previousKey = sourceRef ? sourceKeys.get(sourceRef) : null;
+    // A saved roster build is enumerated after the current equipped identity.
+    // Let the later, per-identity saved build replace an older active-state snapshot
+    // instead of silently keeping pre-sync skill names, sin colors, or passives.
+    if (previousKey) byKey.delete(previousKey);
     byKey.set(candidate.key, candidate);
-    if (candidate.sourceRef) sourceRefs.add(candidate.sourceRef);
+    if (sourceRef) sourceKeys.set(sourceRef, candidate.key);
   };
   for (const account of accounts) {
     const state = account.state;
