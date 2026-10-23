@@ -163,7 +163,7 @@ test('party member PL names persist in the matrix and detail cards show speed an
   assert.match(detail, /persona\.resSlash/);
   assert.match(detail, /persona\.resPierce/);
   assert.match(detail, /persona\.resBlunt/);
-  assert.doesNotMatch(detail, /<dt>HP<\\/dt>|<dt>SAN<\\/dt>/);
+  assert.doesNotMatch(detail, /<dt>HP<\/dt>|<dt>SAN<\/dt>/);
   assert.match(save, /playerName: sanitizePlayerName\(entry\.playerName\)/);
   assert.match(app, /getPartyEntries: \(\) => state\.party\.map/);
   assert.match(app, /assignmentOnly: true/);
