@@ -27,6 +27,7 @@ import {
 
 const DATA_URL = './data/personas.json';
 const STORAGE_KEY = 'lbt_party_color_board_v1';
+let sharedPersonaPersistenceWarningShown = false;
 const PARTY_SORTS = new Set([
   'default', 'no-asc', 'no-desc', 'name', 'hp-desc', 'san-desc', 'speed-desc', 'pattern', 'color',
 ]);
@@ -117,9 +118,14 @@ function applySharedPartySnapshot(keys, sharedPersonas = []) {
   const nextLocal = [...byKey.values()];
   try {
     state.localPersonas = saveLocalPersonas(browserStorage(), nextLocal);
-  } catch {
+    sharedPersonaPersistenceWarningShown = false;
+  } catch (error) {
     // Keep a validated remote copy in memory when local storage is blocked or full.
     state.localPersonas = nextLocal;
+    if (incoming.length && !sharedPersonaPersistenceWarningShown) {
+      showToast('共有の追加人格をブラウザに保存できませんでした。現在のタブでは使えますが、個人編成で継続利用するには追加人格の件数上限・保存容量を確認してから再度共有編成を開いてください。');
+      sharedPersonaPersistenceWarningShown = true;
+    }
   }
   refreshPersonaPool(state.localPersonas);
   state.party = sanitizeParty(keys) || [];
