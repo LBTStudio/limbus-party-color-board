@@ -489,7 +489,7 @@ begin
     where public.session_access_requests.status in ('denied','revoked');
 
   if not exists (select 1 from public.session_access_requests r
-      where r.session_id=v_session_id and r.user_id=v_user_id)
+      where r.session_id=v_session_id and r.user_id=v_user_id and r.status='pending')
      and (select count(*) from public.session_access_requests r
        where r.session_id=v_session_id and r.status='pending') >= 100 then
     raise exception 'PENDING_REQUEST_LIMIT' using errcode = '53300';
