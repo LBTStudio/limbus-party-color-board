@@ -258,6 +258,13 @@ async function refreshSessions() {
 }
 
 async function createSession() {
+  if (typeof bridge.canShareCurrentParty === 'function' && !bridge.canShareCurrentParty()) {
+    const message = '同期・創作・手動追加の人格を含む編成は、現在クラウド共有に対応していません。公式DBの人格だけの編成にするか、個人編成として利用してください。';
+    setStatus(message);
+    bridge.showToast(message);
+    setSharedPanelOpen(true);
+    return;
+  }
   const title = String($('#shared-session-title').value || '').trim();
   if (!title) {
     setStatus('共有編成の名前を入力してください。');

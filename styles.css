@@ -2354,3 +2354,335 @@ h2 {
     transform: none;
   }
 }
+
+
+/* Local LBT persona import and manual persona authoring */
+.picker-local-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px 10px;
+  border-bottom: 1px solid var(--line-dim);
+}
+
+.picker-local-actions .btn {
+  min-height: 38px;
+}
+
+.import-status {
+  padding: 0 20px;
+  overflow-wrap: anywhere;
+}
+
+.import-empty {
+  margin: 8px 20px 14px;
+  padding: 14px;
+}
+
+.import-empty p:last-child {
+  margin-bottom: 0;
+}
+
+.lbt-import-candidates {
+  display: grid;
+  gap: 7px;
+  overflow-y: auto;
+  min-height: 80px;
+  max-height: min(54vh, 520px);
+  padding: 4px 20px 14px;
+  overscroll-behavior: contain;
+}
+
+.lbt-import-option {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid var(--line-dim);
+  border-radius: 8px;
+  background: var(--surface-1);
+  cursor: pointer;
+}
+
+.lbt-import-option:has(input:checked) {
+  border-color: var(--gold-lo);
+  background: color-mix(in oklab, var(--gold) 5%, var(--surface-1));
+}
+
+.lbt-import-option input {
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  accent-color: var(--gold);
+}
+
+.lbt-import-option-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lbt-import-option-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  overflow-wrap: anywhere;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.lbt-import-option-meta {
+  color: var(--tx-dim);
+  font-size: .68rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.lbt-import-option-skills {
+  color: var(--tx-mute);
+  font-size: .66rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.persona-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  color: var(--gold-hi);
+  font-size: .6rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.manual-persona-form {
+  display: grid;
+  gap: 16px;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 20px 8px;
+  overscroll-behavior: contain;
+}
+
+.manual-persona-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manual-persona-fields label,
+.manual-skill-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  color: var(--tx-dim);
+  font-size: .72rem;
+}
+
+.manual-persona-fields .input,
+.manual-skill-field .input,
+.manual-skill-field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.manual-skill-set {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.manual-skill-set legend {
+  padding: 0 7px;
+  color: var(--gold-hi);
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.manual-skill-set > .hint {
+  margin-bottom: 10px;
+  font-size: .68rem;
+}
+
+.manual-skill-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-skill-row {
+  display: grid;
+  grid-template-columns: 34px minmax(130px, 1.3fr) minmax(95px, .9fr) repeat(2, minmax(105px, .8fr));
+  align-items: end;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--line-dim);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .015);
+}
+
+.manual-skill-rank {
+  align-self: center;
+  color: var(--gold);
+  font-family: var(--f-mono);
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.manual-skill-field select {
+  min-height: 40px;
+  padding: 0 6px;
+  font-size: .72rem;
+}
+
+.manual-persona-form .input {
+  padding-inline: 9px;
+}
+
+.manual-persona-form input[type="number"] {
+  appearance: textfield;
+}
+
+.manual-persona-form input[type="number"]::-webkit-inner-spin-button,
+.manual-persona-form input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.picker-item .persona-source-badge {
+  margin-left: 4px;
+}
+
+@media (max-width: 640px) {
+  .picker-local-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px 12px;
+  }
+
+  .picker-local-actions .btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .picker-tools {
+    padding-inline: 12px;
+  }
+
+  .picker-tools .segmented {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .picker-tools .segmented button {
+    flex: 1 0 auto;
+    padding-inline: 8px;
+  }
+
+  .import-status {
+    padding-inline: 14px;
+    font-size: .7rem;
+  }
+
+  .lbt-import-candidates {
+    max-height: min(48dvh, 420px);
+    padding-inline: 12px;
+  }
+
+  .import-empty {
+    margin-inline: 12px;
+  }
+
+  .dialog-actions {
+    flex-wrap: wrap;
+    justify-content: stretch;
+    margin-inline: 12px;
+  }
+
+  .dialog-actions .btn {
+    flex: 1 1 120px;
+    min-height: 42px;
+  }
+
+  .manual-persona-form {
+    padding-inline: 12px;
+  }
+
+  .manual-persona-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .manual-skill-set {
+    padding: 8px;
+  }
+
+  .manual-skill-row {
+    grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .manual-skill-rank {
+    grid-row: 1 / span 2;
+    align-self: start;
+    padding-top: 11px;
+  }
+
+  .manual-skill-field-name {
+    grid-column: span 2;
+  }
+
+  .manual-skill-field-type {
+    grid-column: span 2;
+  }
+
+  .manual-skill-field select {
+    font-size: .78rem;
+  }
+}
+
+
+.picker-item-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  min-width: 0;
+  border-bottom: 1px solid var(--line-dim);
+}
+
+.picker-item-wrap > .picker-item {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-bottom-color: transparent;
+}
+
+.picker-delete-local {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 34px;
+  min-height: 34px;
+  border-color: var(--line-dim);
+  color: var(--tx-mute);
+  font-size: 1.15rem;
+}
+
+.picker-delete-local:hover {
+  border-color: var(--danger);
+  color: #f1a49a;
+}
+
+@media (max-width: 640px) {
+  .picker-item-wrap {
+    gap: 3px;
+  }
+  .picker-delete-local {
+    width: 38px;
+    min-height: 38px;
+  }
+}
