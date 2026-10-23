@@ -12,6 +12,7 @@ const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_se
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261024203000_immediate_delete_manually_ended_sessions.sql');
+const design = read('../docs/shared-sessions-design.md');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
