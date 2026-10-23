@@ -244,7 +244,7 @@ function render() {
     list.append(row);
   });
   if (!sessions.length && configured) {
-    list.append(node('p', 'empty', '共有編成はありません。「＋ 共有編成を作成」から開始してください。'));
+    list.append(node('p', 'empty', '共同編集スペースはありません。「＋ 共同編集スペースを作成」から開始してください。'));
   }
 
   $('#shared-active').hidden = !active;
@@ -296,7 +296,7 @@ async function createSession() {
   }
   const title = String($('#shared-session-title').value || '').trim();
   if (!title) {
-    setStatus('共有編成の名前を入力してください。');
+    setStatus('共同編集スペースの名前を入力してください。');
     $('#shared-session-title').focus();
     return;
   }
@@ -309,7 +309,7 @@ async function createSession() {
     await activateSession(result.session_id, result);
     await refreshSessions();
   } catch (error) {
-    setStatus('共有編成を作成できませんでした: ' + error.message);
+    setStatus('共同編集スペースを作成できませんでした: ' + error.message);
   }
 }
 
