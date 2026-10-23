@@ -1513,3 +1513,23 @@ textarea.input {
 .shared-captcha[hidden] {
   display: none;
 }
+
+
+/* Shared workspace purpose, storage boundaries, and lifecycle */
+.shared-storage-explainer { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:14px 0; }
+.shared-storage-card { min-width:0; padding:13px 14px; border:1px solid var(--line); border-radius:9px; background:var(--surface-1); }
+.shared-storage-card.is-cloud { border-color:color-mix(in oklab,var(--gold) 45%,var(--line)); background:linear-gradient(135deg,color-mix(in oklab,var(--gold) 8%,var(--surface-1)),var(--surface-1)); }
+.shared-storage-label { display:block; margin-bottom:5px; color:var(--tx-mute); font-family:var(--f-mono); font-size:.58rem; letter-spacing:.12em; }
+.shared-storage-card strong { display:block; margin-bottom:4px; color:var(--tx); font-size:.82rem; }
+.shared-storage-card p { margin:0; color:var(--tx-dim); font-size:.7rem; line-height:1.6; }
+.shared-lifecycle { margin:10px 0 14px; padding:10px 12px; border:1px solid var(--line-dim); border-radius:8px; background:color-mix(in oklab,var(--surface-1) 75%,transparent); }
+.shared-lifecycle summary { color:var(--tx-2); font-size:.74rem; font-weight:650; cursor:pointer; }
+.shared-lifecycle ul { display:grid; gap:5px; margin:10px 0; padding-left:20px; color:var(--tx-dim); font-size:.7rem; line-height:1.6; }
+.shared-lifecycle .hint { margin-bottom:0; font-size:.66rem; }
+.shared-active-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.btn-danger-ghost { border-color:color-mix(in oklab,var(--danger) 45%,var(--line)); background:color-mix(in oklab,var(--danger) 8%,var(--surface-1)); color:#e99a91; }
+.btn-danger-ghost:hover { border-color:var(--danger); background:color-mix(in oklab,var(--danger) 16%,var(--surface-1)); color:#ffc0b8; }
+.shared-close-note { margin:0 0 10px; }
+.shared-session-copy { min-width:0; }
+.shared-session-activity { color:var(--gold-hi) !important; }
+@media (max-width:640px) { .shared-storage-explainer { grid-template-columns:1fr; } .shared-active-actions { width:100%; } .shared-active-actions .btn { flex:1 1 auto; } }
