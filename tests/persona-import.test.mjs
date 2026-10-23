@@ -545,7 +545,7 @@ test('renamed LBT roster identity is importable even without sync rank metadata 
         no: 22,
         mode: 'n',
         displayName: '手動で変更した同期名',
-        synced: false,
+        synced: true,
         syncRank: null,
         syncMax: false,
         equipped: false,
