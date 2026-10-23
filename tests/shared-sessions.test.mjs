@@ -104,6 +104,6 @@ test('polling avoids hidden-tab churn and offers explicit conflict handling', ()
   assert.match(sharedUi, /reapplyLocal/);
   assert.match(sharedUi, /accessRevoked/);
   assert.match(sharedUi, /!active\.incomingState/);
-  assert.match(sharedUi, /active\.pollBusy/);
+  assert.match(sharedUi, /session\.pollBusy/);
   assert.match(sharedUi, /未保存の編集、保存処理、または競合があります/);
 });
