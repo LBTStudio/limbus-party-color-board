@@ -199,6 +199,7 @@ test('per-session resource caps are protected by parent-row locks', () => {
 
 
 test('forward migration updates already-deployed resource-cap RPCs', () => {
+  assert.match(forwardMigration, /create index if not exists session_access_requests_decided_by_idx/i);
   for (const name of ['create_party_invite', 'request_party_access', 'decide_party_access_request']) {
     assert.match(forwardMigration, new RegExp('create or replace function public\\.' + name + '\\(', 'i'));
   }
