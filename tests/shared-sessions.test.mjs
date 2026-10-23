@@ -14,6 +14,7 @@ const closedSessionAccessMigration = read('../supabase/migrations/20261023201147
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const sessionCreationRateLimitMigration = read('../supabase/migrations/20261023205650_persist_session_creation_rate_limits.sql');
 const sessionCreationRateLimitBackfillMigration = read('../supabase/migrations/20261023205738_backfill_existing_session_creation_limits.sql');
+const legacyManualArchivePurgeMigration = read('../supabase/migrations/20261023211000_purge_preexisting_manual_archives.sql');
 const legacyClosedSessionAccessMigration = read('../supabase/migrations/20261023195900_restrict_closed_session_status_to_related_users.sql');
 const design = read('../docs/shared-sessions-design.md');
 const seed = read('../supabase/seed-persona-keys.sql');
@@ -382,6 +383,16 @@ test('session creation rate limits survive immediate deletion of the workspace r
     fn.indexOf('insert into public.party_session_creation_log') < fn.indexOf('insert into public.party_sessions'),
     'record creation limits independently of the session row that may later be deleted',
   );
+});
+
+test('rollout purges only previously archived sessions too recent to be inactivity-archived', () => {
+  assert.match(legacyManualArchivePurgeMigration, /delete from public\.party_sessions/i);
+  assert.match(legacyManualArchivePurgeMigration, /archived_at is not null/i);
+  assert.match(legacyManualArchivePurgeMigration, /created_at > now\(\) - interval '30 days'/i);
+  assert.doesNotMatch(legacyManualArchivePurgeMigration, /delete from public\.party_session_creation_log/i,
+    'creation-rate-limit records must survive deleted session rows');
+  assert.match(lifecycleMigration, /last_activity_at < now\(\) - interval '30 days'/i,
+    'automatic idle archival still requires 30 days of inactivity');
 });
 
 test('manual workspace ending deletes data immediately while idle cleanup keeps its seven-day grace period', () => {
