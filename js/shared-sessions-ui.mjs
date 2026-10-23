@@ -618,12 +618,12 @@ async function checkAccess(quiet = false) {
       accessTimer = null;
       pendingRequestSessionId = null;
       await activateSession(sessionId);
-    } else if (['denied', 'revoked', 'not_requested'].includes(result.status)) {
+    } else if (['denied', 'revoked', 'not_requested', 'closed'].includes(result.status)) {
       if (accessTimer) clearTimeout(accessTimer);
       accessTimer = null;
       pendingRequestSessionId = null;
       setRoute('');
-      setStatus('参加申請の状態は「' + result.status + '」です。発行者へ確認してください。');
+      setStatus(result.status === 'closed' ? 'このセッションは終了しています。' : '参加申請の状態は「' + result.status + '」です。発行者へ確認してください。');
     } else if (!quiet) {
       setStatus('まだ承認されていません。承認後は自動で共有編成を開きます。');
     }
