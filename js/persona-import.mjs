@@ -399,7 +399,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
       byKey.delete(previousKey);
       priorities.delete(previousKey);
     }
-    byKey.set(candidate.key, candidate);
+    byKey.set(candidate.key, { ...candidate, _sourceSelectionPriority: priority });
     priorities.set(candidate.key, priority);
     if (sourceRef) sourceKeys.set(sourceRef, candidate.key);
   };
