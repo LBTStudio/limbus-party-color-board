@@ -569,7 +569,7 @@ function syncControls() {
 }
 
 function syncPickerMode() {
-  for (const button of $('[data-picker-mode]')) {
+  for (const button of $$('[data-picker-mode]')) {
     button.setAttribute('aria-pressed', String(button.dataset.pickerMode === state.pickerMode));
   }
 }
