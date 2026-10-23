@@ -66,6 +66,22 @@ test('manual and LBT imports do not bypass the local-persona cap through memory-
   );
 });
 
+test('shared persona snapshots warn once when local persistence fails and recover after a successful save', () => {
+  const start = app.indexOf('function applySharedPartySnapshot(');
+  const end = app.indexOf('\nfunction currentPartySnapshotSize()', start);
+  const snapshot = app.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(snapshot, /state\.localPersonas = saveLocalPersonas\(browserStorage\(\), nextLocal\)/);
+  assert.match(snapshot, /sharedPersonaPersistenceWarningShown = false/);
+  assert.match(snapshot, /state\.localPersonas = nextLocal/);
+  assert.match(snapshot, /if \(incoming\.length && !sharedPersonaPersistenceWarningShown\)/);
+  assert.match(snapshot, /共有の追加人格をブラウザに保存できませんでした/);
+  assert.ok(
+    snapshot.indexOf('state.localPersonas = nextLocal') < snapshot.indexOf('showToast('),
+    'keep the validated remote copy usable in the current tab even when persistence fails',
+  );
+});
+
 test('saveState warns once when a local-only lineup cannot be persisted and clears the warning after recovery', () => {
   const start = app.indexOf('function saveState()');
   const end = app.indexOf('\nfunction init(', start);
