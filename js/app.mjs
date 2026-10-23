@@ -791,8 +791,7 @@ function renderParty() {
       state.selectedSin && colorCount > 0 ? 'is-hot' : '',
     ].filter(Boolean).join(' ');
     const counts = Object.fromEntries(SIN_ORDER.map((sin) => [sin, countColor(persona, sin)]));
-    const resources = SIN_ORDER
-      .filter((sin) => counts[sin] > 0)
+    const resources = [...SIN_ORDER]
       .sort((a, b) => counts[b] - counts[a] || SIN_ORDER.indexOf(a) - SIN_ORDER.indexOf(b));
 
     const stripLabels = persona.slots.map((skillSlot, index) => (
@@ -823,7 +822,7 @@ function renderParty() {
       : '<span class="keyword">キーワードなし</span>';
 
     const resourceChips = resources.map((sin) => (
-      `<span class="res-chip" style="--sin:${SIN_META[sin].color}"><i aria-hidden="true"></i>${escapeHtml(sin)}×${counts[sin]}</span>`
+      `<span class="res-chip${counts[sin] === 0 ? ' is-zero' : ''}" style="--sin:${SIN_META[sin].color}"><i aria-hidden="true"></i>${escapeHtml(sin)}×${counts[sin]}</span>`
     )).join('');
 
     cards.push(`
@@ -862,7 +861,7 @@ function renderParty() {
         </dl>
         <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
-        <div class="card-resources">${resourceChips || '<span class="res-chip">資源色なし</span>'}</div>
+        <div class="card-resources" aria-label="大罪資源内訳">${resourceChips}</div>
       </article>
     `);
   }
