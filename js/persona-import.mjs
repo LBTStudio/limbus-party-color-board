@@ -447,7 +447,15 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
         // A more complete saved roster build can still replace it if it reflects
         // more visible changes than this stale equipped-state snapshot.
         const priority = (base ? relevantDataDifferenceScore(candidate, base) * 10 : 0) + 2;
-        addCandidate(candidate, priority);
+        addCandidate({
+          ...candidate,
+          _debugSelection: {
+            modeForMap,
+            no,
+            foundBase: Boolean(base),
+            catalog: catalog.map((item) => ({ key: item.key, kind: item.kind, no: item.no })),
+          },
+        }, priority);
       }
     }
 
