@@ -25,6 +25,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check js/app.mjs
+          node --check js/security.mjs
           node --check js/shared-sessions.mjs
           node --check js/shared-sessions-ui.mjs
           node --check js/supabase-config.mjs
