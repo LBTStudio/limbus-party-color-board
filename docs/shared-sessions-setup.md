@@ -31,9 +31,20 @@ Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous
 
 匿名ユーザーの ID はブラウザの保存領域に紐づきます。ブラウザのデータ削除、別ブラウザ／別端末への移行、ログアウトなどで元の ID を失うと、その ID が所有していたセッションを復旧できません。最初はテスト用セッションのみで確認してください。本運用前には、所有者アカウントをメール／OAuth にリンクできる認証導線を追加するのが安全です。
 
-匿名サインインは第三者に悪用される可能性があるため、Supabase の Auth rate limit を確認し、公開範囲を広げる前に CAPTCHA / Turnstile などのボット対策も検討してください。現行コードには CAPTCHA トークンの連携はまだありません。
+匿名サインインは第三者に悪用される可能性があるため、Supabase の Auth rate limit を確認し、公開範囲を広げる前に上記の CAPTCHA / Turnstile を必ず設定してください。
 
-## 4. デプロイ結果の確認
+## 4. 公開前に必須：Cloudflare Turnstile / CAPTCHA
+
+匿名ユーザーを大量生成する攻撃は、ユーザー単位の SQL レート制限だけでは防ぎ切れません。**公開範囲を広げる前に CAPTCHA を有効にしてください。**
+
+1. Cloudflare Turnstile でこのサイトのホスト名を登録し、Site key と Secret key を取得する。
+2. \`js/supabase-config.mjs\` の \`TURNSTILE_SITE_KEY\` を Site key に置き換えてコミットする。Site key は公開値なのでリポジトリに置いて構わない。
+3. Supabase Dashboard → Authentication → Bot and Abuse Protection で CAPTCHA protection を有効化し、Cloudflare Turnstile を選択して対応する Secret key を設定する。**Secret key は Supabase Dashboard にのみ保存し、GitHub / ブラウザ / チャットへ置かない。**
+4. デプロイ後、シークレットウィンドウで初回共有操作時に CAPTCHA が表示され、確認を完了しないと匿名ログインが作成されないことを確認する。失敗時・期限切れ時の再試行もテストする。
+
+コードには Turnstile の Site key と認証時の \`captchaToken\` を渡す仕組みを追加していますが、Cloudflare の Site key / Secret key を登録し、Supabase 側で CAPTCHA を有効化するまでは有効な防御になりません。Supabase の [CAPTCHA protection 公式手順](https://supabase.com/docs/guides/auth/auth-captcha) を参照してください。
+
+## 5. デプロイ結果の確認
 
 Supabase GitHub Integration は接続済みとのことなので、Project Settings → Integrations で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認してください。SupabaseのGitHub連携では、productionブランチに対応する `[remotes.main]` の設定を使い、未適用のmigrationを適用します。今回の `supabase/config.toml` は匿名ログインを宣言し、migration後に `seed-persona-keys.sql` を実行する設定になっています。
 
@@ -46,7 +57,7 @@ PRを `main` にマージしたら、Supabase Dashboard の Integrations / デ�
 公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
 
 **手動でSQL Editorから同じmigrationを実行するのは、GitHub連携で適用しない場合だけにしてください。** 両方を使うと migration 履歴がずれる可能性があります。
-## 5. 動作確認
+## 6. 動作確認
 
 1. GitHub Pages の配信更新後、サイトを開き「空の共有セッションを作成」を押す。
 2. 任意のセッション名で作成し、発行者として編成に人格を追加する。パネルの状態が「保存済み」になることを確認する。
@@ -55,13 +66,13 @@ PRを `main` にマージしたら、Supabase Dashboard の Integrations / デ�
 5. 参加者側で承認が確認され、編成が表示されることを確認する。編集者による追加・交換・削除は数秒以内に他画面へ同期される。閲覧者の編集ボタンが無効であることも確認する。
 6. 2画面でほぼ同時に編集し、競合 UI が出ることを確認する。所有者画面で参加者を閲覧者／編集者へ変更できること、招待リンク失効、参加権限剥奪、セッション終了もテストする。
 
-## 6. 人格DB更新時
+## 7. 人格DB更新時
 
 `data/personas.json` が更新されたら、`npm run build:supabase-seed` が `supabase/seed-persona-keys.sql` を再生成する。この seed SQL は DB の許可キー一覧を `data/personas.json` と完全一致させるため、新しいキーの追加だけでなく削除されたキーも反映します。人格データが更新された場合は SQL Editor で `supabase/seed-persona-keys.sql` を再実行して同期してください。通常の人格データ更新 workflow はこの seed を自動生成し、差分をコミットする。
 
 ## 未完了事項
 
 - この初期実装は匿名 Auth ベースで、メール／OAuth による所有者の本人確認・アカウント復旧は未実装。
-- CAPTCHA / Turnstile の UI/API 連携とアクセス申請スパム対策は追加が必要。
+- CAPTCHA / Turnstile はコード側のトークン連携を実装済みだが、Cloudflare Site key / Secret key の登録と Supabase 側 CAPTCHA 有効化は管理者操作が必要。
 - Supabase の実 DB へ SQL を適用した成功確認は、この PR からは行えていない。マイグレーションを適用し、動作確認手順を実施する必要がある。
 - RLS/RPC の負荷・権限テストを実 Supabase で行う必要がある。既存の Node テストはデータ集計、パーサー、静的な SQL セキュリティ条件を確認するのみ。
