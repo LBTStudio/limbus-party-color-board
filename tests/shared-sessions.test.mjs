@@ -377,13 +377,14 @@ test('main board is prioritized and infrequent operations are grouped', () => {
 });
 
 
-test('persona skill color overview maps each labeled strip to the matching skill row', () => {
+test('persona skill color overview keeps the legacy compact strip and explains skill order', () => {
   assert.match(html, /id="persona-color-legend"/);
-  assert.match(html, /上部の S0〜S4 と、下段の同じ番号のスキル行が対応します/);
-  assert.match(app, /class="color-strip-slot"[^>]*title="\$\{escapeHtml\(label\)\}"><b>\$\{escapeHtml\(skillSlot\.rank\)\}<\/b><\/span>/);
-  assert.match(app, /aria-label="各区画はスキル別の罪悪属性です。S番号は下段の同じ番号に対応します"/);
-  assert.match(styles, /\.color-strip-slot b \{/);
-  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
+  assert.match(html, /色帯は左からS0→S4の順です/);
+  assert.match(app, /class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です"/);
+  assert.match(app, /<span style="background:\$\{gradientFor\(skillSlot\.colors\)\}" title="\$\{escapeHtml\(label\)\}"><\/span>/);
+  assert.match(styles, /\.color-strip \{\s*display: flex;\s*height: 4px;[\s\S]*?\.color-strip span \{\s*flex: 1 1 0;/);
+  assert.doesNotMatch(app, /color-strip-slot/);
+  assert.doesNotMatch(styles, /color-strip-slot/);
 });
 
 test('mobile refinement keeps the collapsed shared-session dock compact and respects phone safe areas', () => {

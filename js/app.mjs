@@ -6,6 +6,7 @@ import {
   countColor,
   makePersonaMap,
   parsePartySheet,
+  parsePassiveRequirements,
   personaKindLabel,
   personaNumberLabel,
   sheetNumber,
@@ -29,6 +30,7 @@ const PARTY_SORTS = new Set([
   'default', 'no-asc', 'no-desc', 'name', 'hp-desc', 'san-desc', 'speed-desc', 'pattern', 'color',
 ]);
 const RESOURCE_SORTS = new Set(['count-desc', 'count-asc', 'personas-desc', 'sin-order', 'name']);
+const SKILL_SORT_SLOTS = new Set(['all', 'S0', 'S1', 'S2', 'S3', 'S4']);
 
 const state = {
   data: null,
@@ -37,6 +39,7 @@ const state = {
   party: [],
   partySort: 'default',
   resourceSort: 'count-desc',
+  skillSortSlot: 'all',
   selectedSin: null,
   previousPartySort: 'default',
   pickerIndex: null,
@@ -180,6 +183,7 @@ function saveState() {
     party: savedParty.map((entry) => typeof entry === 'string' ? entry : entry.key),
     partySort: state.partySort,
     resourceSort: state.resourceSort,
+    skillSortSlot: state.skillSortSlot,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -241,6 +245,7 @@ function init(data) {
 
   if (stored && PARTY_SORTS.has(stored.partySort)) state.partySort = stored.partySort;
   if (stored && RESOURCE_SORTS.has(stored.resourceSort)) state.resourceSort = stored.resourceSort;
+  if (stored && SKILL_SORT_SLOTS.has(stored.skillSortSlot)) state.skillSortSlot = stored.skillSortSlot;
   state.previousPartySort = state.partySort === 'color' ? 'default' : state.partySort;
 
   bindEvents();
@@ -255,6 +260,12 @@ function bindEvents() {
   });
   $('#resource-sort').addEventListener('change', (event) => {
     state.resourceSort = event.target.value;
+    saveState();
+    renderAll();
+  });
+  $('#skill-sort-slot').addEventListener('change', (event) => {
+    state.skillSortSlot = SKILL_SORT_SLOTS.has(event.target.value) ? event.target.value : 'all';
+    if (state.selectedSin) state.partySort = 'color';
     saveState();
     renderAll();
   });
@@ -414,9 +425,24 @@ function selectedStyle(sin) {
   return `--sin:${SIN_META[sin].color}`;
 }
 
+function renderPassiveCondition(condition) {
+  const source = String(condition || '—');
+  const requirements = parsePassiveRequirements(source);
+  if (requirements.length === 0) return escapeHtml(source);
+
+  let output = '';
+  let cursor = 0;
+  for (const requirement of requirements) {
+    output += escapeHtml(source.slice(cursor, requirement.start));
+    output += `<span class="passive-sin" style="--sin:${SIN_META[requirement.sin].color}" title="必要な大罪資源">${escapeHtml(requirement.sin)}<b>×${requirement.count}</b></span>`;
+    cursor = requirement.start + requirement.length;
+  }
+  return output + escapeHtml(source.slice(cursor));
+}
+
 function renderMatrix() {
   const result = state.lastAggregate;
-  const sorted = sortParty(state.party, state.partySort, state.selectedSin, state.map);
+  const sorted = sortParty(state.party, state.partySort, state.selectedSin, state.map, state.skillSortSlot);
 
   let head = '<tr><th class="member-head" scope="col">人格</th>';
   for (let index = 0; index < 5; index++) {
@@ -478,7 +504,7 @@ function gradientFor(colors) {
 }
 
 function renderParty() {
-  const sorted = sortParty(state.party, state.partySort, state.selectedSin, state.map);
+  const sorted = sortParty(state.party, state.partySort, state.selectedSin, state.map, state.skillSortSlot);
   const selectedColor = state.selectedSin ? SIN_META[state.selectedSin].color : 'transparent';
   const cards = [];
 
@@ -501,7 +527,7 @@ function renderParty() {
     const strip = persona.slots.map((skillSlot) => {
       const sins = skillSlot.colors.length ? skillSlot.colors.join('・') : '罪悪属性なし';
       const label = `${skillSlot.rank} ${skillSlot.name} / ${skillSlot.type} / ${sins}`;
-      return `<span class="color-strip-slot" style="background:${gradientFor(skillSlot.colors)}" title="${escapeHtml(label)}"><b>${escapeHtml(skillSlot.rank)}</b></span>`;
+      return `<span style="background:${gradientFor(skillSlot.colors)}" title="${escapeHtml(label)}"></span>`;
     }).join('');
 
     const slots = persona.slots.map((skillSlot) => {
@@ -528,7 +554,7 @@ function renderParty() {
 
     cards.push(`
       <article class="${cardClass}" data-key="${escapeHtml(persona.key)}" style="--selected-sin-color:${selectedColor}">
-        <div class="color-strip" role="group" aria-label="各区画はスキル別の罪悪属性です。S番号は下段の同じ番号に対応します">${strip}</div>
+        <div class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です">${strip}</div>
         <div class="card-head">
           <div class="card-id">
             <span class="card-slot">SLOT ${slot}</span>
@@ -551,7 +577,7 @@ function renderParty() {
           <div><dt>SAN</dt><dd>${escapeHtml(persona.san)}</dd></div>
           <div><dt>速度</dt><dd>${escapeHtml(persona.speed)}</dd></div>
         </dl>
-        <p class="passive"><b>パッシブ</b> ${escapeHtml(persona.passiveCond || '—')}${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
+        <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
         <div class="card-resources">${resourceChips || '<span class="res-chip">資源色なし</span>'}</div>
       </article>
@@ -565,6 +591,7 @@ function renderParty() {
 function syncControls() {
   $('#party-sort').value = state.partySort;
   $('#resource-sort').value = state.resourceSort;
+  $('#skill-sort-slot').value = state.skillSortSlot;
   syncPickerMode();
 }
 
@@ -950,6 +977,7 @@ function applyImport() {
   state.selectedSin = null;
   state.partySort = 'default';
   state.previousPartySort = 'default';
+  state.skillSortSlot = 'all';
   saveState();
   renderAll();
   $('#import-dialog').close();
@@ -964,6 +992,7 @@ function resetParty() {
   state.partySort = 'default';
   state.previousPartySort = 'default';
   state.resourceSort = 'count-desc';
+  state.skillSortSlot = 'all';
   saveState();
   renderAll();
   showToast('編成を空にしました。');
