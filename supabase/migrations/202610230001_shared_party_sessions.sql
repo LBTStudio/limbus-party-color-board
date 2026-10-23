@@ -706,7 +706,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog
-as $
+as $$
 declare
   v_user_id uuid := auth.uid();
 begin
@@ -726,7 +726,7 @@ begin
   if not found then raise exception 'MEMBER_NOT_FOUND' using errcode = 'P0002'; end if;
   return jsonb_build_object('status','updated','role',p_role);
 end;
-$;
+$$;
 
 create or replace function public.remove_party_session_member(p_session_id uuid, p_user_id uuid)
 returns jsonb
