@@ -31,7 +31,7 @@ test('shared session tables have RLS enabled and browser roles cannot access the
   ]) {
     assert.match(migration, new RegExp('alter table public\\.' + table + ' enable row level security', 'i'));
   }
-  assert.match(migration, /revoke all on table[\s\S]+from anon, authenticated/i);
+  assert.match(migration, /revoke all on table[\\s\\S]+from public, anon, authenticated/i);
   assert.match(migration, /revoke all on function public\._party_session_snapshot\(uuid\) from public, anon, authenticated/i);
   assert.doesNotMatch(migration, /create policy/i);
   assert.doesNotMatch(migration, /set search_path = pg_catalog, public/i);
@@ -101,4 +101,7 @@ test('polling avoids hidden-tab churn and offers explicit conflict handling', ()
   assert.match(sharedUi, /operationId/);
   assert.match(sharedUi, /reapplyLocal/);
   assert.match(sharedUi, /accessRevoked/);
+  assert.match(sharedUi, /!active\.incomingState/);
+  assert.match(sharedUi, /active\.pollBusy/);
+  assert.match(sharedUi, /未保存の編集、保存処理、または競合があります/);
 });
