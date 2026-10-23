@@ -27,11 +27,22 @@ export const MAX_IMPORT_CHARS = 20_000;
 export const MAX_IMPORT_ROWS = 200;
 
 export function personaKindLabel(persona) {
-  return persona.kind === 'tokui' ? '特異' : '通常';
+  if (persona?.variantType === 'sync') return '同期';
+  if (persona?.kind === 'custom' || persona?.variantType === 'custom' || persona?.variantType === 'manual') return '創作';
+  return persona?.kind === 'tokui' ? '特異' : '通常';
 }
 
 export function personaNumberLabel(persona) {
-  return persona.kind === 'tokui'
+  if (persona?.kind === 'custom' || persona?.variantType === 'custom' || persona?.variantType === 'manual') return '創作';
+  if (persona?.variantType === 'sync') {
+    const original = persona.kind === 'tokui'
+      ? `特異 ${String(persona.no).padStart(3, '0')}`
+      : `No.${String(persona.no).padStart(3, '0')}`;
+    const rank = persona.syncRank ? `・同期${persona.syncRank}` : '';
+    const max = persona.syncMax ? '・MAX' : '';
+    return `${original}（同期）${rank}${max}`;
+  }
+  return persona?.kind === 'tokui'
     ? `特異 ${String(persona.no).padStart(3, '0')}`
     : `No.${String(persona.no).padStart(3, '0')}`;
 }
