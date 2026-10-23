@@ -278,6 +278,22 @@ test('shared session lifecycle clearly separates browser-local and cloud data', 
   assert.match(sharedUi, /共有データは7日後に完全削除/);
 });
 
+test('workspace creation is blocked before the create RPC when the current shared session has unsettled edits', () => {
+  assert.match(sharedUi, /function sessionSwitchError\(\)/);
+  const createStart = sharedUi.indexOf('async function createSession()');
+  const createEnd = sharedUi.indexOf('function sessionSwitchError()', createStart);
+  const createBody = sharedUi.slice(createStart, createEnd);
+  assert.ok(createStart >= 0 && createEnd > createStart);
+  assert.match(createBody, /const switchError = sessionSwitchError\(\)/);
+  assert.ok(
+    createBody.indexOf('sessionSwitchError()') < createBody.indexOf('getApi().createSession'),
+    'reject before creating a server-side workspace that cannot be opened',
+  );
+  const activateStart = sharedUi.indexOf('async function activateSession(');
+  const activateBody = sharedUi.slice(activateStart, activateStart + 500);
+  assert.match(activateBody, /const switchError = sessionSwitchError\(\)/);
+});
+
 test('workspace creation shares one name while invitees retain their own display name', () => {
   assert.match(html, /共同編集スペース名（作成者の表示名を兼ねます）/);
   assert.match(html, /id="shared-session-title" maxlength="40"/);

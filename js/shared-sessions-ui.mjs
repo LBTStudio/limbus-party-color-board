@@ -291,6 +291,11 @@ async function refreshSessions() {
 }
 
 async function createSession() {
+  const switchError = sessionSwitchError();
+  if (switchError) {
+    setStatus(switchError);
+    return;
+  }
   const shareError = shareabilityError();
   if (shareError) {
     setStatus(shareError);
@@ -316,11 +321,18 @@ async function createSession() {
   }
 }
 
-async function activateSession(sessionId, prefetched = null) {
-  if (active && (active.saveBusy || active.retry || active.incomingState
-    || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas))) {
-    throw new Error('未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。');
+function sessionSwitchError() {
+  if (!active) return '';
+  if (active.saveBusy || active.retry || active.incomingState
+    || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas)) {
+    return '未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。';
   }
+  return '';
+}
+
+async function activateSession(sessionId, prefetched = null) {
+  const switchError = sessionSwitchError();
+  if (switchError) throw new Error(switchError);
   const snapshot = prefetched && Array.isArray(prefetched.party_keys)
     ? prefetched
     : await getApi().pollSession(sessionId, -1);
