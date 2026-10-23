@@ -108,6 +108,7 @@ test('multiple LBT accounts expose their owned official personas and active acco
   }));
   storage.setItem('lbt_account_acct-b', JSON.stringify({
     charName: 'B',
+    plName: 'PL-B',
     roster: { personas: [{ mode: 'n', no: 3, uid: 'n3' }] },
   }));
 
@@ -121,6 +122,7 @@ test('multiple LBT accounts expose their owned official personas and active acco
   assert.equal(accounts.length, 2);
   assert.equal(accounts[0].id, 'acct-b', 'active account is presented first');
   assert.equal(accounts[0].active, true);
+  assert.equal(accounts[0].playerName, 'PL-B');
   assert.deepEqual(accounts[0].ownedKeys, ['n3']);
   assert.equal(accounts[0].ownedCount, 1);
   const accountA = accounts.find((account) => account.id === 'acct-a');
@@ -266,6 +268,9 @@ test('LBT save discovery extracts the current synced build, saved build differen
   assert.equal(current.passiveName, '編集パッシブ');
   assert.equal(current.passiveCond, '嫉妬x1');
   assert.equal(current.passiveEffect, '編集済みの効果');
+  assert.equal(current.resSlash, '弱点');
+  assert.equal(current.resPierce, '普通');
+  assert.equal(current.resBlunt, '耐性');
   assert.equal(current.slots[0].name, '変更されたS0');
   assert.equal(current.slots[0].type, '斬撃防御');
   assert.deepEqual(current.slots[0].colors, ['傲慢']);
