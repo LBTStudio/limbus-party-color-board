@@ -58,6 +58,17 @@
           <option value="name">名前順</option>
         </select>
       </div>
+      <div class="control control-skill-sort">
+        <label for="skill-sort-slot">資源色ソートの対象スキル</label>
+        <select id="skill-sort-slot">
+          <option value="all">全スキル合計</option>
+          <option value="S0">戦術0（S0）</option>
+          <option value="S1">戦術1（S1）</option>
+          <option value="S2">戦術2（S2）</option>
+          <option value="S3">戦術3（S3）</option>
+          <option value="S4">戦術4（S4）</option>
+        </select>
+      </div>
     </div>
     <details class="toolbar-more">
       <summary>その他の操作</summary>
@@ -78,7 +89,7 @@
       </div>
       <p class="section-meta"><span id="resource-total">合計 0</span><span id="selected-sin-label" hidden></span></p>
     </div>
-    <p class="hint">カードを押すと、その色を出せる人格を上に並べます。数字は資源総数、下段はその色を出せる人格数です。</p>
+    <p class="hint">カードを押すとその罪悪資源を選択し、出せる人格を上に並べます。「資源色ソートの対象スキル」でS0〜S4を指定すると、そのスキルに選択色を持つ人格が優先されます。数字は資源総数、下段はその色を出せる人格数です。</p>
     <div id="resource-cards" class="resource-grid" aria-live="polite"></div>
   </section>
 
@@ -108,7 +119,7 @@
       </div>
       <p class="section-meta" id="party-count-2">0名</p>
     </div>
-    <p class="hint persona-color-legend" id="persona-color-legend"><strong>色帯の見方：</strong>各色の区画はスキルごとの罪悪属性です。上部の S0〜S4 と、下段の同じ番号のスキル行が対応します。</p>
+    <p class="hint persona-color-legend" id="persona-color-legend"><strong>色帯の見方：</strong>色帯は左からS0→S4の順です。各区画の色は、下段の同じ番号のスキルに設定された罪悪属性を示します。</p>
     <div id="party-cards" class="party-grid"></div>
     <div id="empty-state" class="empty" hidden>
       <p>編成が空です。「＋ 人格を追加」から人格を選んでください。</p>

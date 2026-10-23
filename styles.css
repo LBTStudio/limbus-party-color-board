@@ -660,35 +660,18 @@ textarea.input {
 }
 
 .color-strip {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px;
-  margin: -3px 0 1px;
-}
-
-.color-strip-slot {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  min-height: 23px;
+  height: 4px;
+  gap: 2px;
+  margin: -3px 0 1px;
+  border-radius: 99px;
   overflow: hidden;
-  border: 1px solid rgba(242, 236, 225, .16);
-  border-radius: 4px;
-  background-color: var(--surface-3);
 }
 
-.color-strip-slot b {
-  max-width: 100%;
-  padding: 2px 5px;
-  border-radius: 3px;
-  background: rgba(14, 11, 9, .82);
-  color: #fff8e8;
-  font-family: var(--f-mono);
-  font-size: .64rem;
-  font-weight: 750;
-  line-height: 1.2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, .7);
+.color-strip span {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 1px;
 }
 
 .card-head {
@@ -847,6 +830,29 @@ textarea.input {
 .passive b {
   color: var(--gold);
   font-weight: 600;
+}
+
+.passive-sin {
+  --sin: var(--tx-mute);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 2px 2px 0;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in oklab, var(--sin) 45%, transparent);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--sin) 16%, transparent);
+  color: color-mix(in oklab, var(--sin) 88%, var(--tx));
+  font-size: .68rem;
+  font-weight: 650;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.passive .passive-sin b {
+  color: inherit;
+  font-size: .64rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .slot-list {
@@ -2170,6 +2176,10 @@ h2 {
     width: 100%;
   }
 
+  .control-skill-sort {
+    grid-column: 1 / -1;
+  }
+
   .control label {
     min-height: 1.8em;
     font-size: 0.67rem;
@@ -2234,18 +2244,6 @@ h2 {
     font-size: .7rem;
   }
 
-  .color-strip {
-    gap: 3px;
-  }
-
-  .color-strip-slot {
-    min-height: 22px;
-  }
-
-  .color-strip-slot b {
-    padding-inline: 4px;
-    font-size: .62rem;
-  }
 
   .shared-panel {
     right: calc(8px + env(safe-area-inset-right, 0px));

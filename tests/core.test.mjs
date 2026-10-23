@@ -9,6 +9,7 @@ import {
   countColor,
   makePersonaMap,
   parsePartySheet,
+  parsePassiveRequirements,
   parseSpeedAverage,
   personaNumberLabel,
   resolvePersona,
@@ -99,6 +100,34 @@ test('sorting by a selected color promotes the identities that provide it', () =
   assert.equal(sorted[0].key, 'n34');
   assert.equal(countColor(map.get('n34'), '憤怒'), 1);
   assert.equal(countColor(map.get('n48'), '憤怒'), 0);
+});
+
+test('skill-specific resource sorting prioritizes a matching tactical slot before total counts', () => {
+  const slotPersonas = [
+    { key: 'a', kind: 'normal', no: 1, name: 'A', slots: [
+      { rank: 'S0', colors: ['憤怒'] }, { rank: 'S1', colors: ['色欲'] },
+    ] },
+    { key: 'b', kind: 'normal', no: 2, name: 'B', slots: [
+      { rank: 'S0', colors: ['色欲'] }, { rank: 'S1', colors: ['憤怒'] },
+    ] },
+  ];
+  const slotMap = makePersonaMap(slotPersonas);
+  const slotParty = slotPersonas.map((persona) => ({ key: persona.key }));
+
+  assert.deepEqual(sortParty(slotParty, 'color', '色欲', slotMap, 'S0').map((entry) => entry.key), ['b', 'a']);
+  assert.deepEqual(sortParty(slotParty, 'color', '色欲', slotMap, 'all').map((entry) => entry.key), ['a', 'b']);
+});
+
+test('passive resource requirements parse sin names and quantities without guessing from prose', () => {
+  assert.deepEqual(
+    parsePassiveRequirements('色欲x2 共鳴').map(({ sin, count }) => ({ sin, count })),
+    [{ sin: '色欲', count: 2 }],
+  );
+  assert.deepEqual(
+    parsePassiveRequirements('傲慢x2 憤怒 x3 保有').map(({ sin, count }) => ({ sin, count })),
+    [{ sin: '傲慢', count: 2 }, { sin: '憤怒', count: 3 }],
+  );
+  assert.deepEqual(parsePassiveRequirements('夜明事務所所属の味方3名以上'), []);
 });
 
 test('party sorting by number, name and speed is deterministic', () => {

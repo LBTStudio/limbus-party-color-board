@@ -70,6 +70,17 @@ export function countColor(persona, sin) {
   return count;
 }
 
+export function parsePassiveRequirements(condition) {
+  const source = String(condition ?? '');
+  const pattern = new RegExp(`(${SIN_ORDER.join('|')})\\s*[xX×＊*]\\s*(\\d+)`, 'gu');
+  return [...source.matchAll(pattern)].map((match) => ({
+    sin: match[1],
+    count: Number(match[2]),
+    start: match.index,
+    length: match[0].length,
+  }));
+}
+
 export function totalColors(persona) {
   let count = 0;
   for (const slot of persona?.slots ?? []) count += slotColors(slot).length;
@@ -125,11 +136,18 @@ function colorPattern(persona) {
   });
 }
 
-export function sortParty(party, mode, selectedSin, personaMap) {
+export function sortParty(party, mode, selectedSin, personaMap, selectedSkill = 'all') {
   const copy = [...party];
   const originalIndex = new Map(party.map((entry, index) => [entry.key, index]));
   const persona = (entry) => personaMap.get(entry.key);
   const fallback = (a, b) => originalIndex.get(a.key) - originalIndex.get(b.key);
+  const selectedSkillIndex = /^S[0-4]$/.test(selectedSkill) ? Number(selectedSkill.slice(1)) : -1;
+  const selectedSkillMatch = (target) => {
+    if (selectedSkillIndex < 0) return 0;
+    const identity = persona(target);
+    const slot = identity?.slots?.find((item) => item.rank === selectedSkill) ?? identity?.slots?.[selectedSkillIndex];
+    return slotColors(slot).includes(selectedSin) ? 1 : 0;
+  };
   const noCompare = (a, b) => {
     const pa = persona(a);
     const pb = persona(b);
@@ -162,7 +180,8 @@ export function sortParty(party, mode, selectedSin, personaMap) {
         copy.sort((a, b) => {
           const pa = persona(a);
           const pb = persona(b);
-          return countColor(pb, selectedSin) - countColor(pa, selectedSin)
+          return (selectedSkillIndex >= 0 ? selectedSkillMatch(b) - selectedSkillMatch(a) : 0)
+            || countColor(pb, selectedSin) - countColor(pa, selectedSin)
             || totalColors(pb) - totalColors(pa)
             || fallback(a, b);
         });
