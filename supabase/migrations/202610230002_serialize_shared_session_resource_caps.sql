@@ -3,6 +3,9 @@
 -- Recreate only affected RPCs so the lock-order fixes reach the live database
 -- without recreating tables or touching existing session data.
 
+create index if not exists session_access_requests_decided_by_idx
+  on public.session_access_requests (decided_by);
+
 create or replace function public.create_party_invite(p_session_id uuid, p_expires_hours integer default 168)
 returns jsonb
 language plpgsql
