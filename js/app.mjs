@@ -207,6 +207,7 @@ function refreshSelectedLbtPersonaData() {
           showToast('LBT同期人格の既存データを更新しました。追加の人格を自動登録するには追加人格ライブラリの空きを確保してください。');
         } catch (updateError) {
           mergeLocalPersonasInMemory(updatesOnly);
+          renderAll();
           showToast('LBT同期人格は現在のタブに反映しましたが、ブラウザへ保存できませんでした。');
           if (shared?.isActive) shared.onPartyChanged();
           return true;
@@ -217,6 +218,7 @@ function refreshSelectedLbtPersonaData() {
       }
     } else {
       mergeLocalPersonasInMemory(toApply);
+      renderAll();
       showToast('LBT同期人格を現在のタブに反映しましたが、ブラウザへ保存できませんでした: ' + (error.message || '保存エラー'));
       if (shared?.isActive) shared.onPartyChanged();
       return true;
@@ -224,6 +226,7 @@ function refreshSelectedLbtPersonaData() {
   }
 
   refreshPersonaPool(applied.personas);
+  renderAll();
   if (applied.added || applied.updated) {
     showToast(`LBTアカウント「${selectedAccount.name}」の同期人格を最新データに反映しました（新規${applied.added}件・更新${applied.updated}件）。`);
   }
