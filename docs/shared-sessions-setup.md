@@ -4,9 +4,10 @@
 
 ## 1. ブラウザ用 publishable key
 
-この PR の `js/supabase-config.mjs` には、プロジェクトの Dashboard に表示されている `sb_publishable_...` キーを設定済みです。通常、追加操作は不要です。念のため、対象プロジェクトの Project Settings → API Keys と一致することを確認してください。
+このPRの `js/supabase-config.mjs` には、対象プロジェクトのDashboardに表示されている公開キーを設定済みです。追加のキー登録は不要です。対象プロジェクトの Project Settings → API Keys と一致することだけ確認してください。PRが `main` にマージされるまでは、公開サイト側にはこの変更が反映されません。
 
 このキーはブラウザに配信される公開キーであり、公開リポジトリに置いて問題ありません。実際のアクセス権は RLS とサーバー側 RPC で制御します。**`sb_secret_...` や旧形式の `service_role` キーは、ブラウザ設定や公開リポジトリに絶対に置かないでください。** [Supabase API keys の公式説明](https://supabase.com/docs/guides/getting-started/api-keys)
+
 ## 2. DB マイグレーションを適用
 
 次のどちらか一方を選ぶ。
@@ -32,14 +33,19 @@ Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous
 
 匿名サインインは第三者に悪用される可能性があるため、Supabase の Auth rate limit を確認し、公開範囲を広げる前に CAPTCHA / Turnstile などのボット対策も検討してください。現行コードには CAPTCHA トークンの連携はまだありません。
 
-## 4. GitHub / Supabase デプロイ設定
+## 4. デプロイ結果の確認
 
-Supabase Project Settings → Integrations の GitHub Integration で対象リポジトリを選択し、Working directory はリポジトリ直下の `.` を指定する。Production branch のデプロイを有効化した場合、新しいマイグレーションは通常そのブランチへ merge した後に適用される。
+Supabase GitHub Integration は接続済みとのことなので、Project Settings → Integrations で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認してください。SupabaseのGitHub連携では、productionブランチに対応する `[remotes.main]` の設定を使い、未適用のmigrationを適用します。今回の `supabase/config.toml` は匿名ログインを宣言し、migration後に `seed-persona-keys.sql` を実行する設定になっています。
 
-この会話で確認できた Supabase の Integrations ページでは、GitHub リポジトリの選択を促す画面になっていたため、プロジェクト単位の接続と production deploy が有効かを確認すること。接続だけではフロントエンドの publishable key や Auth 設定が自動で埋まるわけではない。
+PRを `main` にマージしたら、Supabase Dashboard の Integrations / デプロイ履歴で次のステップがすべて成功したことを確認してください。
 
-マイグレーションを手動で SQL Editor から適用した場合、Supabase CLI の migration 履歴と一致しない可能性がある。後で GitHub Integration / CLI を本格運用する際は、実 DB の状態と migration 履歴を照合し、同じ変更を二重に適用しないようにする。
+- migration: セッション用テーブルとRPCが作成された
+- config: 本番の Anonymous Sign-Ins 設定が適用された
+- seed: 許可対象の人格キー一覧が同期された
 
+公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
+
+**手動でSQL Editorから同じmigrationを実行するのは、GitHub連携で適用しない場合だけにしてください。** 両方を使うと migration 履歴がずれる可能性があります。
 ## 5. 動作確認
 
 1. GitHub Pages の配信更新後、サイトを開き「空の共有セッションを作成」を押す。
