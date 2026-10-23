@@ -635,6 +635,7 @@ function applyLbtPersonaImport() {
     mergeLocalPersonasInMemory(selected);
     showToast('今回の追加データをメモリ上に読み込みました。永続保存はできませんでした: ' + (error.message || '保存エラー'));
   }
+  renderAll();
   if ($('#lbt-import-dialog').open) $('#lbt-import-dialog').close();
   state.importCandidates = [];
   reopenPickerAfterLocalDialog('local');
@@ -728,6 +729,7 @@ function saveManualPersonaFromDialog() {
     showToast('人格を一時追加しましたが、ブラウザへ永続保存できませんでした。');
   }
   refreshPersonaPool(state.localPersonas);
+  renderAll();
   if ($('#manual-persona-dialog').open) $('#manual-persona-dialog').close();
   reopenPickerAfterLocalDialog('local');
   showToast(`創作人格「${persona.name}」を追加しました。`);
