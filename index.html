@@ -206,6 +206,16 @@
     <button type="button" id="open-lbt-persona-import" class="btn btn-ghost">LBT保存データを読み込む</button>
     <button type="button" id="open-manual-persona" class="btn">＋ 手動で創作人格を追加</button>
   </div>
+  <div id="picker-account-controls" class="picker-account-controls" hidden>
+    <label class="picker-account-select" for="picker-lbt-account">参照するLBTアカウント
+      <select id="picker-lbt-account" class="input" aria-describedby="picker-account-status"></select>
+    </label>
+    <label class="picker-unowned-toggle" for="picker-show-unowned">
+      <input id="picker-show-unowned" type="checkbox">
+      <span>未所持の人格も表示</span>
+    </label>
+    <p id="picker-account-status" class="picker-account-status" role="status" aria-live="polite"></p>
+  </div>
   <div class="picker-tools">
     <label class="sr-only" for="picker-search">人格を検索</label>
     <input id="picker-search" class="input" type="search" placeholder="名前・番号・キーワードで検索" autocomplete="off">

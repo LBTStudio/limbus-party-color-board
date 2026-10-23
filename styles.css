@@ -2705,3 +2705,70 @@ h2 {
     min-height: 38px;
   }
 }
+
+
+/* LBT account selection and owned-persona filtering in the identity picker */
+.picker-account-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr);
+  align-items: center;
+  gap: 9px 14px;
+  padding: 12px 20px 10px;
+  border-bottom: 1px solid var(--line-dim);
+  background: var(--surface-0);
+}
+
+.picker-account-controls[hidden] {
+  display: none;
+}
+
+.picker-account-select {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--tx-dim);
+  font-size: .72rem;
+}
+
+.picker-account-select .input {
+  width: 100%;
+  min-width: 0;
+}
+
+.picker-unowned-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--tx-main);
+  font-size: .76rem;
+  cursor: pointer;
+}
+
+.picker-unowned-toggle input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--gold);
+}
+
+.picker-account-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--tx-mute);
+  font-size: .68rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .picker-account-controls {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px 12px;
+  }
+
+  .picker-account-status {
+    grid-column: auto;
+  }
+}
