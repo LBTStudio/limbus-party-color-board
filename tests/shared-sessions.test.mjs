@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { MAX_IMPORT_CHARS, MAX_IMPORT_ROWS, parsePartySheet } from '../js/core.mjs';
+import { escapeHtml } from '../js/security.mjs';
 
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
@@ -11,6 +13,10 @@ const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
 const sharedUi = read('../js/shared-sessions-ui.mjs');
+const app = read('../js/app.mjs');
+const html = read('../index.html');
+const testWorkflow = read('../.github/workflows/test.yml');
+const updateWorkflow = read('../.github/workflows/update-data.yml');
 
 test('Supabase persona allowlist matches the checked-in persona catalog', () => {
   const generatedKeys = [...seed.matchAll(/^\s*\('([nt]\d+)'\),?$/gm)].map((match) => match[1]);
@@ -275,4 +281,62 @@ test('lifecycle migration tracks live usage and schedules idle cleanup safely', 
   assert.match(lifecycleMigration, /cleanup-idle-party-sessions/);
   assert.match(lifecycleMigration, /revoke all on function public\.cleanup_idle_party_sessions\(\) from public, anon, authenticated/i);
   assert.match(lifecycleMigration, /'last_activity_at',s\.last_activity_at/i);
+});
+
+
+test('untrusted persona fields are escaped before template-based HTML insertion', () => {
+  const payload = '</dd><img src=x onerror="alert(1)">';
+  assert.equal(
+    escapeHtml(payload),
+    '&lt;/dd&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
+  );
+  assert.match(app, /<dd>\$\{escapeHtml\(persona\.hp\)\}<\\/dd>/);
+  assert.match(app, /<dd>\$\{escapeHtml\(persona\.san\)\}<\\/dd>/);
+  assert.equal((app.match(/escapeHtml\(personaNumberLabel\(persona\)\)/g) || []).length, 2);
+});
+
+test('CSV/TSV import rejects excessive length and row counts before resolving personas', () => {
+  assert.equal(MAX_IMPORT_CHARS, 20_000);
+  assert.equal(MAX_IMPORT_ROWS, 200);
+  const tooLong = parsePartySheet('x'.repeat(MAX_IMPORT_CHARS + 1), personas);
+  assert.match(tooLong.errors.join(' '), /長すぎます/);
+
+  const tooManyRows = parsePartySheet(Array(MAX_IMPORT_ROWS + 1).fill('人格番号').join('\\n'), personas);
+  assert.match(tooManyRows.errors.join(' '), /行数が多すぎます/);
+});
+
+test('CSP disallows inline script execution and limits resource origins', () => {
+  const match = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/);
+  assert.ok(match, 'a CSP meta policy must be present');
+  const policy = match[1];
+  assert.match(policy, /script-src 'self' https:\\/\\/esm\.sh https:\\/\\/challenges\.cloudflare\.com/);
+  assert.doesNotMatch(policy, /script-src[^;]*unsafe-inline/i);
+  assert.match(policy, /object-src 'none'/);
+  assert.match(policy, /connect-src[^;]*hobntjcrzybqsiobrpsz\.supabase\.co/);
+});
+
+test('invite token is removed from the URL before loading third-party scripts', () => {
+  const initPosition = sharedUi.indexOf('const initialRoute = captureInitialRoute();');
+  const turnstilePosition = sharedUi.indexOf('await initializeTurnstile();', initPosition);
+  assert.ok(initPosition >= 0 && turnstilePosition > initPosition);
+  const captureStart = sharedUi.indexOf('function captureInitialRoute()');
+  const routeStart = sharedUi.indexOf('async function initializeRoute(route)', captureStart);
+  assert.ok(captureStart >= 0 && routeStart > captureStart);
+  assert.match(sharedUi.slice(captureStart, routeStart), /if \(route\.token\) setRoute\(''\)/);
+});
+
+test('browser Supabase SDK dependency uses an exact version instead of a floating major tag', () => {
+  assert.match(client, /@supabase\\/supabase-js@[0-9]+\\.[0-9]+\\.[0-9]+\\?target=es2022/);
+  assert.doesNotMatch(client, /@supabase\\/supabase-js@2\\?/);
+});
+
+test('GitHub Actions dependencies are pinned and upstream data updates require review', () => {
+  for (const workflow of [testWorkflow, updateWorkflow]) {
+    assert.match(workflow, /uses: actions\\/checkout@[0-9a-f]{40}/);
+    assert.match(workflow, /uses: actions\\/setup-node@[0-9a-f]{40}/);
+  }
+  assert.match(updateWorkflow, /pull-requests:\\s*write/);
+  assert.match(updateWorkflow, /gh pr create/);
+  assert.match(updateWorkflow, /git add data\\/personas\\.json supabase\\/seed-persona-keys\\.sql/);
+  assert.doesNotMatch(updateWorkflow, /git push\\s+origin\\s+main\\b/i);
 });
