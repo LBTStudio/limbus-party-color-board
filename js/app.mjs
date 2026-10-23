@@ -79,8 +79,9 @@ function sanitizePlayerName(value) {
 }
 
 function defaultPlayerName() {
+  const accounts = discoverLbtAccounts(browserStorage(), state.data?.personas || []);
   return sanitizePlayerName(
-    state.lbtAccounts.find((account) => account.id === state.selectedLbtAccountId)?.playerName,
+    accounts.find((account) => account.id === state.selectedLbtAccountId)?.playerName,
   );
 }
 
@@ -429,7 +430,7 @@ function bindEvents() {
     }
     entry.playerName = sanitizePlayerName(input.value);
     saveState();
-    renderAll();
+    renderMatrix();
     showToast('担当PL名を保存しました。');
   });
   $('#reset-party').addEventListener('click', resetParty);
