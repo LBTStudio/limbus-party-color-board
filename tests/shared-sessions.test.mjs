@@ -12,7 +12,9 @@ const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_se
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
-const sessionCreationRateLimitMigration = read('../supabase/migrations/20261023210000_persist_session_creation_rate_limits.sql');
+const sessionCreationRateLimitMigration = read('../supabase/migrations/20261023205650_persist_session_creation_rate_limits.sql');
+const sessionCreationRateLimitBackfillMigration = read('../supabase/migrations/20261023205738_backfill_existing_session_creation_limits.sql');
+const legacyClosedSessionAccessMigration = read('../supabase/migrations/20261023195900_restrict_closed_session_status_to_related_users.sql');
 const design = read('../docs/shared-sessions-design.md');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
@@ -349,6 +351,17 @@ test('workspace creation is blocked before the create RPC when the current share
   const activateStart = sharedUi.indexOf('async function activateSession(');
   const activateBody = sharedUi.slice(activateStart, activateStart + 500);
   assert.match(activateBody, /const switchError = sessionSwitchError\(\)/);
+});
+
+test('tracked migration files include all production versions and backfill pre-existing sessions', () => {
+  const newClosed = /create or replace function public\.check_my_party_access\(p_session_id uuid\)/i;
+  assert.match(legacyClosedSessionAccessMigration, newClosed);
+  assert.match(closedSessionAccessMigration, newClosed);
+  assert.match(legacyClosedSessionAccessMigration, /revoke all on function public\.check_my_party_access\(uuid\) from public, anon/i);
+  assert.match(legacyClosedSessionAccessMigration, /grant execute on function public\.check_my_party_access\(uuid\) to authenticated/i);
+  assert.match(sessionCreationRateLimitBackfillMigration, /insert into public\.party_session_creation_log\(owner_user_id, created_at\)/i);
+  assert.match(sessionCreationRateLimitBackfillMigration, /from public\.party_sessions s/i);
+  assert.match(sessionCreationRateLimitBackfillMigration, /s\.created_at > now\(\) - interval '30 days'/i);
 });
 
 test('session creation rate limits survive immediate deletion of the workspace row', () => {
