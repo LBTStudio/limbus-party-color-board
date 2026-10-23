@@ -1503,3 +1503,13 @@ textarea.input {
     flex-direction: column;
   }
 }
+
+
+.shared-captcha {
+  margin-block: 0.75rem;
+  min-height: 0;
+}
+
+.shared-captcha[hidden] {
+  display: none;
+}
