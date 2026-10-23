@@ -374,9 +374,11 @@ function renderParty() {
       .filter((sin) => counts[sin] > 0)
       .sort((a, b) => counts[b] - counts[a] || SIN_ORDER.indexOf(a) - SIN_ORDER.indexOf(b));
 
-    const strip = persona.slots.map((skillSlot) => (
-      `<span style="background:${gradientFor(skillSlot.colors)}"></span>`
-    )).join('');
+    const strip = persona.slots.map((skillSlot) => {
+      const sins = skillSlot.colors.length ? skillSlot.colors.join('・') : '罪悪属性なし';
+      const label = `${skillSlot.rank} ${skillSlot.name} / ${skillSlot.type} / ${sins}`;
+      return `<span class="color-strip-slot" style="background:${gradientFor(skillSlot.colors)}" title="${escapeHtml(label)}"><b>${escapeHtml(skillSlot.rank)}</b></span>`;
+    }).join('');
 
     const slots = persona.slots.map((skillSlot) => {
       const firstColor = skillSlot.colors[0] ? SIN_META[skillSlot.colors[0]].color : 'var(--tx-mute)';
@@ -402,7 +404,7 @@ function renderParty() {
 
     cards.push(`
       <article class="${cardClass}" data-key="${escapeHtml(persona.key)}" style="--selected-sin-color:${selectedColor}">
-        <div class="color-strip" aria-hidden="true">${strip}</div>
+        <div class="color-strip" role="group" aria-label="各区画はスキル別の罪悪属性です。S番号は下段の同じ番号に対応します">${strip}</div>
         <div class="card-head">
           <div class="card-id">
             <span class="card-slot">SLOT ${slot}</span>

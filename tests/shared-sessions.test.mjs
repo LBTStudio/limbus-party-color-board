@@ -374,3 +374,20 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(sharedUi.includes("bridge.showToast('新しい参加申請が"));
   assert.ok(sharedUi.includes("requestBadge.textContent = '参加申請 ' + pendingCount"));
 });
+
+
+test('persona skill color overview maps each labeled strip to the matching skill row', () => {
+  assert.match(html, /id="persona-color-legend"/);
+  assert.match(html, /上部の S0〜S4 と、下段の同じ番号のスキル行が対応します/);
+  assert.match(app, /class="color-strip-slot"[^>]*title="\$\{escapeHtml\(label\)\}"><b>\$\{escapeHtml\(skillSlot\.rank\)\}<\/b><\/span>/);
+  assert.match(app, /aria-label="各区画はスキル別の罪悪属性です。S番号は下段の同じ番号に対応します"/);
+  assert.match(styles, /\.color-strip-slot b \{/);
+  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
+});
+
+test('mobile refinement keeps the collapsed shared-session dock compact and respects phone safe areas', () => {
+  assert.match(styles, /\.shared-panel:not\(\.is-open\) \{[\s\S]*?width: fit-content;/);
+  assert.match(styles, /max-height: min\(70dvh, 620px\)/);
+  assert.match(styles, /env\(safe-area-inset-bottom, 0px\)/);
+  assert.match(styles, /\.shared-panel:not\(\.is-open\) > \.section-head \{[\s\S]*?flex-direction: row;/);
+});
