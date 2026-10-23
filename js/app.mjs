@@ -85,8 +85,12 @@ function defaultParty() {
 }
 
 function saveState() {
+  const sharedController = window.sharedPartySession;
+  const savedParty = sharedController?.isActive && Array.isArray(sharedController.personalPartySnapshot)
+    ? sharedController.personalPartySnapshot
+    : state.party.map((entry) => entry.key);
   const payload = {
-    party: state.party.map((entry) => entry.key),
+    party: savedParty.map((entry) => typeof entry === 'string' ? entry : entry.key),
     partySort: state.partySort,
     resourceSort: state.resourceSort,
   };
@@ -94,6 +98,14 @@ function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
     // Storage can be unavailable in private windows; the URL still carries the party.
+  }
+  if (sharedController?.isActive) {
+    const params = new URLSearchParams(location.search);
+    params.delete('p');
+    const query = params.toString();
+    history.replaceState(null, '', location.pathname + (query ? '?' + query : '') + '#session=' + encodeURIComponent(sharedController.sessionId));
+    sharedController.onPartyChanged();
+    return;
   }
   try {
     const params = new URLSearchParams(location.search);
@@ -225,6 +237,10 @@ function renderAll() {
   if ($('#picker').open) renderPickerList();
 }
 
+function canEditParty() {
+  return window.sharedPartySession?.canEdit?.() ?? true;
+}
+
 function renderMeta() {
   const meta = state.data.meta;
   const result = state.lastAggregate;
@@ -233,7 +249,11 @@ function renderMeta() {
   $('#resource-total').textContent = `合計 ${result.grandTotal}`;
   $('#party-count').textContent = `${state.party.length}名`;
   $('#party-count-2').textContent = `${state.party.length}名`;
-  $('#add-member').disabled = state.party.length >= MAX_PARTY;
+  const canEdit = canEditParty();
+  $('#add-member').disabled = state.party.length >= MAX_PARTY || !canEdit;
+  $('#import-tsv').disabled = !canEdit;
+  $('#reset-party').disabled = !canEdit;
+  $('#import-apply').disabled = !canEdit;
 
   const selected = $('#selected-sin-label');
   if (state.selectedSin) {
@@ -399,8 +419,8 @@ function renderParty() {
             <span class="card-no">${personaNumberLabel(persona)}</span>
           </div>
           <div class="card-actions">
-            <button type="button" class="mini-btn" data-action="edit-member" data-index="${originalIndex}">変更</button>
-            <button type="button" class="icon-btn" data-action="remove-member" data-index="${originalIndex}" aria-label="${escapeHtml(persona.name)}を編成から外す">×</button>
+            <button type="button" class="mini-btn" data-action="edit-member" data-index="${originalIndex}" ${canEditParty() ? "" : "disabled"}>変更</button>
+            <button type="button" class="icon-btn" data-action="remove-member" data-index="${originalIndex}" aria-label="${escapeHtml(persona.name)}を編成から外す" ${canEditParty() ? "" : "disabled"}>×</button>
           </div>
         </div>
         <div class="card-title">
@@ -451,6 +471,7 @@ function toggleSin(sin) {
 }
 
 function openPicker(index) {
+  if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   if (index === null && state.party.length >= MAX_PARTY) {
     showToast(`編成は最大 ${MAX_PARTY} 名です。`);
     return;
@@ -513,6 +534,7 @@ function renderPickerList() {
 }
 
 function choosePersona(key) {
+  if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   const persona = state.map.get(key);
   if (!persona) return;
   const existingIndex = state.party.findIndex((entry) => entry.key === key);
@@ -540,6 +562,7 @@ function choosePersona(key) {
 }
 
 function removeMember(index) {
+  if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   if (index < 0 || index >= state.party.length) return;
   const [removed] = state.party.splice(index, 1);
   const persona = removed ? state.map.get(removed.key) : null;
@@ -558,6 +581,7 @@ function openImport() {
 }
 
 function applyImport() {
+  if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   const result = parsePartySheet($('#import-text').value, state.personas);
   const error = $('#import-error');
   if (result.errors.length > 0) {
@@ -577,6 +601,7 @@ function applyImport() {
 }
 
 function resetParty() {
+  if (!canEditParty()) { showToast('このセッションは閲覧のみです。'); return; }
   if (!window.confirm('編成を空に戻しますか？')) return;
   state.party = defaultParty();
   state.selectedSin = null;
@@ -666,6 +691,23 @@ async function boot() {
     const response = await fetch(DATA_URL, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     init(await response.json());
+    try {
+      const { initializeSharedSessionsUi } = await import('./shared-sessions-ui.mjs');
+      await initializeSharedSessionsUi({
+        getPartyKeys: () => state.party.map((entry) => entry.key),
+        setPartyKeys: (keys) => {
+          state.party = sanitizeParty(keys) || [];
+          renderAll();
+        },
+        renderAll,
+        saveState,
+        showToast,
+      });
+    } catch (sharedError) {
+      console.error('Shared sessions UI failed to initialize', sharedError);
+      const sharedStatus = document.querySelector('#shared-status');
+      if (sharedStatus) sharedStatus.textContent = '共有機能の初期化に失敗しました。個人編成はそのまま利用できます。';
+    }
   } catch (error) {
     console.error(error);
     $('#source-meta').textContent = 'データ読み込み失敗';
