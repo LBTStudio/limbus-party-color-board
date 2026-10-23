@@ -2,3 +2,15 @@ project_id = "limbus-party-color-board"
 
 [auth]
 enable_anonymous_sign_ins = true
+
+# Tell Supabase GitHub Integration which remote project represents production.
+# This enables production config application and the configured seed SQL after migrations.
+[remotes.main]
+project_id = "hobntjcrzybqsiobrpsz"
+
+[remotes.main.auth]
+enable_anonymous_sign_ins = true
+
+[remotes.main.db.seed]
+enabled = true
+sql_paths = ["./seed-persona-keys.sql"]
