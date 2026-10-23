@@ -255,7 +255,7 @@ async function activateSession(sessionId, prefetched = null) {
   if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
   if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
 
-  if (!personalPartySnapshot) personalPartySnapshot = currentKeys().slice();
+  if (!active && !personalPartySnapshot) personalPartySnapshot = currentKeys().slice();
   stopPolling();
   active = {
     sessionId: snapshot.session_id || sessionId,
@@ -293,10 +293,13 @@ async function refreshAdmin() {
     return;
   }
   try {
-    admin = await getApi().getAdmin(session.sessionId);
+    const result = await getApi().getAdmin(session.sessionId);
+    if (active !== session || session.role !== 'owner') return;
+    admin = result;
     session.adminUpdatedAt = Date.now();
     render();
   } catch (error) {
+    if (active !== session || session.role !== 'owner') return;
     statusMessage = '参加権限の管理情報を取得できませんでした: ' + error.message;
     render();
   }
@@ -452,8 +455,10 @@ async function sendSave(session, operation) {
     session.retry = null;
     session.status = 'saved';
     session.title = result.title || session.title;
+    const roleChanged = session.role !== (result.role || session.role);
     session.role = result.role || session.role;
     statusMessage = '保存済み · revision ' + session.revision;
+    if (roleChanged) bridge.renderAll();
   } catch (error) {
     if (active !== session) return;
     session.status = 'unsaved';

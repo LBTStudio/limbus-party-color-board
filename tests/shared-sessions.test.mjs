@@ -140,3 +140,35 @@ test('polling avoids hidden-tab churn and offers explicit conflict handling', ()
   assert.match(sharedUi, /session\.pollBusy/);
   assert.match(sharedUi, /未保存の編集、保存処理、または競合があります/);
 });
+
+test('pending-request cap is checked before the request is inserted', () => {
+  const start = migration.indexOf('create or replace function public.request_party_access');
+  const end = migration.indexOf('create or replace function public.check_my_party_access');
+  const request = migration.slice(start, end);
+  assert.ok(request.indexOf('PENDING_REQUEST_LIMIT') < request.indexOf('insert into public.session_access_requests'));
+});
+
+test('edit role is rechecked after the session row lock', () => {
+  const start = migration.indexOf('create or replace function public.apply_party_edit');
+  const end = migration.indexOf('create or replace function public.list_party_session_admin');
+  const applyEdit = migration.slice(start, end);
+  const lockIndex = applyEdit.indexOf('for update');
+  const roleIndex = applyEdit.indexOf('select m.role into v_role');
+  assert.ok(lockIndex > -1 && roleIndex > lockIndex);
+  assert.match(applyEdit, /EDITOR_REQUIRED/);
+});
+
+test('session switching preserves the personal snapshot and ignores stale admin responses', () => {
+  assert.match(sharedUi, /if \(!active && !personalPartySnapshot\)/);
+  assert.match(sharedUi, /if \(active !== session \|\| session\.role !== 'owner'\) return;/);
+});
+
+test('docs describe the implemented shared-session feature', () => {
+  const readme = read('../README.md');
+  const design = read('../docs/shared-sessions-design.md');
+  const failureModes = read('../docs/shared-sessions-failure-modes.md');
+  assert.doesNotMatch(readme, /複数人の編集は同期されません/);
+  assert.doesNotMatch(design, /共有セッションは未実装/);
+  assert.doesNotMatch(failureModes, /共有セッション機能がまだない/);
+  assert.match(readme, /招待リンクを開いた人はアクセス申請を送り/);
+});

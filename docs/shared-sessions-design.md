@@ -2,7 +2,7 @@
 
 ## 状態と目的
 
-**共有セッションは未実装**。現行公開版は GitHub Pages 上の静的ツールで、URL / `localStorage` は個人用編成の保存・スナップショット共有に限られる。
+**共有セッションは実装済み**。Supabase の migration / Anonymous Sign-Ins / publishable key を設定すると有効になる。未設定の間は GitHub Pages 上の個人用編成（URL / `localStorage`）だけが動く。
 
 この設計は「編成作業の補助」を優先する。チャットや共同描画のようなサブ秒同期は不要で、共有する実データも最大6人分の人格キーとリビジョン程度である。一方、誤編集、編成の消失、他グループへの漏えいは避けなければならない。
 
@@ -31,7 +31,7 @@
 
 - `party_sessions`: `id`, `title`, `owner_user_id`, `party_keys`, `revision`, `created_at`, `updated_at`, `archived_at`
 - `session_members`: `session_id`, `user_id`, `role`（owner / editor / viewer）, `joined_at`
-- `session_invites`: `id`, `session_id`, `token_hash`, `proposed_role`, `expires_at`, `revoked_at`, `created_by`
+- `session_invites`: `id`, `session_id`, `token_hash`, `expires_at`, `revoked_at`, `created_by`
 - `session_access_requests`: `id`, `session_id`, `user_id`, `display_name`, `status`（pending / approved / denied / revoked）, `requested_at`, `decided_by`, `decided_at`
 - `session_events`: `id`, `session_id`, `revision`, `actor_user_id`, `operation_id`, `operation`, `created_at`
 
@@ -42,7 +42,7 @@
 ## 招待・参加権限の流れ
 
 1. owner が認証して空のセッションを作成する。セッション URL / ID は秘密情報として扱わない。
-2. owner が有効期限付き招待リンクを発行する。リンクの fragment（例: `#join=<random-token>`）には十分長い暗号学的乱数を置き、DB には token 本体ではなくハッシュを保存する。秘密トークンはログやエラー、計測イベントへ出さない。
+2. owner が有効期限付き招待リンクを発行する。リンクの fragment（実装は `#invite=<random-token>`）には十分長い暗号学的乱数を置き、DB には token 本体ではなくハッシュを保存する。秘密トークンはログやエラー、計測イベントへ出さない。
 3. 訪問者はリンクを開いて表示名を入力し、アクセスを申請する。トークンは申請の資格を示すだけで、編成データへのアクセスを直接与えない。トークンを使う処理は HTTPS でサーバーへ送り、処理後は `history.replaceState` で URL から除く。
 4. owner は申請者を確認して却下するか、viewer / editor として承認する。承認前の申請者に、編成、メンバー一覧、履歴、セッション名など非公開情報を返さない。
 5. owner はいつでもメンバーを剥奪し、リンクを失効できる。以降のサーバー要求は拒否される。ただし剥奪前に本人が閲覧・コピーした情報を遠隔から回収することはできない。
@@ -89,15 +89,15 @@
 
 詳細な失敗シナリオ、発生条件、予防策、検証項目は [共有セッションの失敗想定と対策](shared-sessions-failure-modes.md) を参照する。少なくとも、未承認アクセス、リンク漏えい、権限剥奪、セッション混線、同時編集、応答消失後の再送、ネットワーク断、タブ休止、期限切れ・削除済みセッション、429 / 5xx、プロバイダー上限を試験する。
 
-## 実装順序
+## 実装状況
 
-1. SQL migration、RLS / grants、セッション単位の独立性テスト
-2. owner 認証、セッション作成・削除・アーカイブ、空の編成保存
-3. 招待発行、アクセス申請、承認・却下、role 変更・剥奪、リンク失効
-4. revision 付き RPC 書き込み、重複排除、競合・権限テスト
-5. adaptive polling、接続・保存状態 UI、復帰・バックオフ
-6. 監査ログの保持期限、レート制限、使用量監視、負荷試験
-7. テスト・本番 Supabase の環境変数と移行手順を分離し、secrets が静的配信物に含まれないことを CI で検証
+- [x] SQL migration、RLS / grants、セッション単位の独立性を確認する静的テスト
+- [x] 匿名 Auth、セッション作成・終了、空の編成保存
+- [x] 招待発行、アクセス申請、承認・却下、role 変更・剥奪、リンク失効
+- [x] revision 付き RPC 書き込み、operation_id による重複排除、競合 UI
+- [x] adaptive polling、接続・保存状態 UI、復帰・バックオフ
+- [ ] 実 Supabase での負荷・権限・同時編集テスト（導入手順の動作確認で実施）
+- [ ] 監査ログの保持期限、使用量監視、メール/OAuth による所有者復旧
 
 ## リリース条件
 

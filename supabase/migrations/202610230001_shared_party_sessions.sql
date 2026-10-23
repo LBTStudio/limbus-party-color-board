@@ -482,18 +482,18 @@ begin
     where m.session_id=v_session_id and m.user_id=v_user_id;
   if found then return jsonb_build_object('status','approved','session_id',v_session_id,'role',v_role); end if;
 
-  insert into public.session_access_requests(session_id,user_id,display_name,status)
-  values (v_session_id,v_user_id,v_display_name,'pending')
-  on conflict (session_id,user_id) do update
-    set display_name=excluded.display_name,status='pending',requested_at=now(),decided_by=null,decided_at=null
-    where public.session_access_requests.status in ('denied','revoked');
-
   if not exists (select 1 from public.session_access_requests r
       where r.session_id=v_session_id and r.user_id=v_user_id and r.status='pending')
      and (select count(*) from public.session_access_requests r
        where r.session_id=v_session_id and r.status='pending') >= 100 then
     raise exception 'PENDING_REQUEST_LIMIT' using errcode = '53300';
   end if;
+
+  insert into public.session_access_requests(session_id,user_id,display_name,status)
+  values (v_session_id,v_user_id,v_display_name,'pending')
+  on conflict (session_id,user_id) do update
+    set display_name=excluded.display_name,status='pending',requested_at=now(),decided_by=null,decided_at=null
+    where public.session_access_requests.status in ('denied','revoked');
 
   select r.status into v_status from public.session_access_requests r
     where r.session_id=v_session_id and r.user_id=v_user_id;
@@ -575,15 +575,15 @@ declare
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
   if p_operation_id is null then raise exception 'OPERATION_ID_REQUIRED' using errcode = '22023'; end if;
-  select m.role into v_role from public.session_members m
-    where m.session_id=p_session_id and m.user_id=v_user_id;
-  if not found or v_role not in ('owner','editor') then raise exception 'EDITOR_REQUIRED' using errcode = '42501'; end if;
 
-  -- Serialize edits within this session only. Other group sessions use different rows.
+  -- Serialize edits and membership changes within this session only.
   select s.revision,s.archived_at into v_revision,v_archived
     from public.party_sessions s where s.id=p_session_id for update;
   if not found then raise exception 'SESSION_NOT_FOUND' using errcode = 'P0002'; end if;
   if v_archived is not null then raise exception 'SESSION_CLOSED' using errcode = '55000'; end if;
+  select m.role into v_role from public.session_members m
+    where m.session_id=p_session_id and m.user_id=v_user_id;
+  if not found or v_role not in ('owner','editor') then raise exception 'EDITOR_REQUIRED' using errcode = '42501'; end if;
 
   if exists (select 1 from public.session_events e where e.session_id=p_session_id and e.operation_id=p_operation_id) then
     return public._party_session_snapshot(p_session_id) || jsonb_build_object('status','duplicate','operation_id',p_operation_id);
@@ -714,10 +714,10 @@ begin
   if p_role not in ('editor','viewer') then
     raise exception 'ROLE_MUST_BE_EDITOR_OR_VIEWER' using errcode = '22023';
   end if;
-  if not exists (
-    select 1 from public.party_sessions s
+  perform 1 from public.party_sessions s
     where s.id=p_session_id and s.owner_user_id=v_user_id and s.archived_at is null
-  ) then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
+    for update;
+  if not found then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
   if p_user_id=v_user_id then raise exception 'CANNOT_CHANGE_OWNER_ROLE' using errcode = '22023'; end if;
 
   update public.session_members m
@@ -737,7 +737,9 @@ as $$
 declare v_owner uuid; v_caller uuid := auth.uid();
 begin
   if v_caller is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
-  select owner_user_id into v_owner from public.party_sessions where id=p_session_id and archived_at is null;
+  select owner_user_id into v_owner from public.party_sessions
+    where id=p_session_id and archived_at is null
+    for update;
   if not found or v_owner <> v_caller then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
   if p_user_id=v_owner then raise exception 'CANNOT_REMOVE_OWNER' using errcode = '22023'; end if;
   delete from public.session_members where session_id=p_session_id and user_id=p_user_id;

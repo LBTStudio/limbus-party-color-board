@@ -1,10 +1,10 @@
 # 共有セッション導入手順
 
-このリポジトリには共有編成のフロントエンドと SQL マイグレーションを追加しています。**接続設定が入るまでは公開サイトで共有機能は動作しません**。Supabase の secret / service role key はブラウザへ絶対に置かないでください。
+このリポジトリには共有編成のフロントエンドと SQL マイグレーションが含まれています。**Supabase のプロジェクト設定と migration の適用が済むまで、公開サイトで共有機能は動作しません**。Supabase の secret / service role key はブラウザへ絶対に置かないでください。
 
 ## 1. ブラウザ用 publishable key
 
-このPRの `js/supabase-config.mjs` には、対象プロジェクトのDashboardに表示されている公開キーを設定済みです。追加のキー登録は不要です。対象プロジェクトの Project Settings → API Keys と一致することだけ確認してください。PRが `main` にマージされるまでは、公開サイト側にはこの変更が反映されません。
+`js/supabase-config.mjs` には、対象プロジェクトのDashboardに表示されている公開キーを設定済みです。追加のキー登録は不要です。対象プロジェクトの Project Settings → API Keys と一致することだけ確認してください。キーを変更した場合は、このファイルを更新して再デプロイしてください。
 
 このキーはブラウザに配信される公開キーであり、公開リポジトリに置いて問題ありません。実際のアクセス権は RLS とサーバー側 RPC で制御します。**`sb_secret_...` や旧形式の `service_role` キーは、ブラウザ設定や公開リポジトリに絶対に置かないでください。** [Supabase API keys の公式説明](https://supabase.com/docs/guides/getting-started/api-keys)
 
@@ -12,10 +12,10 @@
 
 次のどちらか一方を選ぶ。
 
-- **GitHub Integration で自動適用する場合（推奨）:** リポジトリ連携済みとのことなので、Project Settings → Integrations → GitHub Integration で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認する。このリポジトリの `supabase/config.toml` には `[remotes.main]`、匿名ログイン設定、人格キーseedのパスを追加済み。PRを `main` にマージした後、Supabase Dashboardのデプロイ履歴で migration・config・seed の各ステップが成功したことを確認する。Supabaseの [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
+- **GitHub Integration で自動適用する場合（推奨）:** Project Settings → Integrations → GitHub Integration で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認する。このリポジトリの `supabase/config.toml` には `[remotes.main]`、匿名ログイン設定、人格キーseedのパスを追加済み。`main` へマージした後、Supabase Dashboardのデプロイ履歴で migration・config・seed の各ステップが成功したことを確認する。Supabaseの [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
 - **手動で適用する場合:** 自動デプロイが未設定なら、Dashboard → SQL Editor から `supabase/migrations/202610230001_shared_party_sessions.sql` 全体を開いて実行する。
 
-GitHub Integration が `supabase/config.toml` の設定を本番にも適用するには、対象の本番ブランチに対応する `[remotes.main]` の指定が必要です。seed は migration の後に実行されます。手動実行と自動適用を併用しないでください。公式仕様は [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照してください。
+GitHub Integration が接続されている場合、`supabase/config.toml` の設定を本番にも適用するには、対象の本番ブランチに対応する `[remotes.main]` の指定が必要です。seed は migration の後に実行されます。手動実行と自動適用を併用しないでください。公式仕様は [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照してください。接続状況は Project Settings → Integrations で確認できます。
 
 - セッション、参加者、招待、アクセス申請、編集履歴、許可済み人格キーのテーブル
 - ブラウザからの直接テーブルアクセスを禁止する権限と RLS
@@ -46,9 +46,9 @@ Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous
 
 ## 5. デプロイ結果の確認
 
-Supabase GitHub Integration は接続済みとのことなので、Project Settings → Integrations で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認してください。SupabaseのGitHub連携では、productionブランチに対応する `[remotes.main]` の設定を使い、未適用のmigrationを適用します。今回の `supabase/config.toml` は匿名ログインを宣言し、migration後に `seed-persona-keys.sql` を実行する設定になっています。
+Supabase GitHub Integration を使う場合は、Project Settings → Integrations で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認してください。SupabaseのGitHub連携では、productionブランチに対応する `[remotes.main]` の設定を使い、未適用のmigrationを適用します。今回の `supabase/config.toml` は匿名ログインを宣言し、migration後に `seed-persona-keys.sql` を実行する設定になっています。
 
-PRを `main` にマージしたら、Supabase Dashboard の Integrations / デプロイ履歴で次のステップがすべて成功したことを確認してください。
+`main` へマージしたら、Supabase Dashboard の Integrations / デプロイ履歴で次のステップがすべて成功したことを確認してください。
 
 - migration: セッション用テーブルとRPCが作成された
 - config: 本番の Anonymous Sign-Ins 設定が適用された
@@ -74,5 +74,5 @@ PRを `main` にマージしたら、Supabase Dashboard の Integrations / デ�
 
 - この初期実装は匿名 Auth ベースで、メール／OAuth による所有者の本人確認・アカウント復旧は未実装。
 - CAPTCHA / Turnstile はコード側のトークン連携を実装済みだが、Cloudflare Site key / Secret key の登録と Supabase 側 CAPTCHA 有効化は管理者操作が必要。
-- Supabase の実 DB へ SQL を適用した成功確認は、この PR からは行えていない。マイグレーションを適用し、動作確認手順を実施する必要がある。
+- Supabase の実 DB へ SQL を適用した成功確認は、migration のデプロイ後に行う。デプロイ履歴または RPC の応答を確認し、動作確認手順を実施する必要がある。
 - RLS/RPC の負荷・権限テストを実 Supabase で行う必要がある。既存の Node テストはデータ集計、パーサー、静的な SQL セキュリティ条件を確認するのみ。
