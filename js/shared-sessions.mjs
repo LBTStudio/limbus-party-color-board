@@ -44,7 +44,7 @@ async function getClient() {
     throw new Error('Supabase の publishable key が未設定です。js/supabase-config.mjs を設定してください。');
   }
   if (!clientPromise) {
-    clientPromise = import('https://esm.sh/@supabase/supabase-js@2?target=es2022').then(({ createClient }) => (
+    clientPromise = import('https://esm.sh/@supabase/supabase-js@2.118.0?target=es2022').then(({ createClient }) => (
       createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: {
           persistSession: true,

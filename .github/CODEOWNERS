@@ -1,0 +1,7 @@
+# Security-sensitive files should be reviewed by the repository owner.
+# Enforce this through the main-branch rules: require PRs and code-owner approval.
+/.github/workflows/ @LBTStudio
+/js/ @LBTStudio
+/index.html @LBTStudio
+/tools/ @LBTStudio
+/supabase/ @LBTStudio

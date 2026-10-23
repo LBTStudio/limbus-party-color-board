@@ -642,11 +642,22 @@ async function checkAccess(quiet = false) {
   }
 }
 
-async function initializeRoute() {
+function captureInitialRoute() {
   const params = new URLSearchParams(location.hash.slice(1));
-  const token = params.get('invite');
-  const sessionId = params.get('session');
-  const requestedSessionId = params.get('request');
+  const route = {
+    token: params.get('invite'),
+    sessionId: params.get('session'),
+    requestedSessionId: params.get('request'),
+  };
+
+  // Invite tokens are bearer-like secrets. Remove them before any third-party
+  // script is loaded, while keeping the captured token only in this closure.
+  if (route.token) setRoute('');
+  return route;
+}
+
+async function initializeRoute(route) {
+  const { token, sessionId, requestedSessionId } = route;
 
   if (!isSharedSessionsConfigured()) {
     if (token || sessionId || requestedSessionId) {
@@ -672,8 +683,6 @@ async function initializeRoute() {
   }
   if (!token) return;
 
-  // Remove the bearer token from the address/history before showing prompts or making API requests.
-  setRoute('');
   const provided = window.prompt('共有セッションで表示する名前を入力してください', displayName());
   if (!provided || !provided.trim()) {
     setStatus('参加申請をキャンセルしました。招待リンクを再度開くと申請できます。');
@@ -681,8 +690,6 @@ async function initializeRoute() {
   }
   $('#shared-display-name').value = provided.trim().slice(0, 40);
   rememberDisplayName();
-  // Remove the bearer token from URL/history before sending it to the API.
-  setRoute('');
   try {
     const result = await getApi().requestAccess(token, displayName());
     if (result.status === 'approved') {
@@ -815,6 +822,7 @@ export async function initializeSharedSessionsUi(callbacks) {
     if (pendingRequestSessionId) scheduleAccessCheck(500);
   });
   render();
+  const initialRoute = captureInitialRoute();
   await initializeTurnstile();
-  await initializeRoute();
+  await initializeRoute(initialRoute);
 }

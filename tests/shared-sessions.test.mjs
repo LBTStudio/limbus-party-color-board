@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { MAX_IMPORT_CHARS, MAX_IMPORT_ROWS, parsePartySheet } from '../js/core.mjs';
+import { escapeHtml } from '../js/security.mjs';
 
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
@@ -11,6 +13,10 @@ const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
 const sharedUi = read('../js/shared-sessions-ui.mjs');
+const app = read('../js/app.mjs');
+const html = read('../index.html');
+const testWorkflow = read('../.github/workflows/test.yml');
+const updateWorkflow = read('../.github/workflows/update-data.yml');
 
 test('Supabase persona allowlist matches the checked-in persona catalog', () => {
   const generatedKeys = [...seed.matchAll(/^\s*\('([nt]\d+)'\),?$/gm)].map((match) => match[1]);
@@ -275,4 +281,69 @@ test('lifecycle migration tracks live usage and schedules idle cleanup safely', 
   assert.match(lifecycleMigration, /cleanup-idle-party-sessions/);
   assert.match(lifecycleMigration, /revoke all on function public\.cleanup_idle_party_sessions\(\) from public, anon, authenticated/i);
   assert.match(lifecycleMigration, /'last_activity_at',s\.last_activity_at/i);
+});
+
+
+ 
+test('untrusted persona fields are escaped before template-based HTML insertion', () => {
+  const payload = '</dd><img src=x onerror="alert(1)">';
+  assert.equal(
+    escapeHtml(payload),
+    '&lt;/dd&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
+  );
+  assert.ok(app.includes('<dd>${escapeHtml(persona.hp)}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.san)}</dd>'));
+  assert.equal((app.match(/escapeHtml\(personaNumberLabel\(persona\)\)/g) || []).length, 2);
+});
+
+test('CSV/TSV import rejects excessive length and row counts before resolving personas', () => {
+  assert.equal(MAX_IMPORT_CHARS, 20_000);
+  assert.equal(MAX_IMPORT_ROWS, 200);
+  const tooLong = parsePartySheet('x'.repeat(MAX_IMPORT_CHARS + 1), personas);
+  assert.match(tooLong.errors.join(' '), /長すぎます/);
+
+  const tooManyRows = parsePartySheet(Array(MAX_IMPORT_ROWS + 1).fill('人格番号').join(String.fromCharCode(10)), personas);
+  assert.match(tooManyRows.errors.join(' '), /行数が多すぎます/);
+});
+
+test('CSP disallows inline script execution and limits resource origins', () => {
+  const match = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/);
+  assert.ok(match, 'a CSP meta policy must be present');
+  const policy = match[1];
+  assert.ok(policy.includes("script-src 'self' https://esm.sh https://challenges.cloudflare.com"));
+  const scriptSource = policy.split(';').find((directive) => directive.trim().startsWith('script-src'));
+  assert.ok(scriptSource);
+  assert.ok(!scriptSource.includes('unsafe-inline'));
+  assert.ok(policy.includes("object-src 'none'"));
+  assert.ok(policy.includes('connect-src'));
+  assert.ok(policy.includes('hobntjcrzybqsiobrpsz.supabase.co'));
+});
+
+test('invite token is removed from the URL before loading third-party scripts', () => {
+  const initPosition = sharedUi.indexOf('const initialRoute = captureInitialRoute();');
+  const turnstilePosition = sharedUi.indexOf('await initializeTurnstile();', initPosition);
+  assert.ok(initPosition >= 0 && turnstilePosition > initPosition);
+  const captureStart = sharedUi.indexOf('function captureInitialRoute()');
+  const routeStart = sharedUi.indexOf('async function initializeRoute(route)', captureStart);
+  assert.ok(captureStart >= 0 && routeStart > captureStart);
+  assert.ok(sharedUi.slice(captureStart, routeStart).includes("if (route.token) setRoute('');"));
+});
+
+test('browser Supabase SDK dependency uses an exact version instead of a floating major tag', () => {
+  assert.ok(client.includes('@supabase/supabase-js@2.118.0?target=es2022'));
+  assert.ok(!client.includes('@supabase/supabase-js@2?target=es2022'));
+});
+
+test('GitHub Actions dependencies are pinned and upstream data updates require review', () => {
+  for (const workflow of [testWorkflow, updateWorkflow]) {
+    for (const line of workflow.split(String.fromCharCode(10)).filter((value) => value.includes('uses: actions/checkout@') || value.includes('uses: actions/setup-node@'))) {
+      const reference = line.trim().split('@')[1].split(' ')[0];
+      assert.match(reference, /^[0-9a-f]{40}$/);
+    }
+  }
+  assert.ok(updateWorkflow.includes('pull-requests: write'));
+  assert.ok(updateWorkflow.includes('gh pr create'));
+  assert.ok(updateWorkflow.includes('git add data/personas.json supabase/seed-persona-keys.sql'));
+  assert.ok(!updateWorkflow.includes('git push origin main'));
+  assert.ok(updateWorkflow.includes('git push --force origin "HEAD:${BRANCH_NAME}"'));
 });
