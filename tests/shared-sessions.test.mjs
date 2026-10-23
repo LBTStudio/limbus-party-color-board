@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
 const migration = read('../supabase/migrations/202610230001_shared_party_sessions.sql');
+const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -194,4 +195,32 @@ test('per-session resource caps are protected by parent-row locks', () => {
   const requestLock = decide.indexOf('for update', sessionLock + 1);
   assert.ok(sessionLock >= 0 && requestLock > sessionLock);
   assert.ok(requestLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
+});
+
+
+test('forward migration updates already-deployed resource-cap RPCs', () => {
+  for (const name of ['create_party_invite', 'request_party_access', 'decide_party_access_request']) {
+    assert.match(forwardMigration, new RegExp('create or replace function public\\\\.' + name + '\\\\(', 'i'));
+  }
+  assert.equal((forwardMigration.match(/\\bas \\$\\$/g) || []).length, 3);
+  assert.equal((forwardMigration.match(/^\\$\\$;$/gm) || []).length, 3);
+
+  const inviteStart = forwardMigration.indexOf('create or replace function public.create_party_invite');
+  const inviteEnd = forwardMigration.indexOf('create or replace function public.request_party_access');
+  const invite = forwardMigration.slice(inviteStart, inviteEnd);
+  assert.ok(invite.indexOf('for update') >= 0);
+  assert.ok(invite.indexOf('for update') < invite.indexOf('ACTIVE_INVITE_LIMIT'));
+
+  const requestStart = forwardMigration.indexOf('create or replace function public.request_party_access');
+  const requestEnd = forwardMigration.indexOf('create or replace function public.decide_party_access_request');
+  const request = forwardMigration.slice(requestStart, requestEnd);
+  assert.ok(request.indexOf('for update') >= 0);
+  assert.ok(request.indexOf('for update') < request.indexOf('PENDING_REQUEST_LIMIT'));
+  assert.ok(request.indexOf('for update') < request.indexOf('insert into public.session_access_requests'));
+
+  const decide = forwardMigration.slice(requestEnd);
+  const firstLock = decide.indexOf('for update');
+  const secondLock = decide.indexOf('for update', firstLock + 1);
+  assert.ok(firstLock >= 0 && secondLock > firstLock);
+  assert.ok(secondLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
 });
