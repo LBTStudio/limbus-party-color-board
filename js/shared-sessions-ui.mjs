@@ -501,6 +501,16 @@ function onPartyChanged() {
   const keys = currentKeys();
   const personas = currentPersonas();
   if (samePartyState(keys, personas, active.lastSavedKeys, active.lastSavedPersonas)) return;
+  if (typeof bridge.canShareCurrentParty === 'function') {
+    const check = bridge.canShareCurrentParty();
+    if (check !== true) {
+      active.status = 'unsaved';
+      statusMessage = typeof check === 'string' ? check : 'この編成は共有スナップショットの上限を超えています。';
+      render();
+      bridge.showToast(statusMessage);
+      return;
+    }
+  }
   active.saveBusy = true;
   const operation = {
     keys: [...keys],
