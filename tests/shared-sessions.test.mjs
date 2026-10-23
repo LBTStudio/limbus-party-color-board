@@ -315,6 +315,21 @@ test('shared session lifecycle clearly separates browser-local and cloud data', 
   assert.match(sharedUi, /共有データは7日後に完全削除/);
 });
 
+test('creating a workspace validates the title and the owner display name separately', () => {
+  const start = sharedUi.indexOf('async function createSession()');
+  const end = sharedUi.indexOf('function sessionSwitchError()', start);
+  const create = sharedUi.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(create, /const title = String\(\$\('#shared-session-title'\)\.value \|\| ''\)\.trim\(\)\.slice\(0, 80\)/);
+  assert.match(create, /const ownerDisplayName = String\(\$\('#shared-display-name'\)\.value \|\| ''\)\.trim\(\)\.slice\(0, 40\)/);
+  const titleValidation = create.indexOf("共同編集スペース名を入力してください。");
+  const displayValidation = create.indexOf("自分の表示名を入力してください。");
+  const rpc = create.indexOf("getApi().createSession(title, ownerDisplayName)");
+  assert.ok(titleValidation >= 0 && displayValidation > titleValidation);
+  assert.ok(rpc > displayValidation, 'the server call must happen only after both independent fields are validated');
+  assert.match(sharedUi, /if \(value\) rememberDisplayName\(value\);/);
+});
+
 test('workspace creation is blocked before the create RPC when the current shared session has unsettled edits', () => {
   assert.match(sharedUi, /function sessionSwitchError\(\)/);
   const createStart = sharedUi.indexOf('async function createSession()');
