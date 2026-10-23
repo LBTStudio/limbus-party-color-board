@@ -21,7 +21,9 @@ test('startup sync updates every picker mode button without throwing', () => {
     'a single HTMLElement is not iterable',
   );
   assert.match(app, /function syncControls\(\) \{[\s\S]*?syncPickerMode\(\);[\s\S]*?\}/);
-  assert.equal((html.match(/data-picker-mode=/g) || []).length, 4, 'all four filter buttons exist');
+  assert.equal((html.match(/data-picker-mode=/g) || []).length, 3, 'all, sync, and original filters exist');
+  assert.match(html, /data-picker-mode="sync"[^>]*>同期<\/button>/);
+  assert.match(html, /data-picker-mode="original"[^>]*>オリ<\/button>/);
 });
 
 
@@ -186,12 +188,12 @@ test('PL-name edit uses the normal persistence and shared-session save path', ()
   assert.doesNotMatch(handler, /renderAll\(\)/, 'do not replace the input/button while the user is clicking away');
 });
 
-test('persona picker refreshes LBT account sync data and replaces stale official candidates', () => {
+test('persona picker refreshes LBT sync data and keeps the original catalog identity beside its synced variant', () => {
   const openStart = app.indexOf('function openPicker(index)');
   const openEnd = app.indexOf('function renderLbtImportCandidates()', openStart);
   const openPicker = app.slice(openStart, openEnd);
   const syncStart = app.indexOf('function refreshSelectedLbtPersonaData()');
-  const syncEnd = app.indexOf('function syncedIdentityKeysForAccount', syncStart);
+  const syncEnd = app.indexOf('function personaSnapshotForShare', syncStart);
   const syncRefresh = app.slice(syncStart, syncEnd);
   const pickerStart = app.indexOf('function renderPickerList()');
   const pickerEnd = app.indexOf('function deleteLocalPersona', pickerStart);
@@ -203,8 +205,11 @@ test('persona picker refreshes LBT account sync data and replaces stale official
   assert.match(syncRefresh, /discoverLbtPersonaCandidates\(/);
   assert.match(syncRefresh, /importLocalPersonas\(/);
   assert.match(syncRefresh, /localPersonaPickerSignature\(existing\) !== localPersonaPickerSignature\(candidate\)/);
-  assert.match(picker, /syncedIdentityKeysForAccount\(selectedAccount\)/);
-  assert.match(picker, /if \(syncedIdentityKeys\.has\(identityKey\)\) return false/);
+  assert.doesNotMatch(picker, /syncedIdentityKeys/);
+  assert.match(picker, /state\.pickerMode === 'sync' && persona\.variantType !== 'sync'/);
+  assert.match(picker, /state\.pickerMode === 'original' && persona\.variantType === 'sync'/);
+  assert.match(picker, /persona\.variantType === 'sync' \? '同期' : 'オリ'/);
+  assert.match(picker, /同期・創作人格|同期データ/);
   assert.match(personaImport, /byKey\.delete\(previousKey\)/);
 });
 
