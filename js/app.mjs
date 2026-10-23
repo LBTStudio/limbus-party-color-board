@@ -13,6 +13,7 @@ import {
   sortResources,
   totalColors,
 } from './core.mjs';
+import { escapeHtml } from './security.mjs';
 
 const DATA_URL = './data/personas.json';
 const STORAGE_KEY = 'lbt_party_color_board_v1';
@@ -39,16 +40,6 @@ const state = {
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[character]));
-}
 
 function readStored() {
   try {
@@ -416,7 +407,7 @@ function renderParty() {
           <div class="card-id">
             <span class="card-slot">SLOT ${slot}</span>
             <span class="kind-badge">${personaKindLabel(persona)}</span>
-            <span class="card-no">${personaNumberLabel(persona)}</span>
+            <span class="card-no">${escapeHtml(personaNumberLabel(persona))}</span>
           </div>
           <div class="card-actions">
             <button type="button" class="mini-btn" data-action="edit-member" data-index="${originalIndex}" ${canEditParty() ? "" : "disabled"}>変更</button>
@@ -430,8 +421,8 @@ function renderParty() {
           </div>
         </div>
         <dl class="stats">
-          <div><dt>HP</dt><dd>${persona.hp}</dd></div>
-          <div><dt>SAN</dt><dd>${persona.san}</dd></div>
+          <div><dt>HP</dt><dd>${escapeHtml(persona.hp)}</dd></div>
+          <div><dt>SAN</dt><dd>${escapeHtml(persona.san)}</dd></div>
           <div><dt>速度</dt><dd>${escapeHtml(persona.speed)}</dd></div>
         </dl>
         <p class="passive"><b>パッシブ</b> ${escapeHtml(persona.passiveCond || '—')}${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
@@ -517,7 +508,7 @@ function renderPickerList() {
         ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(`${personaNumberLabel(persona)} ${persona.name}${disabled ? ' 編成済み' : ''}`)}">
         <span class="picker-main">
           <span class="picker-line">
-            <span class="picker-no">${personaNumberLabel(persona)}</span>
+            <span class="picker-no">${escapeHtml(personaNumberLabel(persona))}</span>
             <span class="picker-name">${escapeHtml(persona.name)}</span>
             ${disabled ? '<span class="picker-state">編成済み</span>' : ''}
           </span>
