@@ -180,6 +180,7 @@ test('PL-name edit uses the normal persistence and shared-session save path', ()
   assert.match(handler, /data-player-name-index/);
   assert.match(handler, /entry\.playerName = sanitizePlayerName\(input\.value\)/);
   assert.match(handler, /saveState\(\)/);
-  assert.match(handler, /renderAll\(\)/);
+  assert.match(handler, /renderMatrix\(\)/);
   assert.match(handler, /canEditParty\(\)/);
+  assert.doesNotMatch(handler, /renderAll\(\)/, 'do not replace the input/button while the user is clicking away');
 });
