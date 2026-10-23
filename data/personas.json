@@ -1040,7 +1040,8 @@
       "speed": "1d7",
       "speedAvg": 4,
       "keywords": [
-        "出血"
+        "出血",
+        "煙"
       ],
       "affiliation": "笑う顔",
       "passiveName": "煙払い",
@@ -5369,7 +5370,8 @@
       "speedAvg": 4.5,
       "keywords": [
         "呼吸",
-        "火傷"
+        "火傷",
+        "煙"
       ],
       "affiliation": "ヴィリーブ工房",
       "passiveName": "蒸気を纏う",
@@ -5427,7 +5429,8 @@
       "speed": "2d3+1",
       "speedAvg": 5,
       "keywords": [
-        "呼吸"
+        "呼吸",
+        "煙"
       ],
       "affiliation": "",
       "passiveName": "一本一本",
@@ -6808,7 +6811,9 @@
       "san": 55,
       "speed": "2d2",
       "speedAvg": 3,
-      "keywords": [],
+      "keywords": [
+        "煙"
+      ],
       "affiliation": "",
       "passiveName": "考えの歯車",
       "passiveCond": "色欲x4 保有",
