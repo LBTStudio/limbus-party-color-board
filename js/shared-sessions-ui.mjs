@@ -174,7 +174,7 @@ function renderAdmin(data) {
       makeActionButton('却下', 'shared-deny', { requestId: item.request_id }),
     ],
   )));
-  membersRoot.replaceChildren(adminSection('参加者', members, '参加者はいません。', (item) => adminItem(
+  membersRoot.replaceChildren(adminSection('参加者（' + members.length + '/16名）', members, '参加者はいません。', (item) => adminItem(
     item.display_name,
     roleLabel(item.role) + ' · ID ' + String(item.user_id).slice(0, 8),
     item.role === 'owner' ? [] : [
@@ -254,7 +254,9 @@ function render() {
     const row = node('div', 'shared-session-item');
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
-    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)));
+    const memberCount = Number(item.member_count);
+    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
+      + ' · ' + (Number.isFinite(memberCount) && memberCount > 0 ? memberCount : 1) + '/16名'));
     text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
     const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
     text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
@@ -710,7 +712,15 @@ async function removeMember(userId) {
 }
 
 async function decideRequest(requestId, decision, role = 'viewer') {
-  await getApi().decideRequest(requestId, decision, role);
+  try {
+    await getApi().decideRequest(requestId, decision, role);
+  } catch (error) {
+    if (decision === 'approve' && error?.code === '53300') {
+      setStatus('この共同編集スペースは発行者を含め最大16名です。参加者を整理してから申請を承認してください。');
+      return;
+    }
+    throw error;
+  }
   await refreshAdmin();
   await refreshSessions();
   setStatus(decision === 'approve' ? roleLabel(role) + 'として承認しました。' : '参加申請を却下しました。');
