@@ -409,9 +409,11 @@ declare
   v_expires timestamptz;
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
-  if not exists (select 1 from public.party_sessions s where s.id=p_session_id and s.owner_user_id=v_user_id and s.archived_at is null) then
-    raise exception 'OWNER_REQUIRED' using errcode = '42501';
-  end if;
+  -- Serialize invite creation for this session before enforcing its active-invite cap.
+  perform 1 from public.party_sessions s
+    where s.id=p_session_id and s.owner_user_id=v_user_id and s.archived_at is null
+    for update;
+  if not found then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
   if p_expires_hours is null or p_expires_hours < 1 or p_expires_hours > 720 then
     raise exception 'EXPIRY_MUST_BE_1_TO_720_HOURS' using errcode = '22023';
   end if;
@@ -476,6 +478,12 @@ begin
   join public.party_sessions s on s.id=i.session_id
   where i.token_hash=md5(lower(p_token)) and i.revoked_at is null
     and i.expires_at > now() and s.archived_at is null;
+  if not found then raise exception 'INVITE_INVALID_OR_EXPIRED' using errcode = '22023'; end if;
+
+  -- Requests for the same session serialize before checking the pending-request cap.
+  perform 1 from public.party_sessions s
+    where s.id=v_session_id and s.archived_at is null
+    for update;
   if not found then raise exception 'INVITE_INVALID_OR_EXPIRED' using errcode = '22023'; end if;
 
   select m.role into v_role from public.session_members m
@@ -668,8 +676,18 @@ declare
   v_user_id uuid := auth.uid();
   v_request public.session_access_requests%rowtype;
   v_owner uuid;
+  v_session_id uuid;
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
+  select r.session_id into v_session_id from public.session_access_requests r where r.id=p_request_id;
+  if not found then raise exception 'REQUEST_NOT_FOUND' using errcode = 'P0002'; end if;
+
+  -- Lock the parent session first so concurrent approvals cannot exceed its member cap.
+  perform 1 from public.party_sessions s
+    where s.id=v_session_id and s.archived_at is null
+    for update;
+  if not found then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
+
   select * into v_request from public.session_access_requests r where r.id=p_request_id for update;
   if not found then raise exception 'REQUEST_NOT_FOUND' using errcode = 'P0002'; end if;
   select s.owner_user_id into v_owner from public.party_sessions s
