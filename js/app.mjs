@@ -739,6 +739,22 @@ function applyLbtPersonaImport() {
     return;
   }
 
+  const sharedSession = window.sharedPartySession;
+  if (sharedSession?.isActive && !sharedSession.canEdit()) {
+    const selectedPartyKeys = new Set(state.party.map((entry) => entry.key));
+    const wouldChangeSharedIdentity = selected.some((candidate) => {
+      const existing = state.localPersonas.find((persona) => (
+        candidate.sourceRef && persona.sourceRef === candidate.sourceRef
+      )) || state.localPersonas.find((persona) => persona.key === candidate.key);
+      return existing && selectedPartyKeys.has(existing.key);
+    });
+    if (wouldChangeSharedIdentity) {
+      $('#lbt-import-status').textContent =
+        '閲覧中の共有編成で使用している人格は更新できません。共有編成を閉じてから再取り込みしてください。';
+      return;
+    }
+  }
+
   try {
     const result = importLocalPersonas(browserStorage(), selected);
     refreshPersonaPool(result.personas);
@@ -752,6 +768,9 @@ function applyLbtPersonaImport() {
     showToast('今回の追加データをメモリ上に読み込みました。永続保存はできませんでした: ' + (error.message || '保存エラー'));
   }
   renderAll();
+  // Importing an update to an identity currently selected in an editable shared
+  // party changes its snapshot too; start the normal optimistic save path.
+  if (sharedSession?.isActive) sharedSession.onPartyChanged();
   if ($('#lbt-import-dialog').open) $('#lbt-import-dialog').close();
   state.importCandidates = [];
   reopenPickerAfterLocalDialog('local');
