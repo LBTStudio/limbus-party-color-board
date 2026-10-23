@@ -165,7 +165,7 @@ function render() {
   $('#shared-refresh').disabled = !configured;
   $('#shared-role-label').textContent = active
     ? roleLabel(active.role) + ' / revision ' + active.revision
-    : '個人編成';
+    : 'この端末の個人編成';
 
   const list = $('#shared-session-list');
   list.replaceChildren();
