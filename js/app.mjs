@@ -256,6 +256,19 @@ function readUrlKeys() {
   return params.get('p').split(',').map((key) => key.trim()).filter(Boolean);
 }
 
+function readUrlPlayerNames() {
+  const params = new URLSearchParams(location.search);
+  try {
+    const parsed = JSON.parse(params.get('pl') || '[]');
+    if (!Array.isArray(parsed)) return new Map();
+    return new Map(parsed.slice(0, MAX_PARTY)
+      .filter((item) => Array.isArray(item) && typeof item[0] === 'string')
+      .map(([key, name]) => [key, sanitizePlayerName(name)]));
+  } catch {
+    return new Map();
+  }
+}
+
 function sanitizeParty(entries) {
   if (!Array.isArray(entries)) return null;
   const seen = new Set();
@@ -311,6 +324,7 @@ function saveState() {
   if (sharedController?.isActive) {
     const params = new URLSearchParams(location.search);
     params.delete('p');
+    params.delete('pl');
     const query = params.toString();
     history.replaceState(null, '', location.pathname + (query ? '?' + query : '') + '#session=' + encodeURIComponent(sharedController.sessionId));
     sharedController.onPartyChanged();
@@ -323,8 +337,14 @@ function saveState() {
     // emit a URL that looks shareable but cannot reconstruct the custom persona elsewhere.
     if (state.party.length > 0 && !containsLocalOnlyPersona) {
       params.set('p', state.party.map((entry) => entry.key).join(','));
+      const namedEntries = state.party
+        .filter((entry) => sanitizePlayerName(entry.playerName))
+        .map((entry) => [entry.key, sanitizePlayerName(entry.playerName)]);
+      if (namedEntries.length) params.set('pl', JSON.stringify(namedEntries));
+      else params.delete('pl');
     } else {
       params.delete('p');
+      params.delete('pl');
     }
     const query = params.toString();
     history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
@@ -360,7 +380,12 @@ function init(data) {
     party = fromStore;
   }
   if (party === null) party = defaultParty();
-  state.party = party.slice(0, MAX_PARTY);
+  const urlPlayerNames = readUrlPlayerNames();
+  state.party = party.slice(0, MAX_PARTY).map((entry) => (
+    urlPlayerNames.has(entry.key)
+      ? { ...entry, playerName: urlPlayerNames.get(entry.key) }
+      : entry
+  ));
 
   if (stored && PARTY_SORTS.has(stored.partySort)) state.partySort = stored.partySort;
   if (stored && RESOURCE_SORTS.has(stored.resourceSort)) state.resourceSort = stored.resourceSort;
