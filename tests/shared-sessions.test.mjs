@@ -366,6 +366,8 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(html.includes('id="shared-panel-content"'));
   assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-content'));
   assert.ok(styles.includes('position: fixed;'));
+  assert.ok(styles.includes('.shared-panel,\n  .card-actions'));
+  assert.ok(sharedUi.includes('a[href="#shared-panel"]'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true, { focusRequests: true })'));
   assert.ok(sharedUi.includes("bridge.showToast('新しい参加申請が"));
