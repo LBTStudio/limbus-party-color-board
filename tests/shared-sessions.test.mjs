@@ -509,8 +509,10 @@ test('untrusted persona fields are escaped before template-based HTML insertion'
     escapeHtml(payload),
     '&lt;/dd&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
   );
-  assert.ok(app.includes('<dd>${escapeHtml(persona.hp)}</dd>'));
-  assert.ok(app.includes('<dd>${escapeHtml(persona.san)}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.speed || \'—\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resSlash || \'—\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resPierce || \'—\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resBlunt || \'—\')}</dd>'));
   assert.equal((app.match(/escapeHtml\(personaNumberLabel\(persona\)\)/g) || []).length, 2);
 });
 
