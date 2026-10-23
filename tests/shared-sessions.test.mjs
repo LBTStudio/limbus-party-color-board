@@ -428,7 +428,7 @@ test('manual workspace ending deletes data immediately while idle cleanup keeps 
     'the delayed purge remains only for automatically archived idle sessions');
 });
 
-test('member capacity supports 16 participants and workspace lists show the creator display name', () => {
+test('member capacity supports 16 within the 20-person cap and workspace lists show the creator display name', () => {
   assert.match(migration, /SESSION_MEMBER_LIMIT/);
   assert.match(migration, /session_members m where m\.session_id=v_request\.session_id\) >= 20/);
   const start = immediateDeleteMigration.indexOf('create or replace function public.list_my_party_sessions()');
@@ -440,7 +440,7 @@ test('member capacity supports 16 participants and workspace lists show the crea
   assert.match(listFunction, /owner_member\.user_id = s\.owner_user_id/);
   assert.match(sharedUi, /'発行者: ' \+ \(item\.owner_display_name \|\| '編成主'\)/);
   assert.match(sharedUi, /'発行者: ' \+ active\.ownerDisplayName/);
-  assert.match(design, /16名全員が常時アクティブの場合/);
+  assert.match(design, /20名が毎日24時間5秒間隔でポーリングし続ける場合/);
 });
 
 test('tool URL copying is separate from invitation issuance and cannot auto-copy an invite secret', () => {
