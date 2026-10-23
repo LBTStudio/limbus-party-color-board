@@ -76,6 +76,24 @@ test('saveState warns once when a local-only lineup cannot be persisted and clea
   );
 });
 
+test('LBT identity imports save active-party snapshot changes and block read-only visual divergence', () => {
+  const start = app.indexOf('function applyLbtPersonaImport()');
+  const end = app.indexOf('\nfunction renderManualSkillFields(', start);
+  const importer = app.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(importer, /sharedSession\?\.isActive && !sharedSession\.canEdit\(\)/);
+  assert.match(importer, /wouldChangeSharedIdentity/);
+  assert.match(importer, /閲覧中の共有編成で使用している人格は更新できません/);
+  assert.ok(
+    importer.indexOf('const wouldChangeSharedIdentity') < importer.indexOf('importLocalPersonas(browserStorage(), selected)'),
+    'read-only sessions must reject an overwrite before persisting local data',
+  );
+  assert.ok(
+    importer.indexOf('renderAll();') < importer.indexOf('sharedSession.onPartyChanged()'),
+    'notify the shared save controller after an editable active-party identity is refreshed',
+  );
+});
+
 test('party color strip retains the compact legacy design and explains the S0-S4 order', () => {
   assert.match(html, /色帯は左からS0→S4の順です/);
   assert.match(app, /class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です"/);
