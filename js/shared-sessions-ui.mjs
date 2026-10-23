@@ -740,10 +740,19 @@ async function checkAccess(quiet = false) {
   try {
     const result = await getApi().checkAccess(sessionId, displayName());
     if (result.status === 'approved') {
+      try {
+        // Keep the approved request pending until activation succeeds. If the
+        // current session has unsaved edits, activateSession rejects switching;
+        // retain the request so polling can retry after the user resolves them.
+        await activateSession(sessionId);
+      } catch (error) {
+        setStatus('参加が承認されましたが、現在の編成を切り替えられません: ' + error.message);
+        scheduleAccessCheck(15000);
+        return;
+      }
       if (accessTimer) clearTimeout(accessTimer);
       accessTimer = null;
       pendingRequestSessionId = null;
-      await activateSession(sessionId);
     } else if (['denied', 'revoked', 'not_requested', 'closed'].includes(result.status)) {
       if (accessTimer) clearTimeout(accessTimer);
       accessTimer = null;
