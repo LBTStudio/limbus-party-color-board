@@ -124,7 +124,10 @@ function saveState() {
   }
   try {
     const params = new URLSearchParams(location.search);
-    if (state.party.length > 0) {
+    const containsLocalOnlyPersona = state.party.some((entry) => state.map.get(entry.key)?.localOnly);
+    // Local persona keys reference data stored only in this browser profile. Do not
+    // emit a URL that looks shareable but cannot reconstruct the custom persona elsewhere.
+    if (state.party.length > 0 && !containsLocalOnlyPersona) {
       params.set('p', state.party.map((entry) => entry.key).join(','));
     } else {
       params.delete('p');
@@ -232,6 +235,9 @@ function handleClick(event) {
         break;
       case 'pick-persona':
         choosePersona(action.dataset.key);
+        break;
+      case 'delete-local-persona':
+        deleteLocalPersona(action.dataset.key);
         break;
       default:
         break;
@@ -746,7 +752,7 @@ function renderPickerList() {
     const sourceBadge = persona.localOnly
       ? `<span class="persona-source-badge">${escapeHtml(persona.sourceLabel || personaKindLabel(persona))}</span>`
       : '';
-    return `
+    const pickerButton = `
       <button type="button" class="picker-item" data-action="pick-persona" data-key="${escapeHtml(persona.key)}"
         ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(`${personaNumberLabel(persona)} ${persona.name}${stateLabel ? ` ${stateLabel}` : ''}`)}">
         <span class="picker-main">
@@ -762,11 +768,34 @@ function renderPickerList() {
         <span class="picker-colors" aria-hidden="true">${colors.map((sin) => (
           `<span class="picker-dot" style="--sin:${SIN_META[sin].color}" title="${escapeHtml(sin)}"></span>`
         )).join('')}</span>
-      </button>
-    `;
+      </button>`;
+    return persona.localOnly
+      ? `<div class="picker-item-wrap">${pickerButton}<button type="button" class="icon-btn picker-delete-local" data-action="delete-local-persona" data-key="${escapeHtml(persona.key)}" aria-label="${escapeHtml(persona.name)}を追加人格ライブラリから削除" title="追加人格から削除">×</button></div>`
+      : pickerButton;
   }).join('');
 
   $('#picker-empty').hidden = results.length > 0;
+}
+
+function deleteLocalPersona(key) {
+  const persona = state.localPersonas.find((item) => item.key === key);
+  if (!persona) return;
+  if (state.party.some((entry) => entry.key === key)) {
+    showToast('編成で使用中の人格です。先に編成から外してください。');
+    return;
+  }
+  if (!window.confirm(`「${persona.name}」をこのブラウザの追加人格ライブラリから削除しますか？`)) return;
+  const next = state.localPersonas.filter((item) => item.key !== key);
+  try {
+    state.localPersonas = saveLocalPersonas(browserStorage(), next);
+  } catch (error) {
+    showToast('追加人格を削除できませんでした: ' + (error.message || '保存エラー'));
+    return;
+  }
+  refreshPersonaPool(state.localPersonas);
+  renderAll();
+  renderPickerList();
+  showToast(`「${persona.name}」を追加人格ライブラリから削除しました。`);
 }
 
 function choosePersona(key) {
@@ -857,6 +886,7 @@ async function copyTsv() {
   const result = state.lastAggregate;
   const rows = [[
     '枠',
+    '人格キー',
     '人格番号',
     '人格名',
     '種別',
@@ -874,6 +904,7 @@ async function copyTsv() {
     if (!persona) return;
     rows.push([
       index + 1,
+      persona.key,
       sheetNumber(persona),
       persona.name,
       personaKindLabel(persona),
