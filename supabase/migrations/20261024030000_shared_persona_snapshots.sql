@@ -1,6 +1,6 @@
 -- Share local-only LBT synchronized/original/manual personas as bounded data snapshots.
--- The browser still owns the source save; this migration only enables session members
--- to exchange a validated display/aggregation snapshot through the existing RPC boundary.
+-- The original LBT browser save remains local; only selected snapshots are sent to an
+-- authorized shared session so another session member can reconstruct the board entry.
 
 alter table public.party_sessions
   add column if not exists party_personas jsonb not null default '[]'::jsonb;
@@ -23,7 +23,7 @@ create or replace function public._sync_party_persona_snapshots()
 returns trigger
 language plpgsql
 set search_path = pg_catalog
-as $
+as $$
 declare
   v_personas jsonb;
 begin
@@ -31,14 +31,13 @@ begin
     raise exception 'PARTY_PERSONAS_MUST_BE_ARRAY' using errcode = '22023';
   end if;
 
-  -- Drop snapshots that no longer belong to a selected key. This also cleans up
-  -- stale data when an older client saves an official-only party through v1 RPC.
+  -- Remove snapshots whose keys are no longer in the party. This also cleans stale
+  -- local snapshots when an older client saves an official-only party through v1 RPC.
   select coalesce(jsonb_agg(item.value order by item.ordinality), '[]'::jsonb)
     into v_personas
     from jsonb_array_elements(new.party_personas) with ordinality as item(value, ordinality)
     where item.value->>'key' = any(new.party_keys);
   new.party_personas := v_personas;
-
   return new;
 end;
 $$;
@@ -97,8 +96,8 @@ begin
 end;
 $$;
 
--- New RPC keeps the existing RPC's role checks, optimistic revision check, idempotency,
--- and rate limit, while accepting only selected, well-formed local persona snapshots.
+-- This v2 RPC keeps the original role checks, optimistic revision, idempotency and
+-- rate limits. Non-catalog keys must have one validated snapshot in the same operation.
 create or replace function public.apply_party_edit_v2(
   p_session_id uuid,
   p_expected_revision bigint,
@@ -122,13 +121,16 @@ declare
   v_slot jsonb;
   v_color jsonb;
   v_slot_index integer;
+  v_keyword jsonb;
   v_local_keys text[] := '{}'::text[];
   v_key text;
+  v_numeric numeric;
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
   if p_operation_id is null then raise exception 'OPERATION_ID_REQUIRED' using errcode = '22023'; end if;
 
-  -- Serialize edits and membership changes within this session only.
+  -- Match the per-user serialization used by the current party-edit RPC.
+  perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
   select s.revision,s.archived_at into v_revision,v_archived
     from public.party_sessions s where s.id=p_session_id for update;
   if not found then raise exception 'SESSION_NOT_FOUND' using errcode = 'P0002'; end if;
@@ -156,7 +158,7 @@ begin
   if cardinality(p_party_keys) <> (select count(distinct k) from unnest(p_party_keys) as u(k)) then
     raise exception 'DUPLICATE_PERSONA_KEY' using errcode = '22023';
   end if;
-  if p_party_personas is null or jsonb_typeof(p_party_personas) <> 'array' then
+  if p_party_personas is null or jsonb_typeof(p_party_personas) is distinct from 'array' then
     raise exception 'PARTY_PERSONAS_MUST_BE_ARRAY' using errcode = '22023';
   end if;
   if jsonb_array_length(p_party_personas) > 6 or octet_length(p_party_personas::text) > 60000 then
@@ -165,12 +167,14 @@ begin
 
   for v_persona in select value from jsonb_array_elements(p_party_personas)
   loop
-    if jsonb_typeof(v_persona) <> 'object' then
+    if jsonb_typeof(v_persona) is distinct from 'object' then
       raise exception 'INVALID_PARTY_PERSONA_SNAPSHOT' using errcode = '22023';
     end if;
 
     v_key := coalesce(v_persona->>'key','');
-    if char_length(v_key) > 180 or v_key !~ '^(lbt-sync-|lbt-original-|manual-)[A-Za-z0-9_-]{1,180}
+    if char_length(v_key) > 180
+      or v_key !~ '^(lbt-sync-|lbt-original-|manual-)[A-Za-z0-9_-]{1,180}$'
+    then
       raise exception 'INVALID_LOCAL_PERSONA_KEY' using errcode = '22023';
     end if;
     if v_key = any(v_local_keys) then
@@ -185,21 +189,17 @@ begin
       or coalesce(v_persona->>'kind','') not in ('normal','tokui','custom')
       or coalesce(v_persona->>'variantType','') not in ('sync','custom','manual')
       or jsonb_typeof(v_persona->'no') is distinct from 'number'
-      or (v_persona->>'no')::numeric < 0 or (v_persona->>'no')::numeric > 9999
       or jsonb_typeof(v_persona->'hp') is distinct from 'number'
-      or (v_persona->>'hp')::numeric < 1 or (v_persona->>'hp')::numeric > 9999
       or jsonb_typeof(v_persona->'san') is distinct from 'number'
-      or (v_persona->>'san')::numeric < 0 or (v_persona->>'san')::numeric > 9999
       or jsonb_typeof(v_persona->'speed') is distinct from 'string'
       or char_length(v_persona->>'speed') > 40
       or jsonb_typeof(v_persona->'speedAvg') is distinct from 'number'
-      or (v_persona->>'speedAvg')::numeric < 0 or (v_persona->>'speedAvg')::numeric > 999
       or jsonb_typeof(v_persona->'sourceLabel') is distinct from 'string'
       or char_length(v_persona->>'sourceLabel') > 100
       or jsonb_typeof(v_persona->'originType') is distinct from 'string'
       or char_length(v_persona->>'originType') > 40
-      or (v_persona->>'syncRank' is not null and v_persona->>'syncRank' not in ('0','00','000'))
       or jsonb_typeof(v_persona->'syncMax') is distinct from 'boolean'
+      or (v_persona->>'syncRank' is not null and v_persona->>'syncRank' not in ('0','00','000'))
       or char_length(coalesce(v_persona->>'passiveName','')) > 100
       or char_length(coalesce(v_persona->>'passiveCond','')) > 240
       or char_length(coalesce(v_persona->>'affiliation','')) > 100
@@ -209,16 +209,34 @@ begin
       raise exception 'INVALID_PARTY_PERSONA_FIELDS' using errcode = '22023';
     end if;
 
+    v_numeric := (v_persona->>'no')::numeric;
+    if v_numeric < 0 or v_numeric > 9999 then
+      raise exception 'INVALID_PARTY_PERSONA_NUMBER' using errcode = '22023';
+    end if;
+    v_numeric := (v_persona->>'hp')::numeric;
+    if v_numeric < 1 or v_numeric > 9999 then
+      raise exception 'INVALID_PARTY_PERSONA_HP' using errcode = '22023';
+    end if;
+    v_numeric := (v_persona->>'san')::numeric;
+    if v_numeric < 0 or v_numeric > 9999 then
+      raise exception 'INVALID_PARTY_PERSONA_SAN' using errcode = '22023';
+    end if;
+    v_numeric := (v_persona->>'speedAvg')::numeric;
+    if v_numeric < 0 or v_numeric > 999 then
+      raise exception 'INVALID_PARTY_PERSONA_SPEED' using errcode = '22023';
+    end if;
+
     if jsonb_array_length(v_persona->'keywords') > 60 then
       raise exception 'PARTY_PERSONA_KEYWORD_LIMIT' using errcode = '22023';
     end if;
-    if exists (
-      select 1 from jsonb_array_elements(v_persona->'keywords') as keyword(value)
-      where jsonb_typeof(keyword.value) is distinct from 'string'
-        or char_length(keyword.value #>> '{}') > 60
-    ) then
-      raise exception 'INVALID_PARTY_PERSONA_KEYWORDS' using errcode = '22023';
-    end if;
+    for v_keyword in select value from jsonb_array_elements(v_persona->'keywords')
+    loop
+      if jsonb_typeof(v_keyword) is distinct from 'string'
+        or char_length(v_keyword #>> '{}') > 60
+      then
+        raise exception 'INVALID_PARTY_PERSONA_KEYWORDS' using errcode = '22023';
+      end if;
+    end loop;
 
     if jsonb_array_length(v_persona->'slots') <> 5 then
       raise exception 'PARTY_PERSONA_REQUIRES_FIVE_SLOTS' using errcode = '22023';
@@ -227,7 +245,7 @@ begin
       select value, (ordinality - 1)::integer
       from jsonb_array_elements(v_persona->'slots') with ordinality
     loop
-      if jsonb_typeof(v_slot) <> 'object'
+      if jsonb_typeof(v_slot) is distinct from 'object'
         or coalesce(v_slot->>'rank','') <> ('S' || v_slot_index::text)
         or char_length(coalesce(v_slot->>'name','')) > 120
         or char_length(coalesce(v_slot->>'type','')) > 80
@@ -249,8 +267,8 @@ begin
     end loop;
   end loop;
 
-  -- Official identities must be in the catalog allowlist. Non-catalog keys must
-  -- have exactly one matching snapshot in this same atomic operation.
+  -- Official identities must match the allowlist. Any other selected key must be
+  -- an authorized local key with exactly one snapshot in this atomic edit.
   if exists (
     select 1 from unnest(p_party_keys) as selected(k)
     where exists (select 1 from public.party_persona_keys official where official.persona_key=selected.k)
@@ -281,118 +299,5 @@ end;
 $$;
 
 revoke all on function public._party_session_snapshot(uuid) from public, anon, authenticated;
-revoke all on function public.apply_party_edit_v2(uuid,bigint,uuid,text[],jsonb,text) from public, anon;
-grant execute on function public.apply_party_edit_v2(uuid,bigint,uuid,text[],jsonb,text) to authenticated;
- then
-      raise exception 'INVALID_LOCAL_PERSONA_KEY' using errcode = '22023';
-    end if;
-    if v_key = any(v_local_keys) then
-      raise exception 'DUPLICATE_LOCAL_PERSONA_SNAPSHOT' using errcode = '22023';
-    end if;
-    v_local_keys := array_append(v_local_keys, v_key);
-    if not (v_key = any(p_party_keys)) then
-      raise exception 'UNSELECTED_LOCAL_PERSONA_SNAPSHOT' using errcode = '22023';
-    end if;
-
-    if coalesce(v_persona->>'name','') = '' or char_length(v_persona->>'name') > 100
-      or coalesce(v_persona->>'kind','') not in ('normal','tokui','custom')
-      or coalesce(v_persona->>'variantType','') not in ('sync','custom','manual')
-      or jsonb_typeof(v_persona->'no') is distinct from 'number'
-      or (v_persona->>'no')::numeric < 0 or (v_persona->>'no')::numeric > 9999
-      or jsonb_typeof(v_persona->'hp') is distinct from 'number'
-      or (v_persona->>'hp')::numeric < 1 or (v_persona->>'hp')::numeric > 9999
-      or jsonb_typeof(v_persona->'san') is distinct from 'number'
-      or (v_persona->>'san')::numeric < 0 or (v_persona->>'san')::numeric > 9999
-      or jsonb_typeof(v_persona->'speed') is distinct from 'string'
-      or char_length(v_persona->>'speed') > 40
-      or jsonb_typeof(v_persona->'speedAvg') is distinct from 'number'
-      or (v_persona->>'speedAvg')::numeric < 0 or (v_persona->>'speedAvg')::numeric > 999
-      or jsonb_typeof(v_persona->'sourceLabel') is distinct from 'string'
-      or char_length(v_persona->>'sourceLabel') > 100
-      or jsonb_typeof(v_persona->'originType') is distinct from 'string'
-      or char_length(v_persona->>'originType') > 40
-      or (v_persona->>'syncRank' is not null and v_persona->>'syncRank' not in ('0','00','000'))
-      or jsonb_typeof(v_persona->'syncMax') is distinct from 'boolean'
-      or char_length(coalesce(v_persona->>'passiveName','')) > 100
-      or char_length(coalesce(v_persona->>'passiveCond','')) > 240
-      or char_length(coalesce(v_persona->>'affiliation','')) > 100
-      or jsonb_typeof(v_persona->'keywords') is distinct from 'array'
-      or jsonb_typeof(v_persona->'slots') is distinct from 'array'
-    then
-      raise exception 'INVALID_PARTY_PERSONA_FIELDS' using errcode = '22023';
-    end if;
-
-    if jsonb_array_length(v_persona->'keywords') > 60 then
-      raise exception 'PARTY_PERSONA_KEYWORD_LIMIT' using errcode = '22023';
-    end if;
-    if exists (
-      select 1 from jsonb_array_elements(v_persona->'keywords') as keyword(value)
-      where jsonb_typeof(keyword.value) is distinct from 'string'
-        or char_length(keyword.value #>> '{}') > 60
-    ) then
-      raise exception 'INVALID_PARTY_PERSONA_KEYWORDS' using errcode = '22023';
-    end if;
-
-    if jsonb_array_length(v_persona->'slots') <> 5 then
-      raise exception 'PARTY_PERSONA_REQUIRES_FIVE_SLOTS' using errcode = '22023';
-    end if;
-    for v_slot, v_slot_index in
-      select value, (ordinality - 1)::integer
-      from jsonb_array_elements(v_persona->'slots') with ordinality
-    loop
-      if jsonb_typeof(v_slot) <> 'object'
-        or coalesce(v_slot->>'rank','') <> ('S' || v_slot_index::text)
-        or char_length(coalesce(v_slot->>'name','')) > 120
-        or char_length(coalesce(v_slot->>'type','')) > 80
-        or jsonb_typeof(v_slot->'colors') is distinct from 'array'
-      then
-        raise exception 'INVALID_PARTY_PERSONA_SLOT' using errcode = '22023';
-      end if;
-      if jsonb_array_length(v_slot->'colors') > 2 then
-        raise exception 'PARTY_PERSONA_COLOR_LIMIT' using errcode = '22023';
-      end if;
-      for v_color in select value from jsonb_array_elements(v_slot->'colors')
-      loop
-        if jsonb_typeof(v_color) is distinct from 'string'
-          or (v_color #>> '{}') not in ('憤怒','色欲','怠惰','暴食','憂鬱','傲慢','嫉妬')
-        then
-          raise exception 'INVALID_PARTY_PERSONA_COLOR' using errcode = '22023';
-        end if;
-      end loop;
-    end loop;
-  end loop;
-
-  -- Official identities must be in the catalog allowlist. Non-catalog keys must
-  -- have exactly one matching snapshot in this same atomic operation.
-  if exists (
-    select 1 from unnest(p_party_keys) as selected(k)
-    where exists (select 1 from public.party_persona_keys official where official.persona_key=selected.k)
-      and selected.k = any(v_local_keys)
-  ) then
-    raise exception 'OFFICIAL_KEY_CANNOT_BE_LOCAL_SNAPSHOT' using errcode = '22023';
-  end if;
-  if exists (
-    select 1 from unnest(p_party_keys) as selected(k)
-    where not exists (select 1 from public.party_persona_keys official where official.persona_key=selected.k)
-      and not (selected.k = any(v_local_keys))
-  ) then
-    raise exception 'UNKNOWN_PERSONA_KEY' using errcode = '22023';
-  end if;
-
-  v_new_revision := v_revision + 1;
-  update public.party_sessions
-    set party_keys=p_party_keys,
-        party_personas=p_party_personas,
-        revision=v_new_revision,
-        updated_at=now()
-    where id=p_session_id;
-  insert into public.session_events(session_id,revision,actor_user_id,operation_id,operation,payload)
-    values (p_session_id,v_new_revision,v_user_id,p_operation_id,left(coalesce(p_operation,'party_update'),40),
-      jsonb_build_object('party_keys',p_party_keys));
-  return public._party_session_snapshot(p_session_id) || jsonb_build_object('status','saved','operation_id',p_operation_id);
-end;
-$$;
-
-revoke all on function public._party_session_snapshot(uuid) from public, anon, authenticated;
-revoke all on function public.apply_party_edit_v2(uuid,bigint,uuid,text[],jsonb,text) from public, anon;
+revoke all on function public.apply_party_edit_v2(uuid,bigint,uuid,text[],jsonb,text) from public, anon, authenticated;
 grant execute on function public.apply_party_edit_v2(uuid,bigint,uuid,text[],jsonb,text) to authenticated;
