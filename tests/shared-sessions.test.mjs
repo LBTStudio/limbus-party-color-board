@@ -331,6 +331,23 @@ test('workspace creation is blocked before the create RPC when the current share
   assert.match(activateBody, /const switchError = sessionSwitchError\(\)/);
 });
 
+test('workspace archival is rejected before the RPC when local changes have not settled', () => {
+  const start = sharedUi.indexOf('async function archiveActive()');
+  const end = sharedUi.indexOf('\nfunction leaveSession()', start);
+  const archive = sharedUi.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(archive, /const switchError = sessionSwitchError\(\)/);
+  assert.ok(
+    archive.indexOf('sessionSwitchError()') < archive.indexOf('window.confirm('),
+    'validate edits before asking for archival confirmation',
+  );
+  assert.ok(
+    archive.indexOf('sessionSwitchError()') < archive.indexOf('getApi().archiveSession'),
+    'never archive first and only afterwards ask whether to discard local edits',
+  );
+  assert.match(archive, /未解決の編集がある間は共同編集スペースを終了できません/);
+});
+
 test('workspace creation shares one name while invitees retain their own display name', () => {
   assert.match(html, /共同編集スペース名（作成者の表示名を兼ねます）/);
   assert.match(html, /id="shared-session-title" maxlength="40"/);
