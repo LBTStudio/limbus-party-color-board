@@ -312,7 +312,7 @@ async function createSession() {
 
 async function activateSession(sessionId, prefetched = null) {
   if (active && (active.saveBusy || active.retry || active.incomingState
-    || !sameKeys(currentKeys(), active.lastSavedKeys))) {
+    || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas))) {
     throw new Error('未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。');
   }
   const snapshot = prefetched && Array.isArray(prefetched.party_keys)
@@ -532,7 +532,7 @@ async function sendSave(session, operation) {
     if (result.status === 'conflict') {
       session.revision = Number(result.revision) || session.revision;
       session.incomingState = result;
-      session.localDraft = currentKeys();
+      session.localDraft = { keys: currentKeys(), personas: currentPersonas() };
       session.retry = null;
       session.status = 'conflict';
       statusMessage = '保存競合を検出しました。サーバー版かローカル版を選択してください。';
