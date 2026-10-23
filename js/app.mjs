@@ -217,6 +217,15 @@ function bindEvents() {
       else if (dialog.id === 'manual-persona-dialog') closeManualPersonaDialog();
       else dialog.close();
     });
+    dialog.addEventListener('cancel', (event) => {
+      if (dialog.id === 'lbt-import-dialog') {
+        event.preventDefault();
+        closeLbtPersonaImport();
+      } else if (dialog.id === 'manual-persona-dialog') {
+        event.preventDefault();
+        closeManualPersonaDialog();
+      }
+    });
   }
 }
 
@@ -576,6 +585,8 @@ function reopenPickerAfterLocalDialog(mode = null) {
 
 function openLbtPersonaImport() {
   state.modalReturnToPicker = true;
+  state.pickerQuery = '';
+  $('#picker-search').value = '';
   $('#picker').close();
   try {
     state.importCandidates = discoverLbtPersonaCandidates(browserStorage(), state.data.personas);
@@ -666,6 +677,8 @@ function resetManualPersonaForm() {
 
 function openManualPersonaDialog() {
   state.modalReturnToPicker = true;
+  state.pickerQuery = '';
+  $('#picker-search').value = '';
   $('#picker').close();
   resetManualPersonaForm();
   $('#manual-persona-dialog').showModal();
