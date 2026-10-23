@@ -24,6 +24,20 @@ test('startup sync updates every picker mode button without throwing', () => {
 });
 
 
+test('deleting an added persona cannot remove one referenced by the saved personal party during collaboration', () => {
+  const deleteStart = app.indexOf('function deleteLocalPersona(key)');
+  const deleteEnd = app.indexOf('\nfunction choosePersona(', deleteStart);
+  const deletion = app.slice(deleteStart, deleteEnd);
+  assert.ok(deleteStart >= 0 && deleteEnd > deleteStart);
+  assert.match(deletion, /window\.sharedPartySession\?\.isActive/);
+  assert.match(deletion, /window\.sharedPartySession\.personalPartySnapshot/);
+  assert.match(deletion, /savedPersonalKeys\.includes\(key\)/);
+  assert.ok(
+    deletion.indexOf('savedPersonalKeys.includes(key)') < deletion.indexOf('saveLocalPersonas('),
+    'protect the saved lineup before mutating the local persona library',
+  );
+});
+
 test('party color strip retains the compact legacy design and explains the S0-S4 order', () => {
   assert.match(html, /色帯は左からS0→S4の順です/);
   assert.match(app, /class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です"/);
