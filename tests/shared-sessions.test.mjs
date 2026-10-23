@@ -6,6 +6,7 @@ const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
 const migration = read('../supabase/migrations/202610230001_shared_party_sessions.sql');
 const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
+const lifecycleMigration = read('../supabase/migrations/202610230003_shared_session_lifecycle_cleanup.sql');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
 const config = read('../js/supabase-config.mjs');
@@ -248,4 +249,30 @@ test('forward migration updates already-deployed resource-cap RPCs and serialize
   const secondRowLock = decide.indexOf('for update', firstRowLock + 1);
   assert.ok(firstRowLock >= 0 && secondRowLock > firstRowLock);
   assert.ok(secondRowLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
+});
+
+
+test('shared session lifecycle clearly separates browser-local and cloud data', () => {
+  const html = read('../index.html');
+  assert.match(html, /共有編成（クラウド保存）/);
+  assert.match(html, /この端末の個人編成/);
+  assert.match(html, /PERSONAL · THIS BROWSER/);
+  assert.match(html, /SHARED · CLOUD DATABASE/);
+  assert.match(html, /30日間/);
+  assert.match(html, /7日後/);
+  assert.match(html, /この端末で閉じる/);
+  assert.match(html, /共有編成を終了/);
+  assert.match(sharedUi, /last_activity_at/);
+  assert.match(sharedUi, /共有データは7日後に完全削除/);
+});
+
+test('lifecycle migration tracks live usage and schedules idle cleanup safely', () => {
+  assert.match(lifecycleMigration, /add column if not exists last_activity_at/i);
+  assert.match(lifecycleMigration, /last_activity_at < now\(\) - interval '5 minutes'/i);
+  assert.match(lifecycleMigration, /last_activity_at < now\(\) - interval '30 days'/i);
+  assert.match(lifecycleMigration, /archived_at < now\(\) - interval '7 days'/i);
+  assert.match(lifecycleMigration, /create extension if not exists pg_cron/i);
+  assert.match(lifecycleMigration, /cleanup-idle-party-sessions/);
+  assert.match(lifecycleMigration, /revoke all on function public\.cleanup_idle_party_sessions\(\) from public, anon, authenticated/i);
+  assert.match(lifecycleMigration, /'last_activity_at',s\.last_activity_at/i);
 });
