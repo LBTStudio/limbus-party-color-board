@@ -171,6 +171,7 @@ function personaSnapshotForShare(persona, playerName = '') {
     affiliation: persona.affiliation || '',
     passiveName: persona.passiveName || '',
     passiveCond: persona.passiveCond || '',
+    passiveEffect: persona.passiveEffect || '',
     slots: (persona.slots || []).map((slot, index) => ({
       rank: `S${index}`,
       name: slot.name || '',
@@ -1307,6 +1308,10 @@ async function boot() {
       const { initializeSharedSessionsUi } = await import('./shared-sessions-ui.mjs');
       await initializeSharedSessionsUi({
         getPartyKeys: () => state.party.map((entry) => entry.key),
+        getPartyEntries: () => state.party.map((entry) => ({
+          key: entry.key,
+          playerName: sanitizePlayerName(entry.playerName),
+        })),
         setPartyKeys: (keys, sharedPersonas = []) => applySharedPartySnapshot(keys, sharedPersonas),
         getPartyPersonas: getShareablePartyPersonas,
         renderAll,
