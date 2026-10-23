@@ -234,16 +234,6 @@ function refreshSelectedLbtPersonaData() {
   return true;
 }
 
-function syncedIdentityKeysForAccount(account) {
-  if (!account) return new Set();
-  const prefix = `${account.id}:identity:`;
-  return new Set(state.localPersonas
-    .filter((persona) => persona.variantType === 'sync'
-      && persona.sourceRef?.startsWith(prefix)
-      && persona.sourceIdentityKey)
-    .map((persona) => persona.sourceIdentityKey));
-}
-
 function personaSnapshotForShare(persona, playerName = '') {
   if (!persona) return null;
   const assignment = { key: persona.key, playerName: sanitizePlayerName(playerName) };
@@ -1055,7 +1045,7 @@ function applyLbtPersonaImport() {
   if (sharedSession?.isActive) sharedSession.onPartyChanged();
   if ($('#lbt-import-dialog').open) $('#lbt-import-dialog').close();
   state.importCandidates = [];
-  reopenPickerAfterLocalDialog('local');
+  reopenPickerAfterLocalDialog('all');
 }
 
 function renderManualSkillFields() {
@@ -1153,7 +1143,7 @@ function saveManualPersonaFromDialog() {
   refreshPersonaPool(state.localPersonas);
   renderAll();
   if ($('#manual-persona-dialog').open) $('#manual-persona-dialog').close();
-  reopenPickerAfterLocalDialog('local');
+  reopenPickerAfterLocalDialog('all');
   showToast(`創作人格「${persona.name}」を追加しました。`);
 }
 
@@ -1163,16 +1153,13 @@ function renderPickerList() {
   const currentKey = state.pickerIndex !== null ? state.party[state.pickerIndex]?.key : null;
   const selectedAccount = state.lbtAccounts.find((account) => account.id === state.selectedLbtAccountId) || null;
   const ownedOnly = Boolean(selectedAccount && !state.showUnownedPersonas);
-  const syncedIdentityKeys = syncedIdentityKeysForAccount(selectedAccount);
 
   const results = state.personas.filter((persona) => {
-    if (!persona.localOnly) {
-      const identityKey = `${persona.kind === 'tokui' ? 't' : 'n'}:${persona.no}`;
-      if (syncedIdentityKeys.has(identityKey)) return false;
-    }
     if (ownedOnly && !isPersonaOwnedByLbtAccount(persona, selectedAccount)) return false;
-    if (state.pickerMode === 'local' && !persona.localOnly) return false;
-    if (state.pickerMode !== 'all' && state.pickerMode !== 'local' && persona.kind !== state.pickerMode) return false;
+    // Show the original catalog identity and its LBT-synced variant as separate
+    // entries. The picker filter classifies identities by provenance, not combat kind.
+    if (state.pickerMode === 'sync' && persona.variantType !== 'sync') return false;
+    if (state.pickerMode === 'original' && persona.variantType === 'sync') return false;
     if (!query) return true;
     const haystack = [
       persona.name,
@@ -1194,7 +1181,7 @@ function renderPickerList() {
     const keywords = persona.keywords.length > 0 ? persona.keywords.join('・') : (persona.affiliation || '—');
     const stateLabel = alreadySelected ? '編成済み' : '';
     const sourceBadge = persona.localOnly
-      ? `<span class="persona-source-badge">${escapeHtml(persona.sourceLabel || personaKindLabel(persona))}</span>`
+      ? `<span class="persona-source-badge">${persona.variantType === 'sync' ? '同期' : 'オリ'}</span>`
       : '';
     const pickerButton = `
       <button type="button" class="picker-item" data-action="pick-persona" data-key="${escapeHtml(persona.key)}"
@@ -1207,7 +1194,7 @@ function renderPickerList() {
             ${stateLabel ? `<span class="picker-state">${escapeHtml(stateLabel)}</span>` : ''}
           </span>
           <span class="picker-keywords">${escapeHtml(keywords)}</span>
-          ${persona.localOnly && persona.sourceAccount ? `<span class="lbt-import-option-meta">保存元：${escapeHtml(persona.sourceAccount)}</span>` : ''}
+          ${persona.localOnly ? `<span class="lbt-import-option-meta">${persona.sourceAccount ? `保存元：${escapeHtml(persona.sourceAccount)} · ` : ''}${escapeHtml(persona.sourceLabel || (persona.variantType === 'sync' ? '同期データ' : 'オリジナル人格'))}</span>` : ''}
         </span>
         <span class="picker-colors" aria-hidden="true">${colors.map((sin) => (
           `<span class="picker-dot" style="--sin:${SIN_META[sin].color}" title="${escapeHtml(sin)}"></span>`
