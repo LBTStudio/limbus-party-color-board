@@ -172,3 +172,26 @@ test('docs describe the implemented shared-session feature', () => {
   assert.doesNotMatch(failureModes, /共有セッション機能がまだない/);
   assert.match(readme, /招待リンクを開いた人はアクセス申請を送り/);
 });
+
+test('per-session resource caps are protected by parent-row locks', () => {
+  const inviteStart = migration.indexOf('create or replace function public.create_party_invite');
+  const inviteEnd = migration.indexOf('create or replace function public.revoke_party_invite');
+  const createInvite = migration.slice(inviteStart, inviteEnd);
+  assert.ok(createInvite.indexOf('for update') >= 0);
+  assert.ok(createInvite.indexOf('for update') < createInvite.indexOf('ACTIVE_INVITE_LIMIT'));
+
+  const requestStart = migration.indexOf('create or replace function public.request_party_access');
+  const requestEnd = migration.indexOf('create or replace function public.check_my_party_access');
+  const requestAccess = migration.slice(requestStart, requestEnd);
+  assert.ok(requestAccess.indexOf('for update') >= 0);
+  assert.ok(requestAccess.indexOf('for update') < requestAccess.indexOf('PENDING_REQUEST_LIMIT'));
+  assert.ok(requestAccess.indexOf('for update') < requestAccess.indexOf('insert into public.session_access_requests'));
+
+  const decideStart = migration.indexOf('create or replace function public.decide_party_access_request');
+  const decideEnd = migration.indexOf('create or replace function public.set_party_session_member_role');
+  const decide = migration.slice(decideStart, decideEnd);
+  const sessionLock = decide.indexOf('for update');
+  const requestLock = decide.indexOf('for update', sessionLock + 1);
+  assert.ok(sessionLock >= 0 && requestLock > sessionLock);
+  assert.ok(requestLock < decide.indexOf('SESSION_MEMBER_LIMIT'));
+});
