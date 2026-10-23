@@ -1315,6 +1315,7 @@ textarea.input {
 
 @media print {
   .controls,
+  .shared-panel,
   .card-actions,
   .toast,
   dialog {
@@ -1843,10 +1844,95 @@ h2 {
 }
 
 .shared-panel {
+  position: fixed;
+  z-index: 80;
+  right: 16px;
+  bottom: 16px;
+  width: min(720px, calc(100vw - 32px));
+  max-height: min(84dvh, 920px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 14px;
+  overflow: hidden;
   scroll-margin-top: 16px;
   border-color: #4a4030;
-  background: linear-gradient(145deg, rgba(27, 23, 19, .96), rgba(21, 18, 16, .96) 65%);
-  box-shadow: none;
+  background: linear-gradient(145deg, rgba(27, 23, 19, .985), rgba(21, 18, 16, .985) 65%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .62);
+  backdrop-filter: blur(16px);
+}
+
+.shared-panel:not(.is-open) {
+  width: min(430px, calc(100vw - 32px));
+  max-height: none;
+  padding: 12px 14px;
+}
+
+.shared-panel:not(.is-open) > .section-head {
+  margin-bottom: 0;
+}
+
+.shared-panel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 0 2px 2px 0;
+}
+
+.shared-panel:not(.is-open) .shared-panel-content {
+  display: none !important;
+}
+
+.shared-dock-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.shared-dock-tools .section-meta {
+  margin: 0;
+}
+
+.shared-panel-toggle {
+  min-height: 34px;
+  padding-inline: 10px;
+  white-space: nowrap;
+}
+
+.shared-toggle-mark {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.shared-request-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 3px 8px;
+  border: 1px solid #8f4d43;
+  border-radius: 999px;
+  background: rgba(217, 106, 94, .14);
+  color: #ffc2b9;
+  font-size: .68rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.shared-request-badge[hidden] {
+  display: none !important;
+}
+
+.shared-panel-toggle:focus-visible,
+.shared-request-badge:focus-visible {
+  outline-offset: 3px;
 }
 
 .shared-panel > .section-head {
@@ -2107,8 +2193,35 @@ h2 {
     max-width: calc(100vw - 54px);
   }
 
+  .shared-panel {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+    max-height: min(78dvh, 760px);
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .shared-panel:not(.is-open) {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    max-width: 380px;
+  }
+
   .shared-panel .section-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .shared-dock-tools {
     gap: 6px;
+  }
+
+  .shared-panel-toggle {
+    min-height: 32px;
+    padding-inline: 8px;
+    font-size: .72rem;
   }
 
   .shared-fields,
