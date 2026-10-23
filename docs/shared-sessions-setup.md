@@ -74,3 +74,14 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 - CAPTCHA / Turnstile はコード側のトークン連携を実装済みだが、Cloudflare Site key / Secret key の登録と Supabase 側 CAPTCHA 有効化は管理者操作が必要。
 - Supabase の実 DB へ SQL を適用した成功確認は、migration のデプロイ後に行う。デプロイ履歴または RPC の応答を確認し、動作確認手順を実施する必要がある。
 - RLS/RPC の負荷・権限テストを実 Supabase で行う必要がある。既存の Node テストはデータ集計、パーサー、静的な SQL セキュリティ条件を確認するのみ。
+
+
+## 8. 共有編成の保存先と自動削除
+
+「共有編成」は端末セッション管理ではなく、Supabase に保存される共同編集ワークスペースです。個人編成は各ブラウザの `localStorage` / URL、共有編成は Supabase Postgres が正本です。
+
+- 認可済みユーザーが共有編成を表示している間は、最終利用時刻を最大5分に1回更新します。
+- 30日間誰も開かなかった共有編成は日次ジョブで自動終了扱いになり、さらに7日後にセッション、メンバー、招待、申請、編集イベントが削除されます。
+- 発行者が「共有編成を終了」を選んだ場合も、7日後に完全削除されます。
+- 「この端末で閉じる」は現在の表示を個人編成に戻すだけで、共有編成を削除しません。
+- 自動削除ジョブは `pg_cron` を使います。migration 適用後に Database → Cron Jobs で `cleanup-idle-party-sessions` が登録され、成功履歴が出ていることを確認してください。

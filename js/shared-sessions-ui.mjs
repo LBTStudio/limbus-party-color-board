@@ -165,16 +165,20 @@ function render() {
   $('#shared-refresh').disabled = !configured;
   $('#shared-role-label').textContent = active
     ? roleLabel(active.role) + ' / revision ' + active.revision
-    : '個人編成';
+    : 'この端末の個人編成';
 
   const list = $('#shared-session-list');
   list.replaceChildren();
   sessions.forEach((item) => {
     const selected = active && active.sessionId === item.session_id;
     const row = node('div', 'shared-session-item');
-    const text = node('div');
+    const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
-    text.append(node('small', '', roleLabel(item.role) + ' · rev ' + (Number(item.revision) || 0) + ' · ' + String(item.session_id).slice(0, 8)));
+    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)));
+    const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
+    text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
+      ? '最終利用 ' + activity.toLocaleDateString() + ' ' + activity.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '利用状況を取得できません'));
     row.append(text);
     const openButton = makeActionButton(selected ? '選択中' : '開く', 'shared-open-session', { sessionId: item.session_id });
     openButton.disabled = Boolean(selected);
@@ -182,7 +186,7 @@ function render() {
     list.append(row);
   });
   if (!sessions.length && configured) {
-    list.append(node('p', 'empty', 'セッションがありません。「空の共有セッションを作成」から開始してください。'));
+    list.append(node('p', 'empty', '共有編成はありません。「＋ 共有編成を作成」から開始してください。'));
   }
 
   $('#shared-active').hidden = !active;
@@ -213,10 +217,10 @@ function render() {
 
 async function refreshSessions() {
   try {
-    setStatus('自分が参加しているセッションを読み込んでいます…');
+    setStatus('参加中の共有編成をクラウドから読み込んでいます…');
     const result = await getApi().listSessions(displayName());
     sessions = Array.isArray(result) ? result : [];
-    statusMessage = 'セッション一覧を読み込みました（' + sessions.length + '件）。';
+    statusMessage = '共有編成を読み込みました（' + sessions.length + '件）。';
     render();
     if (active && active.role === 'owner') await refreshAdmin();
   } catch (error) {
@@ -227,20 +231,20 @@ async function refreshSessions() {
 async function createSession() {
   const title = String($('#shared-session-title').value || '').trim();
   if (!title) {
-    setStatus('セッション名を入力してください。');
+    setStatus('共有編成の名前を入力してください。');
     $('#shared-session-title').focus();
     return;
   }
   rememberDisplayName();
   try {
-    setStatus('空の共有セッションを作成しています…');
+    setStatus('共有編成をクラウドに作成しています…');
     const result = await getApi().createSession(title, displayName());
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
     $('#shared-session-title').value = '';
     await activateSession(result.session_id, result);
     await refreshSessions();
   } catch (error) {
-    setStatus('セッションを作成できませんでした: ' + error.message);
+    setStatus('共有編成を作成できませんでした: ' + error.message);
   }
 }
 
@@ -279,7 +283,7 @@ async function activateSession(sessionId, prefetched = null) {
   inviteUrl = '';
   setRoute('session=' + active.sessionId);
   bridge.setPartyKeys(snapshot.party_keys);
-  statusMessage = '「' + active.title + '」を開きました。編集の保存と同期状態はこのパネルで確認できます。';
+  statusMessage = '「' + active.title + '」をクラウドから開きました。保存・同期状態はこのパネルで確認できます。';
   render();
   await refreshSessions();
   schedulePoll(1000);
@@ -555,13 +559,13 @@ async function decideRequest(requestId, decision, role = 'viewer') {
 async function archiveActive() {
   const session = active;
   if (!session || session.role !== 'owner') return;
-  if (!window.confirm('「' + session.title + '」を終了しますか？以後、参加者はアクセスできません。')) return;
+  if (!window.confirm('「' + session.title + '」を終了しますか？以後、参加者はアクセスできません。共有データは7日後に完全削除されます。')) return;
   try {
     await getApi().archiveSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
     leaveSession();
     await refreshSessions();
-    setStatus('共有セッションを終了しました。');
+    setStatus('共有編成を終了しました。関連データは7日後に自動削除されます。');
   } catch (error) {
     setStatus('セッションを終了できませんでした: ' + error.message);
   }
@@ -589,8 +593,8 @@ function leaveSession() {
   bridge.saveState();
   bridge.renderAll();
   statusMessage = old && old.accessRevoked
-    ? 'アクセス権が失効したため、個人編成に戻りました。'
-    : '個人編成に戻りました。';
+    ? 'アクセス権が失効したため、この端末の個人編成に戻りました。'
+    : 'この端末の個人編成に戻りました。共有編成はクラウドに残っています。';
   render();
 }
 
