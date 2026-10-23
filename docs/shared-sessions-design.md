@@ -127,6 +127,8 @@
 - ポーリングの unchanged 応答は小さな JSON のみ。編成が変わったときだけスナップショットを返し、クライアントは1回の共有人格スナップショットを48,000 bytes以下に制限する。参加者ごとに同じ更新を1回ずつ読むので、16名全員が48 KB近い編成を繰り返し更新する使い方は無料枠の egress を消費し得る。
 - 2026-10-24 時点の本番は Supabase Free。実DBは約12.1 MB、セッション3件（有効2件）、メンバー4件、編集イベント6件。現在のDBは小さく、16名で通常の編成編集をする短時間の運用は十分現実的と見積もる。ただし常時16名が終日操作するケースは負荷試験をしておらず、保証はできない。
 - Supabase Free の現行公表枠は、DB 500 MB、egress 5 GB/月、最大200 pooler clients、DB 接続の推奨上限60、shared CPU・最大0.5 GB RAM。API request 数自体は pricing 上「Unlimited」だが、実際のボトルネックは request 数より shared compute と egress。16名の理論ピークは5秒ごとの約3.2 poll/秒なので、まずは運用可能な水準と判断するが、利用が毎日長時間続くなら Dashboard の egress / CPU / connections を監視し、poll 間隔や有料プランを再評価する。
+- 転送量の例（圧縮を見込まない概算）：16名がそれぞれ1日10回編集すると、月4,800編集。編集者への保存応答＋最大15人への更新スナップショットを各48 KBと仮定すると約3.69 GB/月。平均10 KBなら約0.77 GB/月。同じ前提でアイドルpoll応答を100〜250 bytesと仮定し、約284万poll/月を加えると約0.28〜0.71 GBなので、最大サイズを多用するとFreeの5 GB/月に近づく可能性がある。これは更新ごとに参加者全員がそのrevisionを受け取る保守的な上限であり、実測値ではない。
+- 16名全員が常時5秒間隔でpollし続けるだけなら約829万poll/月。さらに編成変更が5秒ごとに24時間続き、16名全員へ48 KBのスナップショットが配信される極端な条件は約398 GB/月相当となり、Free枠では耐えない。したがって16名という人数自体はコード上対応できるが、長時間の高頻度編集＋大容量人格データには転送量監視が必要。
 - 数値はコード上限からの負荷概算で、実測ストレス試験ではない。参照: [Supabase Pricing](https://supabase.com/pricing)、[Compute and Disk](https://supabase.com/docs/guides/platform/compute-and-disk)、[Connection pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits)。
 
 ## 保存先と自動整理ポリシー
