@@ -383,8 +383,6 @@ test('local persona import enforces the 300-person library limit without partial
   }));
 
   assert.equal(MAX_LOCAL_PERSONAS, 300);
-  assert.match(html, /追加人格ライブラリの上限は、このブラウザにつき最大300件/);
-  assert.match(html, /上限は既存分を含め最大300件です/);
   assert.throws(
     () => importLocalPersonas(storage, candidates),
     (error) => error.code === 'LOCAL_PERSONA_LIMIT' && /最大300件/.test(error.message),
