@@ -15,6 +15,7 @@ const config = read('../js/supabase-config.mjs');
 const sharedUi = read('../js/shared-sessions-ui.mjs');
 const app = read('../js/app.mjs');
 const html = read('../index.html');
+const styles = read('../styles.css');
 const testWorkflow = read('../.github/workflows/test.yml');
 const updateWorkflow = read('../.github/workflows/update-data.yml');
 
@@ -361,5 +362,12 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(html.includes('<details class="toolbar-more">'));
   assert.ok(html.includes('href="#shared-panel">共有編成・同期へ</a>'));
   assert.ok(html.includes('<details class="shared-info">'));
-  assert.ok(sharedUi.includes("$('#shared-panel')?.scrollIntoView({ behavior: 'auto', block: 'start' })"));
+  assert.ok(html.includes('id="shared-panel-toggle"'));
+  assert.ok(html.includes('id="shared-panel-content"'));
+  assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-content'));
+  assert.ok(styles.includes('position: fixed;'));
+  assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
+  assert.ok(sharedUi.includes('setSharedPanelOpen(true, { focusRequests: true })'));
+  assert.ok(sharedUi.includes("bridge.showToast('新しい参加申請が"));
+  assert.ok(sharedUi.includes("requestBadge.textContent = '参加申請 ' + pendingCount"));
 });
