@@ -87,7 +87,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n2",
@@ -147,7 +150,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n3",
@@ -205,7 +211,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n4",
@@ -263,7 +272,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n5",
@@ -323,7 +335,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n6",
@@ -382,7 +397,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n7",
@@ -442,7 +460,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n8",
@@ -501,7 +522,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n9",
@@ -559,7 +583,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n10",
@@ -617,7 +644,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n11",
@@ -675,7 +705,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n12",
@@ -734,7 +767,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n13",
@@ -794,7 +830,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n14",
@@ -853,7 +892,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n15",
@@ -912,7 +954,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n16",
@@ -970,7 +1015,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n17",
@@ -1028,7 +1076,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n18",
@@ -1087,7 +1138,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通"
     },
     {
       "key": "n19",
@@ -1145,7 +1199,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n20",
@@ -1203,7 +1260,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n21",
@@ -1261,7 +1321,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n22",
@@ -1319,7 +1382,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n23",
@@ -1375,7 +1441,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通"
     },
     {
       "key": "n24",
@@ -1433,7 +1502,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n25",
@@ -1491,7 +1563,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n26",
@@ -1550,7 +1625,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n27",
@@ -1609,7 +1687,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n28",
@@ -1667,7 +1748,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n29",
@@ -1725,7 +1809,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n30",
@@ -1783,7 +1870,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n31",
@@ -1842,7 +1932,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n32",
@@ -1901,7 +1994,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n33",
@@ -1960,7 +2056,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n34",
@@ -2018,7 +2117,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n35",
@@ -2076,7 +2178,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n36",
@@ -2134,7 +2239,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n37",
@@ -2194,7 +2302,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n38",
@@ -2253,7 +2364,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n39",
@@ -2311,7 +2425,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n40",
@@ -2370,7 +2487,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n41",
@@ -2431,7 +2551,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n42",
@@ -2489,7 +2612,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n43",
@@ -2548,7 +2674,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n44",
@@ -2606,7 +2735,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n45",
@@ -2664,7 +2796,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n46",
@@ -2722,7 +2857,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n47",
@@ -2780,7 +2918,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n48",
@@ -2838,7 +2979,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n49",
@@ -2898,7 +3042,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n50",
@@ -2957,7 +3104,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n51",
@@ -3016,7 +3166,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n52",
@@ -3075,7 +3228,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n53",
@@ -3133,7 +3289,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n54",
@@ -3191,7 +3350,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n55",
@@ -3249,7 +3411,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n56",
@@ -3307,7 +3472,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n57",
@@ -3366,7 +3534,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n58",
@@ -3426,7 +3597,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n59",
@@ -3485,7 +3659,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n60",
@@ -3543,7 +3720,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n61",
@@ -3601,7 +3781,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n62",
@@ -3660,7 +3843,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n63",
@@ -3719,7 +3905,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n64",
@@ -3778,7 +3967,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n65",
@@ -3837,7 +4029,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n66",
@@ -3895,7 +4090,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n67",
@@ -3954,7 +4152,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n68",
@@ -4013,7 +4214,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n69",
@@ -4072,7 +4276,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n70",
@@ -4131,7 +4338,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n71",
@@ -4191,7 +4401,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n72",
@@ -4249,7 +4462,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n73",
@@ -4308,7 +4524,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n74",
@@ -4367,7 +4586,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n75",
@@ -4425,7 +4647,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n76",
@@ -4484,7 +4709,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n77",
@@ -4542,7 +4770,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n78",
@@ -4600,7 +4831,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n79",
@@ -4658,7 +4892,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n80",
@@ -4717,7 +4954,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n81",
@@ -4776,7 +5016,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n82",
@@ -4834,7 +5077,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通"
     },
     {
       "key": "n83",
@@ -4892,7 +5138,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n84",
@@ -4951,7 +5200,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n85",
@@ -5009,7 +5261,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n86",
@@ -5067,7 +5322,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n87",
@@ -5125,7 +5383,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n88",
@@ -5183,7 +5444,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n89",
@@ -5242,7 +5506,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n90",
@@ -5298,7 +5565,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n91",
@@ -5357,7 +5627,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n92",
@@ -5417,7 +5690,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n93",
@@ -5476,7 +5752,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n94",
@@ -5534,7 +5813,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n95",
@@ -5593,7 +5875,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n96",
@@ -5652,7 +5937,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n97",
@@ -5711,7 +5999,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n98",
@@ -5770,7 +6061,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n99",
@@ -5828,7 +6122,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n100",
@@ -5887,7 +6184,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n101",
@@ -5945,7 +6245,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n102",
@@ -6003,7 +6306,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n103",
@@ -6061,7 +6367,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n104",
@@ -6117,7 +6426,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n105",
@@ -6175,7 +6487,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n106",
@@ -6233,7 +6548,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n107",
@@ -6292,7 +6610,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n108",
@@ -6348,7 +6669,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n109",
@@ -6406,7 +6730,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n110",
@@ -6464,7 +6791,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n111",
@@ -6520,7 +6850,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n112",
@@ -6576,7 +6909,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n113",
@@ -6632,7 +6968,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n114",
@@ -6688,7 +7027,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n115",
@@ -6744,7 +7086,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n116",
@@ -6800,7 +7145,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n117",
@@ -6858,7 +7206,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n118",
@@ -6914,7 +7265,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n119",
@@ -6970,7 +7324,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n120",
@@ -7026,7 +7383,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n121",
@@ -7082,7 +7442,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n122",
@@ -7138,7 +7501,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n123",
@@ -7194,7 +7560,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n124",
@@ -7250,7 +7619,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n125",
@@ -7306,7 +7678,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n126",
@@ -7362,7 +7737,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n127",
@@ -7418,7 +7796,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n128",
@@ -7474,7 +7855,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n129",
@@ -7530,7 +7914,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n130",
@@ -7586,7 +7973,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n131",
@@ -7642,7 +8032,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n132",
@@ -7698,7 +8091,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n133",
@@ -7754,7 +8150,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n134",
@@ -7810,7 +8209,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "n135",
@@ -7866,7 +8268,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n136",
@@ -7922,7 +8327,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n137",
@@ -7978,7 +8386,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n138",
@@ -8034,7 +8445,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n139",
@@ -8090,7 +8504,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n140",
@@ -8146,7 +8563,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "n141",
@@ -8202,7 +8622,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n142",
@@ -8258,7 +8681,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "n143",
@@ -8315,7 +8741,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "n144",
@@ -8371,7 +8800,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "n145",
@@ -8427,7 +8859,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t1",
@@ -8486,7 +8921,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t2",
@@ -8546,7 +8984,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t3",
@@ -8605,7 +9046,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "t4",
@@ -8664,7 +9108,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t5",
@@ -8724,7 +9171,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "t6",
@@ -8782,7 +9232,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t7",
@@ -8840,7 +9293,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t8",
@@ -8898,7 +9354,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t9",
@@ -8957,7 +9416,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t10",
@@ -9015,7 +9477,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t11",
@@ -9074,7 +9539,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t12",
@@ -9133,7 +9601,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t13",
@@ -9192,7 +9663,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t14",
@@ -9251,7 +9725,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通"
     },
     {
       "key": "t15",
@@ -9309,7 +9786,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t16",
@@ -9368,7 +9848,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t17",
@@ -9428,7 +9911,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t18",
@@ -9486,7 +9972,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t19",
@@ -9544,7 +10033,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "t20",
@@ -9606,7 +10098,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t21",
@@ -9662,7 +10157,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t22",
@@ -9718,7 +10216,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t23",
@@ -9774,7 +10275,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t24",
@@ -9830,7 +10334,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t25",
@@ -9886,7 +10393,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t26",
@@ -9942,7 +10452,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t27",
@@ -9998,7 +10511,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t28",
@@ -10054,7 +10570,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "t29",
@@ -10112,7 +10631,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t30",
@@ -10168,7 +10690,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t31",
@@ -10226,7 +10751,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t32",
@@ -10282,7 +10810,10 @@
             "傲慢"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t33",
@@ -10338,7 +10869,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t34",
@@ -10394,7 +10928,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t35",
@@ -10450,7 +10987,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t36",
@@ -10506,7 +11046,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t37",
@@ -10562,7 +11105,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t38",
@@ -10618,7 +11164,10 @@
             "暴食"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点"
     },
     {
       "key": "t39",
@@ -10674,7 +11223,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t40",
@@ -10730,7 +11282,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t41",
@@ -10786,7 +11341,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t42",
@@ -10842,7 +11400,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t43",
@@ -10898,7 +11459,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t44",
@@ -10955,7 +11519,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t45",
@@ -11011,7 +11578,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t46",
@@ -11069,7 +11639,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t47",
@@ -11125,7 +11698,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t48",
@@ -11181,7 +11757,10 @@
             "嫉妬"
           ]
         }
-      ]
+      ],
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗"
     },
     {
       "key": "t49",
@@ -11238,7 +11817,10 @@
             "色欲"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点"
     },
     {
       "key": "t50",
@@ -11294,7 +11876,10 @@
             "憂鬱"
           ]
         }
-      ]
+      ],
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通"
     },
     {
       "key": "t51",
@@ -11350,7 +11935,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t52",
@@ -11406,7 +11994,10 @@
             "怠惰"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t53",
@@ -11462,7 +12053,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     },
     {
       "key": "t54",
@@ -11518,7 +12112,10 @@
             "憤怒"
           ]
         }
-      ]
+      ],
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通"
     }
   ]
 }
