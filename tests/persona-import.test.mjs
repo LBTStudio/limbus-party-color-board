@@ -550,6 +550,65 @@ test('renamed LBT roster displayName is reflected in the add-persona candidates'
   assert.ok(!candidates.some((persona) => persona.name === '元の同期人格名'));
 });
 
+test('saved LBT roster build overrides an older current-persona snapshot for the same identity', () => {
+  const storage = new MemoryStorage();
+  const staleSource = lbtSource({ name: '同期前の人格名', no: 47, colors: ['憤怒', '怠惰', '色欲', '憂鬱', '暴食'] });
+  const latestSkills = staleSource.skills.map((skill, index) => index === 0
+    ? { ...skill, name: '同期後のスキル名', type: '貫通反撃', sin: '嫉妬' }
+    : skill);
+  writeAccount(storage, {
+    personaMode: 'n',
+    personaNo: 47,
+    personaSrc: staleSource,
+    syncedManual: true,
+    skills: staleSource.skills,
+    pas: { name: '同期前パッシブ', cond: '憤怒x2', effect: '旧効果' },
+    roster: {
+      personas: [{
+        uid: 'n47',
+        no: 47,
+        mode: 'n',
+        displayName: '同期後の人格名',
+        synced: true,
+        syncRank: '00',
+        syncMax: false,
+        build: {
+          personaSrc: staleSource,
+          syncedManual: true,
+          hp: '155',
+          san: '50',
+          speed: '2d8',
+          resS: '弱点',
+          resP: '普通',
+          resB: '耐性',
+          skills: latestSkills,
+          pas: { name: '同期後パッシブ', cond: '嫉妬x3', effect: '最新の効果' },
+          uniqueBuffs: [],
+        },
+      }],
+    },
+  });
+
+  const candidates = discoverLbtPersonaCandidates(
+    storage,
+    [makeCatalogSource(staleSource, 'n47', 'normal')],
+    'acct-1',
+  );
+  const sameIdentity = candidates.filter((persona) => persona.sourceRef === 'acct-1:identity:n:47');
+
+  assert.equal(sameIdentity.length, 1, 'the current state and saved roster build must not produce duplicate variants');
+  assert.equal(sameIdentity[0].name, '同期後の人格名');
+  assert.equal(sameIdentity[0].slots[0].name, '同期後のスキル名');
+  assert.equal(sameIdentity[0].slots[0].type, '貫通反撃');
+  assert.deepEqual(sameIdentity[0].slots[0].colors, ['嫉妬']);
+  assert.equal(sameIdentity[0].passiveName, '同期後パッシブ');
+  assert.equal(sameIdentity[0].passiveCond, '嫉妬x3');
+  assert.equal(sameIdentity[0].passiveEffect, '最新の効果');
+  assert.equal(sameIdentity[0].resSlash, '弱点');
+  assert.equal(sameIdentity[0].resPierce, '普通');
+  assert.equal(sameIdentity[0].resBlunt, '耐性');
+});
+
 test('re-import reflects the latest saved LBT skill names, attributes, and passive fields without duplicating the persona', () => {
   const storage = new MemoryStorage();
   const rawSource = lbtSource({ name: '保存済み同期人格', no: 31 });
