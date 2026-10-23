@@ -9,11 +9,16 @@
 3. `js/supabase-config.mjs` の `SUPABASE_PUBLISHABLE_KEY` の値を置き換える。`SUPABASE_URL` はこのプロジェクトの URL として設定済み。
 4. 変更をリポジトリへ push する。これはブラウザで公開されるキーなので、公開してはいけない secret / service_role key とは異なる。実際のデータアクセスはこの実装の RPC 権限チェックで制限される。
 
-**選択するのは `sb_publishable_...` または legacy `anon` key です。** `sb_secret_...`、`service_role` は入力しないでください。
+**原則として `sb_publishable_...` を使ってください。** `anon` key は旧形式で、プロジェクトが新しい key をまだ用意していない場合の互換用です。`sb_secret_...`、`service_role` は入力しないでください。[Supabase API keys の公式説明](https://supabase.com/docs/guides/getting-started/api-keys)
 
 ## 2. DB マイグレーションを適用
 
-Supabase Dashboard → SQL Editor から `supabase/migrations/202610230001_shared_party_sessions.sql` 全体を開いて実行する。成功したら以下が作成される。
+次のどちらか一方を選ぶ。
+
+- **GitHub Integration で自動適用する場合:** Project Settings → Integrations → GitHub Integration でこのリポジトリを選択し、Working directory を `.` にして、Deploy to production を有効にする。Production branch（通常は `main`）へ PR をマージすると、未適用の migration が実行される。Supabase の [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
+- **手動で適用する場合:** 自動デプロイが未設定なら、Dashboard → SQL Editor から `supabase/migrations/202610230001_shared_party_sessions.sql` 全体を開いて実行する。
+
+この PR の確認時点では GitHub Integration 画面にリポジトリ選択の案内が表示されていました。接続済みの場合は上の設定が有効かを確認する。手動実行と自動適用を同時に進めると migration 履歴の確認が必要になるため、どちらの経路で適用したか記録する。
 
 - セッション、参加者、招待、アクセス申請、編集履歴、許可済み人格キーのテーブル
 - ブラウザからの直接テーブルアクセスを禁止する権限と RLS
@@ -23,7 +28,7 @@ Supabase Dashboard → SQL Editor から `supabase/migrations/202610230001_share
 
 ## 3. 匿名ログインを有効化
 
-Supabase Dashboard → Authentication の設定で **Anonymous Sign-Ins** を有効にする。共有リンクを開く側も、編成へのアクセス申請を送るための匿名ユーザーとして認証される。メールアドレスやパスワードは現行の初期実装では要求しない。
+Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous Sign-Ins** を有効にする。必要な設定場所は Supabase の [Anonymous Sign-Ins 公式説明](https://supabase.com/docs/guides/auth/auth-anonymous) を参照。共有リンクを開く側も、編成へのアクセス申請を送るための匿名ユーザーとして認証される。メールアドレスやパスワードは現行の初期実装では要求しない。
 
 ### 重要な制約
 
