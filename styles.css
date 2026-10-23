@@ -2772,3 +2772,16 @@ h2 {
     grid-column: auto;
   }
 }
+
+
+/* Per-persona PL/user assignment */
+.persona-assignee { display: grid; gap: 6px; margin-top: 8px; min-width: 0; }
+.persona-assignee-current { color: var(--tx-dim); font-size: .72rem; overflow-wrap: anywhere; }
+.persona-assignee-current strong { color: var(--gold); }
+.persona-assignee-editor .input { width: 100%; min-height: 34px; padding: 6px 9px; font-size: .76rem; }
+.persona-assignee-editor .input:disabled { opacity: .72; cursor: not-allowed; }
+.member-label, .member-name { overflow-wrap: anywhere; }
+.matrix tbody th.member .member-label { font-family: var(--f-sans, inherit); font-size: .7rem; letter-spacing: 0; }
+.stats-resistances { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stats-resistances dt { white-space: normal; }
+@media (max-width: 520px) { .stats-resistances { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
