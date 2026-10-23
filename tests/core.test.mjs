@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   DEFAULT_PARTY,
+  MAX_PARTY,
   SAMPLE_PARTY,
   SIN_ORDER,
   aggregate,
@@ -223,12 +224,22 @@ test('TSV import rejects duplicates and over-capacity parties', () => {
   const duplicateResult = parsePartySheet(duplicate, personas);
   assert.ok(duplicateResult.errors.some((error) => /重複/.test(error)));
 
-  const seven = ['メンバー名\t人格番号\t人格名'];
-  for (const persona of personas.filter((item) => item.kind === 'normal').slice(0, 7)) {
-    seven.push(`${persona.name}\t${persona.no}\t${persona.name}`);
+  assert.equal(MAX_PARTY, 20);
+
+  const twenty = ['メンバー名\t人格番号\t人格名'];
+  for (const persona of personas.filter((item) => item.kind === 'normal').slice(0, 20)) {
+    twenty.push(`${persona.name}\t${persona.no}\t${persona.name}`);
   }
-  const over = parsePartySheet(seven.join('\n'), personas);
-  assert.ok(over.errors.some((error) => /最大 6 名/.test(error)));
+  const exactLimit = parsePartySheet(twenty.join('\n'), personas);
+  assert.deepEqual(exactLimit.errors, []);
+  assert.equal(exactLimit.party.length, 20);
+
+  const twentyOne = ['メンバー名\t人格番号\t人格名'];
+  for (const persona of personas.filter((item) => item.kind === 'normal').slice(0, 21)) {
+    twentyOne.push(`${persona.name}\t${persona.no}\t${persona.name}`);
+  }
+  const over = parsePartySheet(twentyOne.join('\n'), personas);
+  assert.ok(over.errors.some((error) => /最大 20 名/.test(error)));
 });
 
 

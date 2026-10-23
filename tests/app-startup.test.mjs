@@ -46,7 +46,7 @@ test('deleting an added persona protects persisted personal and active shared pa
 
 test('UI documents the local persona library cap separately from party and collaboration caps', () => {
   assert.match(html, /追加人格ライブラリの上限は、このブラウザにつき最大300件/);
-  assert.match(html, /1つの編成に配置できる人格は最大6名、共同編集スペースの参加者は発行者を含め最大20名/);
+  assert.match(html, /1つの編成に配置できる人格は最大20名、共同編集スペースの参加者は発行者を含め最大20名/);
   assert.match(html, /上限は既存分を含め最大300件です/);
 });
 

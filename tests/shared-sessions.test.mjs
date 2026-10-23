@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { MAX_IMPORT_CHARS, MAX_IMPORT_ROWS, parsePartySheet } from '../js/core.mjs';
+import { MAX_IMPORT_CHARS, MAX_IMPORT_ROWS, MAX_PARTY, parsePartySheet } from '../js/core.mjs';
 import { escapeHtml } from '../js/security.mjs';
 
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -10,6 +10,7 @@ const migration = read('../supabase/migrations/202610230001_shared_party_session
 const forwardMigration = read('../supabase/migrations/202610230002_serialize_shared_session_resource_caps.sql');
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
+const partyCapacityMigration = read('../supabase/migrations/20261023212500_allow_twenty_personas_per_party.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -608,6 +609,19 @@ test('mobile refinement keeps the collapsed shared-session dock compact and resp
   assert.match(styles, /\.shared-panel:not\(\.is-open\) > \.section-head \{[\s\S]*?flex-direction: row;/);
 });
 
+
+test('party capacity is twenty across the client and deployed RPC migrations', () => {
+  assert.equal(MAX_PARTY, 20);
+  assert.match(html, /最大20人/);
+  assert.match(partyCapacityMigration, /create or replace function public\\.apply_party_edit\\(/i);
+  assert.match(partyCapacityMigration, /create or replace function public\\.apply_party_edit_v2\\(/i);
+  assert.match(partyCapacityMigration, /cardinality\\(p_party_keys\\) > 20/i);
+  assert.match(partyCapacityMigration, /PARTY_MUST_HAVE_ZERO_TO_TWENTY_PERSONAS/);
+  assert.match(partyCapacityMigration, /jsonb_array_length\\(p_party_personas\\) > 20/i);
+  assert.match(partyCapacityMigration, /octet_length\\(p_party_personas::text\\) > 60000/i);
+  assert.match(partyCapacityMigration, /revoke all on function public\\.apply_party_edit_v2/i);
+  assert.match(partyCapacityMigration, /grant execute on function public\\.apply_party_edit_v2.*to authenticated/i);
+});
 
 test('LBT local persona snapshots are synchronized through authorized shared-session RPCs', () => {
   const localImport = read('../js/persona-import.mjs');

@@ -20,7 +20,7 @@ export const SAMPLE_PARTY = [
   { key: 'n49' },
 ];
 
-export const MAX_PARTY = 6;
+export const MAX_PARTY = 20;
 
 // Protect the CSV/TSV parser from accidentally or intentionally oversized pastes.
 export const MAX_IMPORT_CHARS = 20_000;
