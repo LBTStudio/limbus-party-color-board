@@ -118,8 +118,8 @@
 - 1スペースのメンバー上限は発行者込み20名。16名の参加は既存のDB上限内であり、承認RPCは親セッションをロックしてから上限を確認する。
 - 可視タブのポーリングは、各利用者が直近2分以内に操作していれば約5秒間隔、操作が落ち着けば約15秒間隔（どちらも少量のジッターあり）。16名全員が常時アクティブの場合の理論値は約3.2 poll RPC/秒、約276,480回/日、約829万回/30日。全員がアイドルなら約1.07回/秒、約92,160回/日、約276万回/30日。
 - ポーリングの unchanged 応答は小さな JSON のみ。編成が変わったときだけスナップショットを返し、クライアントは1回の共有人格スナップショットを48,000 bytes以下に制限する。参加者ごとに同じ更新を1回ずつ読むので、16名全員が48 KB近い編成を繰り返し更新する使い方は無料枠の egress を消費し得る。
-- 2026-10-24 時点の本番は Supabase Free。実DBは約12.1 MB、セッション3件（有効2件）、メンバー4件、編集イベント6件。現在のDBは小さく、16名で通常の編成編集をする短時間の運用は十分現実的と見積もる。ただし常時16名が終日操作するケースは負荷試験をしておらず、保証はできない。
-- Supabase Free の現行公表枠は、DB 500 MB、egress 5 GB/月、最大200 pooler clients、DB 接続の推奨上限60、shared CPU・最大0.5 GB RAM。API request 数自体は pricing 上「Unlimited」だが、実際のボトルネックは request 数より shared compute と egress。16名の理論ピークは5秒ごとの約3.2 poll/秒なので、まずは運用可能な水準と判断するが、利用が毎日長時間続くなら Dashboard の egress / CPU / connections を監視し、poll 間隔や有料プランを再評価する。
+- 2026-10-24 時点の本番DBは約12.2 MB、共有テーブルは今回の確認時点でセッション0件・メンバー0件・招待0件・申請0件・編集イベント0件。DB容量は小さく、16名で通常の編成編集をする短時間の運用は十分現実的と見積もる。ただし常時16名が終日操作するケースは負荷試験をしておらず、保証はできない。
+- Supabase Free/Nano を仮定した公表枠は、DB 500 MB、egress 5 GB/月、最大200 pooler clients、DB 接続60、shared CPU・最大0.5 GB RAM。API request 数自体は pricing 上「Unlimited」だが、実際のボトルネックは request 数より shared compute と egress。契約プランはDashboardで要確認。16名の理論ピークは5秒ごとの約3.2 poll/秒なので、軽量な変更なし応答が中心なら運用可能と見込む。ただし、本番の契約プランはプロジェクト一覧APIだけでは取得できず、Free/Nanoは保守的な仮定である。変更応答が頻発すると最大48 KBのスナップショットを参加者ごとに返すため帯域が支配要因になりうる。利用が毎日長時間続くなら Dashboard の egress / CPU / connections を監視し、poll 間隔やプランを再評価する。
 - 数値はコード上限からの負荷概算で、実測ストレス試験ではない。参照: [Supabase Pricing](https://supabase.com/pricing)、[Compute and Disk](https://supabase.com/docs/guides/platform/compute-and-disk)、[Connection pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits)。
 
 ## 保存先と自動整理ポリシー
