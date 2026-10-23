@@ -842,7 +842,9 @@ function choosePersona(key) {
   $('#picker').close();
   saveState();
   renderAll();
-  showToast(`${persona.name} を編成しました。`);
+  showToast(persona.localOnly
+    ? `${persona.name} を編成しました。追加人格はこのブラウザ内のデータで、URL・クラウド共有には含まれません。`
+    : `${persona.name} を編成しました。`);
 }
 
 function removeMember(index) {
