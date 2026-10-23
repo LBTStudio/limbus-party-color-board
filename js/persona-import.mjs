@@ -179,7 +179,12 @@ function currentSourceFromSnapshot(source, snapshot) {
     result.passive_always = snapshot.pas.always ?? base.passive_always;
     result.passive_effect = snapshot.pas.effect ?? base.passive_effect;
   }
-  if (Array.isArray(snapshot.skills)) result.skills = snapshot.skills;
+  if (Array.isArray(snapshot.skills)) {
+    // The saved LBT build is the source of truth for visible skill names/types/attributes.
+    // Do not let a stale pre-normalized slots array on an imported personaSrc shadow it.
+    result.skills = snapshot.skills;
+    delete result.slots;
+  }
   if (Array.isArray(snapshot.uniqueBuffs)) result.unique_buffs = snapshot.uniqueBuffs;
   if (Array.isArray(base.keywords)) result.keywords = base.keywords;
   return result;
@@ -203,6 +208,7 @@ function sameRelevantData(a, b) {
     name: persona.name, hp: persona.hp, san: persona.san, speed: persona.speed,
     keywords: [...(persona.keywords || [])].sort(), affiliation: persona.affiliation,
     passiveName: persona.passiveName, passiveCond: persona.passiveCond,
+    passiveEffect: persona.passiveEffect,
     slots: (persona.slots || []).map((slot) => ({
       name: slot.name, type: slot.type, colors: [...slot.colors].sort(),
     })),
