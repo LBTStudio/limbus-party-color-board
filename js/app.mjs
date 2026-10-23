@@ -1109,8 +1109,9 @@ function deleteLocalPersona(key) {
   const persistedPartyKeys = Array.isArray(storedParty)
     ? storedParty.map((entry) => typeof entry === 'string' ? entry : entry?.key)
     : [];
-  if ((Array.isArray(savedPersonalKeys) && savedPersonalKeys.includes(key))
-    || persistedPartyKeys.includes(key)) {
+  if ((Array.isArray(savedPersonalKeys) && savedPersonalKeys.some((entry) => (
+    (typeof entry === 'string' ? entry : entry?.key) === key
+  ))) || persistedPartyKeys.includes(key)) {
     showToast('保存済みの個人編成で使用中の人格です。個人編成から外してから削除してください。');
     return;
   }
