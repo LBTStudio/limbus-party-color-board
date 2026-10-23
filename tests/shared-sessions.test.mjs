@@ -370,6 +370,7 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(sharedUi.includes('a[href="#shared-panel"]'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true, { focusRequests: true })'));
+  assert.ok(sharedUi.includes('requestHeading.scrollIntoView({ behavior: \'auto\', block: \'start\' })'));
   assert.ok(sharedUi.includes("bridge.showToast('新しい参加申請が"));
   assert.ok(sharedUi.includes("requestBadge.textContent = '参加申請 ' + pendingCount"));
 });
