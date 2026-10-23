@@ -324,7 +324,7 @@ test('workspace listing includes creator display name and member count while rem
   const fn = memberLimitMigration.slice(start, end);
   assert.ok(start >= 0 && end > start);
   assert.match(fn, /'owner_display_name', coalesce\(owner_member\.display_name, '編成主'\)/);
-  assert.match(fn, /'member_count', \(select count\(\)::integer from public\.session_members/);
+  assert.match(fn, /'member_count', \(select count\(\*\)::integer from public\.session_members/);
   assert.match(fn, /join public\.session_members m on m\.session_id = s\.id and m\.user_id = v_user_id/);
   assert.match(fn, /where s\.archived_at is null/);
   assert.match(sharedUi, /item\.owner_display_name/);
