@@ -44,6 +44,18 @@ function rememberDisplayName(value = displayName()) {
   } catch { /* Optional preference. */ }
 }
 
+function snapshotOwnerDisplayName(snapshot, fallback = '編成主') {
+  const owner = Array.isArray(snapshot?.members)
+    ? snapshot.members.find((member) => member?.role === 'owner')
+    : null;
+  const value = String(owner?.display_name || fallback).trim().slice(0, 40);
+  return value || fallback;
+}
+
+function publicToolUrl() {
+  return location.origin + location.pathname;
+}
+
 function sameKeys(a, b) {
   return Array.isArray(a) && Array.isArray(b)
     && a.length === b.length && a.every((key, index) => key === b[index]);
@@ -243,6 +255,7 @@ function render() {
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
     text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)));
+    text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
     const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
     text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
       ? '最終利用 ' + activity.toLocaleDateString() + ' ' + activity.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -265,7 +278,7 @@ function render() {
   if (!active) return;
 
   $('#shared-active-title').textContent = active.title;
-  $('#shared-active-meta').textContent = roleLabel(active.role) + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
+  $('#shared-active-meta').textContent = '発行者: ' + active.ownerDisplayName + ' · ' + roleLabel(active.role) + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
   const owner = active.role === 'owner' && !active.accessRevoked && active.status !== 'closed';
   $('#shared-create-invite').hidden = !owner;
   $('#shared-invite-tools').hidden = !owner || !inviteUrl;
@@ -358,6 +371,7 @@ async function activateSession(sessionId, prefetched = null) {
     sessionId: snapshot.session_id || sessionId,
     title: snapshot.title || '共有セッション',
     role: snapshot.role || 'viewer',
+    ownerDisplayName: snapshotOwnerDisplayName(snapshot),
     revision: Number(snapshot.revision) || 0,
     lastSavedKeys: [...snapshot.party_keys],
     lastSavedPersonas: remotePersonas(snapshot),
@@ -452,6 +466,9 @@ async function pollSession() {
     }
     const previousRole = session.role;
     if (result.role) session.role = result.role;
+    if (Array.isArray(result.members)) {
+      session.ownerDisplayName = snapshotOwnerDisplayName(result, session.ownerDisplayName);
+    }
     if (previousRole !== session.role) bridge.renderAll();
     const remoteKeys = Array.isArray(result.party_keys) ? result.party_keys : null;
     const incomingPersonas = remotePersonas(result);
@@ -516,6 +533,7 @@ function applySnapshot(snapshot) {
   active.revision = Number(snapshot.revision) || active.revision;
   active.title = snapshot.title || active.title;
   active.role = snapshot.role || active.role;
+  active.ownerDisplayName = snapshotOwnerDisplayName(snapshot, active.ownerDisplayName);
   active.lastSavedKeys = [...snapshot.party_keys];
   active.lastSavedPersonas = remotePersonas(snapshot);
   active.retry = null;
@@ -585,6 +603,7 @@ async function sendSave(session, operation) {
     session.retry = null;
     session.status = 'saved';
     session.title = result.title || session.title;
+    session.ownerDisplayName = snapshotOwnerDisplayName(result, session.ownerDisplayName);
     const roleChanged = session.role !== (result.role || session.role);
     session.role = result.role || session.role;
     statusMessage = '保存済み · revision ' + session.revision;
@@ -642,10 +661,9 @@ async function issueInvite() {
   try {
     const invite = await getApi().createInvite(active.sessionId, 168);
     inviteUrl = location.origin + location.pathname + '#invite=' + invite.token;
-    statusMessage = '参加申請リンクを発行しました。有効期限: ' + new Date(invite.expires_at).toLocaleString();
+    statusMessage = '参加申請リンクを発行しました（有効期限: ' + new Date(invite.expires_at).toLocaleString() + '）。必要な相手に送る場合は、招待リンク専用ボタンでコピーしてください。';
     await refreshAdmin();
     render();
-    await copyInvite();
   } catch (error) {
     setStatus('リンクを発行できませんでした: ' + error.message);
   }
@@ -655,11 +673,25 @@ async function copyInvite() {
   if (!inviteUrl) return;
   try {
     await navigator.clipboard.writeText(inviteUrl);
-    bridge.showToast('参加申請リンクをコピーしました。');
+    bridge.showToast('招待用の参加申請リンクをコピーしました。ツール本体のURLとは別のリンクです。');
   } catch {
     $('#shared-invite-link').focus();
     $('#shared-invite-link').select();
-    bridge.showToast('自動コピーできません。リンク欄を選択してコピーしてください。');
+    bridge.showToast('自動コピーできません。招待リンク欄を選択してコピーしてください。');
+  }
+}
+
+async function copyToolUrl() {
+  const value = publicToolUrl();
+  const input = $('#shared-tool-url');
+  input.value = value;
+  try {
+    await navigator.clipboard.writeText(value);
+    bridge.showToast('ツール本体のURLをコピーしました。招待権限や編成情報は含まれません。');
+  } catch {
+    input.focus();
+    input.select();
+    bridge.showToast('自動コピーできません。ツールURL欄を選択してコピーしてください。');
   }
 }
 
@@ -692,13 +724,13 @@ async function archiveActive() {
     setStatus(switchError + ' 未解決の編集がある間は共同編集スペースを終了できません。');
     return;
   }
-  if (!window.confirm('「' + session.title + '」を終了しますか？以後、参加者はアクセスできません。共有データは7日後に完全削除されます。')) return;
+  if (!window.confirm('「' + session.title + '」を終了しますか？共有編成・参加者・招待・申請・編集履歴を即時削除します。この操作は取り消せません。続行しますか？')) return;
   try {
     await getApi().archiveSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
     leaveSession();
     await refreshSessions();
-    setStatus('共有編成を終了しました。関連データは7日後に自動削除されます。');
+    setStatus('共有編成を終了し、共有データと関連記録を即時削除しました。個人編成は残っています。');
   } catch (error) {
     setStatus('セッションを終了できませんでした: ' + error.message);
   }
@@ -938,6 +970,7 @@ async function initializeTurnstile() {
 
 export async function initializeSharedSessionsUi(callbacks) {
   bridge = callbacks;
+  $('#shared-tool-url').value = publicToolUrl();
   const displayNameInput = $('#shared-display-name');
   try {
     const savedName = String(localStorage.getItem('lbt_party_shared_display_name') || '').trim().slice(0, 40);
@@ -969,6 +1002,7 @@ export async function initializeSharedSessionsUi(callbacks) {
     });
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
+  $('#shared-copy-tool-url').addEventListener('click', () => copyToolUrl());
   $('#shared-display-name').addEventListener('change', () => {
     const value = String($('#shared-display-name').value || '').trim().slice(0, 40);
     if (value) rememberDisplayName(value);

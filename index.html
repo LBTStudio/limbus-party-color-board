@@ -140,6 +140,7 @@
     </div>
     <div id="shared-panel-content" class="shared-panel-content">
     <p class="hint shared-intro">招待リンクから参加申請を受け付け、発行者が承認したメンバーと同じ編成を共同編集する作業スペースです。編成の変更は参加者の画面へ自動同期されます。同期・創作人格は編成に必要な項目だけを共有し、LBTの生セーブやアカウント情報は送信しません。</p>
+    <p class="hint shared-capacity-note">1つの共同編集スペースには、発行者を含め最大20名まで参加できます。</p>
     <details class="shared-info">
       <summary>保存先・保存期間について</summary>
     <div class="shared-storage-explainer" aria-label="データの保存先">
@@ -151,10 +152,11 @@
       <ul>
         <li>参加者が共有編成を開いている間は、活動状況を軽量に記録します（最大5分に1回）。</li>
         <li>30日間、誰も共有編成を開かなければ自動で終了扱いになります。</li>
-        <li>終了から7日後に共有編成と関連データを完全削除します。発行者が手動で終了した場合も同じです。</li>
+        <li>発行者が手動で終了した共有編成は、その場で共有データと関連データを削除します。削除は取り消せません。</li>
+        <li>30日間利用されず自動終了した共有編成は、終了から7日後に共有データと関連データを完全削除します。</li>
         <li>個人編成はこの自動削除の対象外で、このブラウザ内の保存データとして残ります。</li>
       </ul>
-      <p class="hint">自動削除は日次ジョブで処理されるため、期限ちょうどではなく次回の実行時に反映されます。</p>
+      <p class="hint">手動終了は即時削除です。自動終了後の7日間の猶予と混同しないでください。日次ジョブによる自動削除は期限ちょうどではなく、次回の実行時に反映されます。</p>
     </details>
     </details>
 
@@ -167,13 +169,18 @@
     </div>
     <p class="hint shared-name-note">スペース名は編成の名前、表示名は参加者一覧に表示する自分の名前です。新規作成時の所有者名と、招待リンクから参加申請する際の名前に使います。既に参加中のスペースの表示名は変更しません。</p>
     <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create">＋ 共同編集スペースを作成</button><button type="button" class="btn btn-ghost" id="shared-refresh">クラウドから一覧を更新</button></div>
+    <div class="shared-invite-tools shared-tool-url-tools">
+      <label for="shared-tool-url">一般共有用：このツール本体のURL（招待権限・編成情報を含みません）</label>
+      <div class="shared-copy-row"><input class="input" id="shared-tool-url" type="text" readonly value="公開URLを読み込んでいます"><button type="button" class="btn btn-ghost" id="shared-copy-tool-url">ツールURLをコピー</button></div>
+      <p class="hint">このURLは誰でもツールを開ける一般公開URLです。共同編集への参加権限はありません。招待する場合は、下の参加リンクを別途発行し、招待リンク専用ボタンからコピーしてください。</p>
+    </div>
     <div id="shared-session-list" class="shared-list" aria-label="共同編集スペース一覧"></div>
     <div id="shared-access-waiting" class="shared-subpanel" hidden><h3>参加承認待ち</h3><p id="shared-access-message" class="hint">発行者の承認を待っています。</p><button type="button" class="btn btn-ghost" id="shared-check-access">承認状態を確認</button></div>
     <div id="shared-active" class="shared-subpanel" hidden>
       <div class="section-head"><div><h3 id="shared-active-title">共同編集スペース</h3><p class="hint" id="shared-active-meta"></p></div><div class="shared-active-actions"><button type="button" class="btn btn-ghost" id="shared-leave">この端末で閉じる</button><button type="button" class="btn btn-danger-ghost" id="shared-archive" hidden>共同編集スペースを終了</button></div></div>
-      <p class="hint shared-close-note">「この端末で閉じる」は表示を個人編成に戻すだけで、共同編集スペースは終了しません。使い終えたスペースは発行者が「共同編集スペースを終了」してください。</p>
+      <p class="hint shared-close-note">「この端末で閉じる」は表示を個人編成に戻すだけで、共同編集スペースは終了しません。使い終えたスペースは発行者が「共同編集スペースを終了」してください。終了を確定するとクラウドの共有データ・参加者・招待・申請・編集履歴を即時削除し、復元できません。</p>
       <div class="control-actions shared-actions"><button type="button" class="btn" id="shared-create-invite">参加リンクを発行</button><button type="button" class="btn btn-ghost" id="shared-retry-save" hidden>未保存の編集を再試行</button></div>
-      <div id="shared-invite-tools" class="shared-invite-tools" hidden><label for="shared-invite-link">共有リンク（有効期限7日）</label><div class="shared-copy-row"><input class="input" id="shared-invite-link" type="text" readonly><button type="button" class="btn btn-ghost" id="shared-copy-invite">リンクをコピー</button></div><p class="hint">このリンクは参加申請用です。承認前は編成データを公開しません。表示名は本人確認ではないため、発行者は想定した相手か別の手段で確認してから承認してください。</p></div>
+      <div id="shared-invite-tools" class="shared-invite-tools" hidden><label for="shared-invite-link">招待リンク（参加申請用・有効期限7日）</label><div class="shared-copy-row"><input class="input" id="shared-invite-link" type="text" readonly><button type="button" class="btn btn-ghost" id="shared-copy-invite">招待リンクをコピー</button></div><p class="hint">これは参加申請専用のリンクです。発行時に自動コピーはしません。明示的に「招待リンクをコピー」を押した場合だけコピーされます。承認前は編成データを公開しません。</p></div>
       <div id="shared-conflict" class="shared-conflict" hidden><strong>編集競合</strong><p id="shared-conflict-message">別の編集が先に保存されました。</p><div class="control-actions shared-actions"><button type="button" class="btn btn-ghost" id="shared-accept-remote">サーバー版を採用</button><button type="button" class="btn" id="shared-reapply-local">自分の編成を再適用</button></div><p class="hint">「自分の編成を再適用」は現在の編成全体でサーバー版を置き換えます。最新内容を確認してから選択してください。</p></div>
       <div id="shared-admin" class="shared-admin" hidden><h3>参加権限の管理</h3><div id="shared-requests"></div><div id="shared-members"></div><div id="shared-invites"></div></div>
     </div>
