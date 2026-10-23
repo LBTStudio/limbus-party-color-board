@@ -25,16 +25,22 @@ function getApi() {
 
 function displayName() {
   try {
-    const value = String(localStorage.getItem('lbt_party_shared_display_name') || '').trim().slice(0, 40);
+    const input = $('#shared-display-name');
+    const stored = localStorage.getItem('lbt_party_shared_display_name');
+    const value = String(input ? input.value : (stored || '')).trim().slice(0, 40);
     return value || '参加者';
   } catch {
-    return '参加者';
+    const value = String($('#shared-display-name')?.value || '').trim().slice(0, 40);
+    return value || '参加者';
   }
 }
 
 function rememberDisplayName(value = displayName()) {
+  const normalized = String(value || '').trim().slice(0, 40) || '参加者';
+  const input = $('#shared-display-name');
+  if (input && input.value !== normalized) input.value = normalized;
   try {
-    localStorage.setItem('lbt_party_shared_display_name', String(value || '').trim().slice(0, 40) || '参加者');
+    localStorage.setItem('lbt_party_shared_display_name', normalized);
   } catch { /* Optional preference. */ }
 }
 
@@ -303,15 +309,22 @@ async function createSession() {
     setSharedPanelOpen(true);
     return;
   }
-  const title = String($('#shared-session-title').value || '').trim();
+  const title = String($('#shared-session-title').value || '').trim().slice(0, 80);
+  const ownerDisplayName = String($('#shared-display-name').value || '').trim().slice(0, 40);
   if (!title) {
-    setStatus('共同編集スペースの名前を入力してください。');
+    setStatus('共同編集スペース名を入力してください。');
     $('#shared-session-title').focus();
     return;
   }
+  if (!ownerDisplayName) {
+    setStatus('自分の表示名を入力してください。');
+    $('#shared-display-name').focus();
+    return;
+  }
+  rememberDisplayName(ownerDisplayName);
   try {
     setStatus('共有編成をクラウドに作成しています…');
-    const result = await getApi().createSession(title, title);
+    const result = await getApi().createSession(title, ownerDisplayName);
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
     $('#shared-session-title').value = '';
     await activateSession(result.session_id, result);
@@ -826,7 +839,7 @@ async function initializeRoute(route) {
   }
   rememberDisplayName(provided.trim().slice(0, 40));
   try {
-    const result = await getApi().requestAccess(token, displayName());
+    const result = await getApi().requestAccess(token, provided.trim().slice(0, 40));
     if (result.status === 'approved') {
       await activateSession(result.session_id);
     } else if (result.status === 'pending') {
@@ -925,6 +938,12 @@ async function initializeTurnstile() {
 
 export async function initializeSharedSessionsUi(callbacks) {
   bridge = callbacks;
+  const displayNameInput = $('#shared-display-name');
+  try {
+    const savedName = String(localStorage.getItem('lbt_party_shared_display_name') || '').trim().slice(0, 40);
+    if (savedName) displayNameInput.value = savedName;
+    else if (!displayNameInput.value.trim()) displayNameInput.value = '参加者';
+  } catch { /* Optional display-name preference. */ }
 
   const controller = {
     get isActive() { return Boolean(active); },
@@ -950,6 +969,7 @@ export async function initializeSharedSessionsUi(callbacks) {
     });
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
+  $('#shared-display-name').addEventListener('change', () => rememberDisplayName());
   $('#shared-create').addEventListener('click', () => createSession());
   $('#shared-create-invite').addEventListener('click', () => issueInvite());
   $('#shared-copy-invite').addEventListener('click', () => copyInvite());
