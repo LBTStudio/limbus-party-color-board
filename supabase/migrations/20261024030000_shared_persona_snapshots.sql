@@ -181,17 +181,17 @@ begin
     if coalesce(v_persona->>'name','') = '' or char_length(v_persona->>'name') > 100
       or coalesce(v_persona->>'kind','') not in ('normal','tokui','custom')
       or coalesce(v_persona->>'variantType','') not in ('sync','custom','manual')
-      or jsonb_typeof(v_persona->'hp') <> 'number'
+      or jsonb_typeof(v_persona->'hp') is distinct from 'number'
       or (v_persona->>'hp')::numeric < 1 or (v_persona->>'hp')::numeric > 9999
-      or jsonb_typeof(v_persona->'san') <> 'number'
+      or jsonb_typeof(v_persona->'san') is distinct from 'number'
       or (v_persona->>'san')::numeric < 0 or (v_persona->>'san')::numeric > 9999
-      or jsonb_typeof(v_persona->'speed') <> 'string'
+      or jsonb_typeof(v_persona->'speed') is distinct from 'string'
       or char_length(v_persona->>'speed') > 40
       or char_length(coalesce(v_persona->>'passiveName','')) > 100
       or char_length(coalesce(v_persona->>'passiveCond','')) > 240
       or char_length(coalesce(v_persona->>'affiliation','')) > 100
-      or jsonb_typeof(v_persona->'keywords') <> 'array'
-      or jsonb_typeof(v_persona->'slots') <> 'array'
+      or jsonb_typeof(v_persona->'keywords') is distinct from 'array'
+      or jsonb_typeof(v_persona->'slots') is distinct from 'array'
     then
       raise exception 'INVALID_PARTY_PERSONA_FIELDS' using errcode = '22023';
     end if;
@@ -201,7 +201,7 @@ begin
     end if;
     if exists (
       select 1 from jsonb_array_elements(v_persona->'keywords') as keyword(value)
-      where jsonb_typeof(keyword.value) <> 'string'
+      where jsonb_typeof(keyword.value) is distinct from 'string'
         or char_length(keyword.value #>> '{}') > 60
     ) then
       raise exception 'INVALID_PARTY_PERSONA_KEYWORDS' using errcode = '22023';
@@ -215,10 +215,10 @@ begin
       from jsonb_array_elements(v_persona->'slots') with ordinality
     loop
       if jsonb_typeof(v_slot) <> 'object'
-        or coalesce(v_slot->>'rank','') <> 'S' || v_slot_index::text
+        or coalesce(v_slot->>'rank','') <> ('S' || v_slot_index::text)
         or char_length(coalesce(v_slot->>'name','')) > 120
         or char_length(coalesce(v_slot->>'type','')) > 80
-        or jsonb_typeof(v_slot->'colors') <> 'array'
+        or jsonb_typeof(v_slot->'colors') is distinct from 'array'
       then
         raise exception 'INVALID_PARTY_PERSONA_SLOT' using errcode = '22023';
       end if;
@@ -227,7 +227,7 @@ begin
       end if;
       for v_color in select value from jsonb_array_elements(v_slot->'colors')
       loop
-        if jsonb_typeof(v_color) <> 'string'
+        if jsonb_typeof(v_color) is distinct from 'string'
           or (v_color #>> '{}') not in ('憤怒','色欲','怠惰','暴食','憂鬱','傲慢','嫉妬')
         then
           raise exception 'INVALID_PARTY_PERSONA_COLOR' using errcode = '22023';
