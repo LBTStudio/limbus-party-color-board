@@ -24,7 +24,7 @@ test('startup sync updates every picker mode button without throwing', () => {
 });
 
 
-test('deleting an added persona cannot remove one referenced by the saved personal party during collaboration', () => {
+test('deleting an added persona protects persisted personal and active shared parties', () => {
   const deleteStart = app.indexOf('function deleteLocalPersona(key)');
   const deleteEnd = app.indexOf('\nfunction choosePersona(', deleteStart);
   const deletion = app.slice(deleteStart, deleteEnd);
@@ -32,9 +32,15 @@ test('deleting an added persona cannot remove one referenced by the saved person
   assert.match(deletion, /window\.sharedPartySession\?\.isActive/);
   assert.match(deletion, /window\.sharedPartySession\.personalPartySnapshot/);
   assert.match(deletion, /savedPersonalKeys\.includes\(key\)/);
+  assert.match(deletion, /const storedParty = readStored\(\)\?\.party/);
+  assert.match(deletion, /persistedPartyKeys\.includes\(key\)/);
   assert.ok(
     deletion.indexOf('savedPersonalKeys.includes(key)') < deletion.indexOf('saveLocalPersonas('),
     'protect the saved lineup before mutating the local persona library',
+  );
+  assert.ok(
+    deletion.indexOf('persistedPartyKeys.includes(key)') < deletion.indexOf('saveLocalPersonas('),
+    'protect the stored party even when the current URL displays a different party',
   );
 });
 
