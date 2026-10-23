@@ -659,11 +659,32 @@ textarea.input {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--selected-sin-color) 18%, transparent);
 }
 
+.color-strip-wrap {
+  margin: -3px 0 1px;
+}
+
+.color-strip-indexes {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 1px;
+  color: var(--tx-mute);
+  font-family: var(--f-mono);
+  font-size: 0.56rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.color-strip-indexes span {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
 .color-strip {
   display: flex;
   height: 4px;
   gap: 2px;
-  margin: -3px 0 1px;
+  margin: 0;
   border-radius: 99px;
   overflow: hidden;
 }
