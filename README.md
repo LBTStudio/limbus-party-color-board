@@ -20,7 +20,7 @@ LIMBUS BUILD TERMINAL の人格DBを読み込み、編成の罪悪属性（資�
 
 ## 複数人での共有について
 
-現行の公開版には、セッション作成、グループ別共有リンク、参加権限管理、共同編集の機能はありません。設計では「グループごとに独立した非公開セッション」「owner の承認後に閲覧・編集」「数秒間隔の軽量ポーリングによる同期」を採用します。実装方針は [共有セッション設計](docs/shared-sessions-design.md)、障害・不正利用の想定と対策は [失敗想定と対策](docs/shared-sessions-failure-modes.md) を参照してください。
+共有セッションの初期実装を追加しました。利用には Supabase の publishable key 設定、匿名ログインの有効化、DB マイグレーションが必要です。手順は [共有セッション導入手順](docs/shared-sessions-setup.md)、設計は [共有セッション設計](docs/shared-sessions-design.md)、障害・不正利用の想定は [失敗想定と対策](docs/shared-sessions-failure-modes.md) を参照してください。DB／キーの設定が完了するまでは既存の個人編成モードを利用できます。
 
 ## 集計ルール
 
