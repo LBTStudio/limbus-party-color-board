@@ -220,6 +220,32 @@ function sameRelevantData(a, b) {
   return select(a) === select(b);
 }
 
+function relevantDataDifferenceScore(persona, base) {
+  if (!persona || !base) return 0;
+  let score = 0;
+  const fields = [
+    'name', 'hp', 'san', 'speed', 'affiliation',
+    'passiveName', 'passiveCond', 'passiveEffect',
+    'resSlash', 'resPierce', 'resBlunt',
+  ];
+  for (const field of fields) {
+    if ((persona[field] ?? null) !== (base[field] ?? null)) score++;
+  }
+  const keywords = (value) => JSON.stringify([...(value || [])].sort());
+  if (keywords(persona.keywords) !== keywords(base.keywords)) score++;
+  for (let index = 0; index < 5; index++) {
+    const a = persona.slots?.[index] || {};
+    const b = base.slots?.[index] || {};
+    // Skill names, attack types, and sin colors are the exact fields that must
+    // reflect synchronized LBT edits, so prefer the snapshot with those changes.
+    if ((a.name ?? '') !== (b.name ?? '')) score += 100;
+    if ((a.type ?? '') !== (b.type ?? '')) score += 100;
+    const colors = (slot) => JSON.stringify([...(slot.colors || [])].sort());
+    if (colors(a) !== colors(b)) score += 100;
+  }
+  return score;
+}
+
 function makeCandidate(source, metadata, catalog) {
   const kind = kindFromMode(metadata.mode, source);
   const original = kind === 'custom' || source?.__custom === true;
@@ -361,11 +387,21 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
     : availableAccounts;
   const namespace = localPersonaNamespace(storage);
   const byKey = new Map();
-  const sourceRefs = new Set();
-  const addCandidate = (candidate) => {
-    if (!candidate || (candidate.sourceRef && sourceRefs.has(candidate.sourceRef))) return;
+  const sourceKeys = new Map();
+  const priorities = new Map();
+  const addCandidate = (candidate, priority = 0) => {
+    if (!candidate) return;
+    const sourceRef = candidate.sourceRef;
+    const previousKey = sourceRef ? sourceKeys.get(sourceRef) : null;
+    if (previousKey) {
+      const previousPriority = priorities.get(previousKey) ?? 0;
+      if (priority <= previousPriority) return;
+      byKey.delete(previousKey);
+      priorities.delete(previousKey);
+    }
     byKey.set(candidate.key, candidate);
-    if (candidate.sourceRef) sourceRefs.add(candidate.sourceRef);
+    priorities.set(candidate.key, priority);
+    if (sourceRef) sourceKeys.set(sourceRef, candidate.key);
   };
   for (const account of accounts) {
     const state = account.state;
@@ -377,10 +413,16 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
       syncMax: false,
     };
     const owned = Array.isArray(state.roster?.personas) ? state.roster.personas.filter(record) : [];
-    const basePersona = (mode, no) => catalog.find((persona) => (
-      (mode === 't' ? persona.kind === 'tokui' : persona.kind === 'n' ? persona.kind === 'normal' : false)
-      && String(persona.no) === String(no)
-    ));
+    const basePersona = (mode, no) => {
+      const prefix = mode === 't' ? 't' : mode === 'n' ? 'n' : '';
+      // Prefer canonical catalog keys to normalize baseline lookup consistently.
+      const byKey = prefix ? catalog.find((persona) => persona.key === `${prefix}${no}`) : null;
+      if (byKey) return byKey;
+      return catalog.find((persona) => (
+        (mode === 't' ? persona.kind === 'tokui' : mode === 'n' ? persona.kind === 'normal' : false)
+        && String(persona.no) === String(no)
+      ));
+    };
 
     // Current equipped build: import only custom identities or edits explicitly marked as synchronized.
     if (record(state.personaSrc)) {
@@ -406,7 +448,12 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
           syncMax,
           sourceLabel: isCustom ? '現在のオリジナル人格' : '現在の同期化・手動編集',
         }, catalog);
-        addCandidate(candidate);
+        const base = basePersona(modeForMap, no);
+        // The active state wins a tie because it may include unsaved current edits.
+        // A more complete saved roster build can still replace it if it reflects
+        // more visible changes than this stale equipped-state snapshot.
+        const priority = (base ? relevantDataDifferenceScore(candidate, base) * 10 : 0) + 2;
+        addCandidate(candidate, priority);
       }
     }
 
@@ -429,7 +476,9 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
           ...baseMeta, mode: 'custom', no, sourceRef, identityKey,
           sourceLabel: '保存済みオリジナル人格', syncRank, syncMax,
         }, catalog);
-        addCandidate(candidate);
+        addCandidate(candidate, (basePersona(mode, no)
+          ? relevantDataDifferenceScore(candidate, basePersona(mode, no)) * 10
+          : 0) + 1);
         continue;
       }
 
@@ -444,7 +493,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
         const base = basePersona(mode, no);
         const differs = !base || !sameRelevantData(candidate, base);
         if (candidate && (build.syncedManual === true || entry.synced === true || syncRank || syncMax || differs)) {
-          addCandidate(candidate);
+          addCandidate(candidate, (base ? relevantDataDifferenceScore(candidate, base) * 10 : 0) + 1);
         }
         continue;
       }
@@ -469,7 +518,7 @@ export function discoverLbtPersonaCandidates(storage, catalog = [], accountId = 
           syncMax,
           lbtPersonaNo: no,
         };
-        addCandidate(candidate);
+        addCandidate(candidate, (base ? relevantDataDifferenceScore(candidate, base) * 10 : 0) + 1);
       }
     }
   }

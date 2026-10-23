@@ -18,6 +18,7 @@ import {
 import { escapeHtml } from './security.mjs';
 import {
   createManualPersona,
+  MAX_LOCAL_PERSONAS,
   discoverLbtAccounts,
   discoverLbtPersonaCandidates,
   importLocalPersonas,
@@ -145,6 +146,102 @@ function refreshPersonaPool(localPersonas = state.localPersonas) {
   state.localPersonas = Array.isArray(localPersonas) ? localPersonas : [];
   state.personas = [...state.data.personas, ...state.localPersonas];
   state.map = makePersonaMap(state.personas);
+}
+
+function localPersonaPickerSignature(persona) {
+  const fields = [
+    'kind', 'no', 'name', 'hp', 'san', 'speed', 'speedAvg',
+    'resSlash', 'resPierce', 'resBlunt', 'keywords', 'affiliation',
+    'passiveName', 'passiveCond', 'passiveEffect', 'slots',
+    'variantType', 'originType', 'sourceRef', 'sourceAccount',
+    'sourceLabel', 'sourceIdentityKey', 'syncRank', 'syncMax', 'lbtPersonaNo',
+  ];
+  return JSON.stringify(Object.fromEntries(fields.map((field) => [field, persona?.[field] ?? null])));
+}
+
+// The LBT account saved build is the source of truth for renamed/synced identities.
+// Refresh the board copy before showing the picker so stale imported entries cannot
+// shadow newly synchronized skill names, colors, passives, or resistances.
+function refreshSelectedLbtPersonaData() {
+  const selectedAccount = state.lbtAccounts.find((account) => account.id === state.selectedLbtAccountId);
+  if (!selectedAccount || !state.data?.personas) return false;
+
+  let candidates;
+  try {
+    candidates = discoverLbtPersonaCandidates(
+      browserStorage(),
+      state.data.personas,
+      selectedAccount.id,
+    );
+  } catch (error) {
+    showToast('LBT同期データを更新できませんでした: ' + (error.message || '保存データエラー'));
+    return false;
+  }
+  if (!candidates.length) return false;
+
+  const existingBySource = new Map(state.localPersonas
+    .filter((persona) => persona.sourceRef)
+    .map((persona) => [persona.sourceRef, persona]));
+  const existingByKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
+  const shared = window.sharedPartySession;
+  const sharedReadOnly = Boolean(shared?.isActive && !shared.canEdit());
+  const selectedPartyKeys = new Set(state.party.map((entry) => entry.key));
+  const toApply = candidates.filter((candidate) => {
+    const existing = existingBySource.get(candidate.sourceRef) || existingByKey.get(candidate.key);
+    if (sharedReadOnly && existing && selectedPartyKeys.has(existing.key)) return false;
+    return !existing || localPersonaPickerSignature(existing) !== localPersonaPickerSignature(candidate);
+  });
+  if (!toApply.length) return false;
+
+  let applied = null;
+  try {
+    applied = importLocalPersonas(browserStorage(), toApply);
+  } catch (error) {
+    // At the library cap, existing synced identities still get refreshed even if
+    // there is not enough room to import every newly discovered identity.
+    if (error?.code === 'LOCAL_PERSONA_LIMIT') {
+      const updatesOnly = toApply.filter((candidate) => existingBySource.has(candidate.sourceRef));
+      if (updatesOnly.length) {
+        try {
+          applied = importLocalPersonas(browserStorage(), updatesOnly);
+          showToast('LBT同期人格の既存データを更新しました。追加の人格を自動登録するには追加人格ライブラリの空きを確保してください。');
+        } catch (updateError) {
+          mergeLocalPersonasInMemory(updatesOnly);
+          renderAll();
+          showToast('LBT同期人格は現在のタブに反映しましたが、ブラウザへ保存できませんでした。');
+          if (shared?.isActive) shared.onPartyChanged();
+          return true;
+        }
+      } else {
+        showToast(`追加人格ライブラリが最大${MAX_LOCAL_PERSONAS}件のため、新しい同期人格を自動登録できません。不要な追加人格を整理してください。`);
+        return false;
+      }
+    } else {
+      mergeLocalPersonasInMemory(toApply);
+      renderAll();
+      showToast('LBT同期人格を現在のタブに反映しましたが、ブラウザへ保存できませんでした: ' + (error.message || '保存エラー'));
+      if (shared?.isActive) shared.onPartyChanged();
+      return true;
+    }
+  }
+
+  refreshPersonaPool(applied.personas);
+  renderAll();
+  if (applied.added || applied.updated) {
+    showToast(`LBTアカウント「${selectedAccount.name}」の同期人格を最新データに反映しました（新規${applied.added}件・更新${applied.updated}件）。`);
+  }
+  if (shared?.isActive) shared.onPartyChanged();
+  return true;
+}
+
+function syncedIdentityKeysForAccount(account) {
+  if (!account) return new Set();
+  const prefix = `${account.id}:identity:`;
+  return new Set(state.localPersonas
+    .filter((persona) => persona.variantType === 'sync'
+      && persona.sourceRef?.startsWith(prefix)
+      && persona.sourceIdentityKey)
+    .map((persona) => persona.sourceIdentityKey));
 }
 
 function personaSnapshotForShare(persona, playerName = '') {
@@ -458,6 +555,7 @@ function bindEvents() {
     if (!state.lbtAccounts.some((account) => account.id === nextId)) return;
     state.selectedLbtAccountId = nextId;
     writeStoragePreference(LBT_ACCOUNT_FILTER_KEY, nextId);
+    refreshSelectedLbtPersonaData();
     renderLbtAccountControls();
     renderPickerList();
   });
@@ -696,8 +794,7 @@ function renderParty() {
       state.selectedSin && colorCount > 0 ? 'is-hot' : '',
     ].filter(Boolean).join(' ');
     const counts = Object.fromEntries(SIN_ORDER.map((sin) => [sin, countColor(persona, sin)]));
-    const resources = SIN_ORDER
-      .filter((sin) => counts[sin] > 0)
+    const resources = [...SIN_ORDER]
       .sort((a, b) => counts[b] - counts[a] || SIN_ORDER.indexOf(a) - SIN_ORDER.indexOf(b));
 
     const stripLabels = persona.slots.map((skillSlot, index) => (
@@ -728,7 +825,7 @@ function renderParty() {
       : '<span class="keyword">キーワードなし</span>';
 
     const resourceChips = resources.map((sin) => (
-      `<span class="res-chip" style="--sin:${SIN_META[sin].color}"><i aria-hidden="true"></i>${escapeHtml(sin)}×${counts[sin]}</span>`
+      `<span class="res-chip${counts[sin] === 0 ? ' is-zero' : ''}" style="--sin:${SIN_META[sin].color}"><i aria-hidden="true"></i>${escapeHtml(sin)}×${counts[sin]}</span>`
     )).join('');
 
     cards.push(`
@@ -767,7 +864,7 @@ function renderParty() {
         </dl>
         <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
-        <div class="card-resources">${resourceChips || '<span class="res-chip">資源色なし</span>'}</div>
+        <div class="card-resources" aria-label="大罪資源内訳">${resourceChips}</div>
       </article>
     `);
   }
@@ -813,6 +910,7 @@ function openPicker(index) {
   state.pickerIndex = index;
   state.pendingAdd = index === null;
   refreshLbtAccountOptions();
+  refreshSelectedLbtPersonaData();
   state.pickerQuery = '';
   $('#picker-search').value = '';
   $('#picker-title').textContent = index === null ? '人格を追加' : '人格を変更';
@@ -1065,8 +1163,13 @@ function renderPickerList() {
   const currentKey = state.pickerIndex !== null ? state.party[state.pickerIndex]?.key : null;
   const selectedAccount = state.lbtAccounts.find((account) => account.id === state.selectedLbtAccountId) || null;
   const ownedOnly = Boolean(selectedAccount && !state.showUnownedPersonas);
+  const syncedIdentityKeys = syncedIdentityKeysForAccount(selectedAccount);
 
   const results = state.personas.filter((persona) => {
+    if (!persona.localOnly) {
+      const identityKey = `${persona.kind === 'tokui' ? 't' : 'n'}:${persona.no}`;
+      if (syncedIdentityKeys.has(identityKey)) return false;
+    }
     if (ownedOnly && !isPersonaOwnedByLbtAccount(persona, selectedAccount)) return false;
     if (state.pickerMode === 'local' && !persona.localOnly) return false;
     if (state.pickerMode !== 'all' && state.pickerMode !== 'local' && persona.kind !== state.pickerMode) return false;
