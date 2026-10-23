@@ -1315,6 +1315,7 @@ textarea.input {
 
 @media print {
   .controls,
+  .shared-panel,
   .card-actions,
   .toast,
   dialog {
@@ -1873,6 +1874,7 @@ h2 {
 }
 
 .shared-panel-content {
+  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
