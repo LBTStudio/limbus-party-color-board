@@ -12,10 +12,10 @@
 
 次のどちらか一方を選ぶ。
 
-- **GitHub Integration で自動適用する場合（推奨）:** Project Settings → Integrations → GitHub Integration で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認する。このリポジトリの `supabase/config.toml` には `[remotes.main]`、匿名ログイン設定、人格キーseedのパスを追加済み。`main` へマージした後、Supabase Dashboardのデプロイ履歴で migration・config・seed の各ステップが成功したことを確認する。Supabaseの [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
+- **GitHub Integration で自動適用する場合（推奨）:** Project Settings → Integrations → GitHub Integration で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認する。`main` にマージすると未適用の migration は自動適用される。**GitHub Integration は Auth 設定と seed SQL を本番へ自動適用しないため、Anonymous Sign-Ins と CAPTCHA は Dashboard で個別に設定し、人格キー seed は migration 適用後に別途実行する。** Supabase の [GitHub integration 公式手順](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照。
 - **手動で適用する場合:** 自動デプロイが未設定なら、Dashboard → SQL Editor から `supabase/migrations/202610230001_shared_party_sessions.sql` 全体を開いて実行する。
 
-GitHub Integration が接続されている場合、`supabase/config.toml` の設定を本番にも適用するには、対象の本番ブランチに対応する `[remotes.main]` の指定が必要です。seed は migration の後に実行されます。手動実行と自動適用を併用しないでください。公式仕様は [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration) を参照してください。接続状況は Project Settings → Integrations で確認できます。
+GitHub Integration が適用するのは未適用の migration など所定のデプロイ対象であり、Auth の設定値と `seed-persona-keys.sql` は自動適用される前提にしないでください。接続状況は Project Settings → Integrations で確認できます。
 
 - セッション、参加者、招待、アクセス申請、編集履歴、許可済み人格キーのテーブル
 - ブラウザからの直接テーブルアクセスを禁止する権限と RLS
@@ -46,13 +46,11 @@ Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous
 
 ## 5. デプロイ結果の確認
 
-Supabase GitHub Integration を使う場合は、Project Settings → Integrations で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認してください。SupabaseのGitHub連携では、productionブランチに対応する `[remotes.main]` の設定を使い、未適用のmigrationを適用します。今回の `supabase/config.toml` は匿名ログインを宣言し、migration後に `seed-persona-keys.sql` を実行する設定になっています。
+Supabase GitHub Integration を使う場合は、Project Settings → Integrations で Working directory が `.`、Production branch が `main`、Deploy to production が有効であることを確認してください。GitHub Integration は未適用の migration を実行しますが、Auth 設定と seed SQL は本番へ自動適用されないため、次を別々に確認してください。
 
-`main` へマージしたら、Supabase Dashboard の Integrations / デプロイ履歴で次のステップがすべて成功したことを確認してください。
-
-- migration: セッション用テーブルとRPCが作成された
-- config: 本番の Anonymous Sign-Ins 設定が適用された
-- seed: 許可対象の人格キー一覧が同期された
+- migration: Dashboard の migration 履歴に `202610230001` および新しい forward migration がある。適用済み migration ファイルを編集しても、同じバージョンは再実行されない。
+- Auth: Dashboard の Authentication 設定で Anonymous Sign-Ins と CAPTCHA protection が個別に有効化されている。
+- seed: `202610230001` の適用後に `supabase/seed-persona-keys.sql` を SQL Editor などで別途実行し、許可対象の人格キー一覧を同期する。コード内の `config.toml` に seed のパスが書かれていても、本番 Integration が自動実行するとは限らない。
 
 公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
 
