@@ -278,6 +278,18 @@ test('shared session lifecycle clearly separates browser-local and cloud data', 
   assert.match(sharedUi, /共有データは7日後に完全削除/);
 });
 
+test('workspace creation shares one name while invitees retain their own display name', () => {
+  assert.match(html, /共同編集スペース名（作成者の表示名を兼ねます）/);
+  assert.match(html, /id="shared-session-title" maxlength="40"/);
+  assert.match(html, /作成者はこの名前で参加者一覧に表示されます/);
+  assert.doesNotMatch(html, /id="shared-display-name"/);
+  assert.match(sharedUi, /getApi\(\)\.createSession\(title, title\)/);
+  assert.match(sharedUi, /localStorage\.getItem\('lbt_party_shared_display_name'\)/);
+  assert.match(sharedUi, /window\.prompt\('共有セッションで表示する名前を入力してください'/);
+  assert.match(sharedUi, /rememberDisplayName\(provided\.trim\(\)\.slice\(0, 40\)\)/);
+  assert.doesNotMatch(sharedUi, /\$\('#shared-display-name'\)/);
+});
+
 test('lifecycle migration tracks live usage and schedules idle cleanup safely', () => {
   assert.match(lifecycleMigration, /add column if not exists last_activity_at/i);
   assert.match(lifecycleMigration, /last_activity_at < now\(\) - interval '5 minutes'/i);
