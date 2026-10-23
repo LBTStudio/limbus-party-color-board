@@ -149,6 +149,9 @@ function normalizedPersonaFields(persona) {
     san: safeNumber(persona?.san, 45, 0, 9999),
     speed,
     speedAvg: safeNumber(persona?.speedAvg, speedAvg, 0, 999),
+    resSlash: text(persona?.resSlash ?? persona?.res_slash, 40) || '普通',
+    resPierce: text(persona?.resPierce ?? persona?.res_pierce, 40) || '普通',
+    resBlunt: text(persona?.resBlunt ?? persona?.res_blunt, 40) || '普通',
     keywords: [...new Set((Array.isArray(persona?.keywords) ? persona.keywords : [])
       .map((item) => text(item, 60)).filter(Boolean))].slice(0, 60),
     affiliation: text(persona?.affiliation, 100),
@@ -195,6 +198,7 @@ function sameRelevantData(a, b) {
   if (!a || !b) return false;
   const select = (persona) => JSON.stringify({
     name: persona.name, hp: persona.hp, san: persona.san, speed: persona.speed,
+    resSlash: persona.resSlash, resPierce: persona.resPierce, resBlunt: persona.resBlunt,
     keywords: [...(persona.keywords || [])].sort(), affiliation: persona.affiliation,
     passiveName: persona.passiveName, passiveCond: persona.passiveCond,
     slots: (persona.slots || []).map((slot) => ({
