@@ -1,0 +1,4 @@
+project_id = "limbus-party-color-board"
+
+[auth]
+enable_anonymous_sign_ins = true
