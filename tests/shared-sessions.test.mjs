@@ -12,6 +12,7 @@ const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_se
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
+const sessionCreationRateLimitMigration = read('../supabase/migrations/20261023210000_persist_session_creation_rate_limits.sql');
 const design = read('../docs/shared-sessions-design.md');
 const seed = read('../supabase/seed-persona-keys.sql');
 const client = read('../js/shared-sessions.mjs');
@@ -348,6 +349,26 @@ test('workspace creation is blocked before the create RPC when the current share
   const activateStart = sharedUi.indexOf('async function activateSession(');
   const activateBody = sharedUi.slice(activateStart, activateStart + 500);
   assert.match(activateBody, /const switchError = sessionSwitchError\(\)/);
+});
+
+test('session creation rate limits survive immediate deletion of the workspace row', () => {
+  assert.match(sessionCreationRateLimitMigration, /create table if not exists public\.party_session_creation_log/i);
+  assert.match(sessionCreationRateLimitMigration, /owner_user_id uuid not null/i);
+  assert.match(sessionCreationRateLimitMigration, /alter table public\.party_session_creation_log enable row level security/i);
+  assert.match(sessionCreationRateLimitMigration, /revoke all on table public\.party_session_creation_log from public, anon, authenticated/i);
+  const start = sessionCreationRateLimitMigration.indexOf('create or replace function public.create_party_session');
+  const end = sessionCreationRateLimitMigration.indexOf('revoke all on function public.create_party_session', start);
+  const fn = sessionCreationRateLimitMigration.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(fn, /pg_advisory_xact_lock/);
+  assert.match(fn, /party_session_creation_log l[\s\S]*?l\.created_at > now\(\) - interval '1 hour'\) >= 10/);
+  assert.match(fn, /party_session_creation_log l[\s\S]*?l\.created_at > now\(\) - interval '30 days'\) >= 50/);
+  assert.match(fn, /insert into public\.party_session_creation_log\(owner_user_id\)/);
+  assert.match(fn, /party_sessions s[\s\S]*?s\.archived_at is null\) >= 20/);
+  assert.ok(
+    fn.indexOf('insert into public.party_session_creation_log') < fn.indexOf('insert into public.party_sessions'),
+    'record creation limits independently of the session row that may later be deleted',
+  );
 });
 
 test('manual workspace ending deletes data immediately while idle cleanup keeps its seven-day grace period', () => {
