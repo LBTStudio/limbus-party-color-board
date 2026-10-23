@@ -97,6 +97,13 @@ test('browser config rejects privileged keys and allows supported public-key for
   );
   assert.doesNotMatch(configuredKey, /sb_secret_|service_role|supabase_admin/i);
   assert.match(client, /!isPrivilegedKey\(SUPABASE_PUBLISHABLE_KEY\)/);
+  const supabaseConfig = read('../supabase/config.toml');
+  assert.match(supabaseConfig, /\[remotes\.main\]/);
+  assert.match(supabaseConfig, /project_id = "hobntjcrzybqsiobrpsz"/);
+  assert.match(supabaseConfig, /\[remotes\.main\.auth\]/);
+  assert.match(supabaseConfig, /enable_anonymous_sign_ins = true/);
+  assert.match(supabaseConfig, /\[remotes\.main\.db\.seed\]/);
+  assert.match(supabaseConfig, /sql_paths = \["\.\/seed-persona-keys\.sql"\]/);
 });
 test('polling avoids hidden-tab churn and offers explicit conflict handling', () => {
   assert.match(sharedUi, /document\.hidden/);
