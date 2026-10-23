@@ -119,3 +119,6 @@ begin
   end if;
 end;
 $$;
+
+revoke all on function public.decide_party_access_request(uuid,text,text) from public, anon;
+grant execute on function public.decide_party_access_request(uuid,text,text) to authenticated;
