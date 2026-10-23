@@ -79,6 +79,18 @@ function currentKeys() {
   return bridge.getPartyKeys();
 }
 
+function currentPartyEntries() {
+  const entries = typeof bridge.getPartyEntries === 'function'
+    ? bridge.getPartyEntries()
+    : currentKeys().map((key) => ({ key }));
+  return Array.isArray(entries)
+    ? entries.map((entry) => ({
+      key: String(entry?.key ?? ''),
+      playerName: String(entry?.playerName ?? '').trim().slice(0, 80),
+    })).filter((entry) => entry.key)
+    : [];
+}
+
 function currentPersonas() {
   return typeof bridge.getPartyPersonas === 'function' ? bridge.getPartyPersonas() : [];
 }
@@ -370,7 +382,7 @@ async function activateSession(sessionId, prefetched = null) {
   if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
   if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
 
-  if (!active && !personalPartySnapshot) personalPartySnapshot = currentKeys().slice();
+  if (!active && !personalPartySnapshot) personalPartySnapshot = currentPartyEntries();
   stopPolling();
   active = {
     sessionId: snapshot.session_id || sessionId,
@@ -986,7 +998,7 @@ export async function initializeSharedSessionsUi(callbacks) {
   const controller = {
     get isActive() { return Boolean(active); },
     get sessionId() { return active ? active.sessionId : ''; },
-    get personalPartySnapshot() { return personalPartySnapshot ? [...personalPartySnapshot] : null; },
+    get personalPartySnapshot() { return personalPartySnapshot ? personalPartySnapshot.map((entry) => ({ ...entry })) : null; },
     canEdit,
     onPartyChanged,
   };

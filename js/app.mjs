@@ -74,6 +74,17 @@ function browserStorage() {
   }
 }
 
+function sanitizePlayerName(value) {
+  return String(value ?? '').trim().slice(0, 80);
+}
+
+function defaultPlayerName() {
+  const accounts = discoverLbtAccounts(browserStorage(), state.data?.personas || []);
+  return sanitizePlayerName(
+    accounts.find((account) => account.id === state.selectedLbtAccountId)?.playerName,
+  );
+}
+
 function readStoragePreference(key) {
   try {
     return browserStorage()?.getItem(key) ?? null;
@@ -136,10 +147,12 @@ function refreshPersonaPool(localPersonas = state.localPersonas) {
   state.map = makePersonaMap(state.personas);
 }
 
-function personaSnapshotForShare(persona) {
-  if (!persona?.localOnly) return null;
+function personaSnapshotForShare(persona, playerName = '') {
+  if (!persona) return null;
+  const assignment = { key: persona.key, playerName: sanitizePlayerName(playerName) };
+  if (!persona.localOnly) return { ...assignment, assignmentOnly: true };
   return {
-    key: persona.key,
+    ...assignment,
     kind: persona.kind,
     variantType: persona.variantType,
     originType: persona.originType,
@@ -152,10 +165,14 @@ function personaSnapshotForShare(persona) {
     san: persona.san,
     speed: persona.speed,
     speedAvg: persona.speedAvg,
+    resSlash: persona.resSlash || '—',
+    resPierce: persona.resPierce || '—',
+    resBlunt: persona.resBlunt || '—',
     keywords: [...(persona.keywords || [])],
     affiliation: persona.affiliation || '',
     passiveName: persona.passiveName || '',
     passiveCond: persona.passiveCond || '',
+    passiveEffect: persona.passiveEffect || '',
     slots: (persona.slots || []).map((slot, index) => ({
       rank: `S${index}`,
       name: slot.name || '',
@@ -167,14 +184,22 @@ function personaSnapshotForShare(persona) {
 
 function getShareablePartyPersonas() {
   return state.party
-    .map((entry) => personaSnapshotForShare(state.map.get(entry.key)))
+    .map((entry) => personaSnapshotForShare(state.map.get(entry.key), entry.playerName))
     .filter(Boolean);
 }
 
 function applySharedPartySnapshot(keys, sharedPersonas = []) {
   const selectedKeys = new Set(Array.isArray(keys) ? keys : []);
-  const incoming = (Array.isArray(sharedPersonas) ? sharedPersonas : [])
-    .filter((persona) => selectedKeys.has(persona?.key))
+  const sharedSnapshots = (Array.isArray(sharedPersonas) ? sharedPersonas : [])
+    .filter((persona) => selectedKeys.has(persona?.key));
+  const playerNamesByKey = new Map();
+  for (const snapshot of sharedSnapshots) {
+    if (typeof snapshot?.playerName === 'string' || snapshot?.assignmentOnly === true) {
+      playerNamesByKey.set(snapshot.key, sanitizePlayerName(snapshot.playerName));
+    }
+  }
+  const incoming = sharedSnapshots
+    .filter((persona) => persona?.assignmentOnly !== true)
     .map(sanitizeLocalPersona)
     .filter(Boolean);
   const byKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
@@ -192,8 +217,13 @@ function applySharedPartySnapshot(keys, sharedPersonas = []) {
     }
   }
   refreshPersonaPool(state.localPersonas);
-  state.party = sanitizeParty(keys) || [];
-  const missing = (Array.isArray(keys) ? keys : []).filter((key) => !state.map.has(key));
+  state.party = (sanitizeParty(keys) || []).map((entry) => ({
+    ...entry,
+    playerName: playerNamesByKey.has(entry.key)
+      ? playerNamesByKey.get(entry.key)
+      : sanitizePlayerName(entry.playerName),
+  }));
+  const missing = (Array.isArray(keys) ? keys : []).filter((entry) => !state.map.has(typeof entry === 'string' ? entry : entry?.key));
   if (missing.length) {
     showToast('共有編成に必要な追加人格データが不足しています。共有元で再保存してください。');
   }
@@ -227,6 +257,19 @@ function readUrlKeys() {
   return params.get('p').split(',').map((key) => key.trim()).filter(Boolean);
 }
 
+function readUrlPlayerNames() {
+  const params = new URLSearchParams(location.search);
+  try {
+    const parsed = JSON.parse(params.get('pl') || '[]');
+    if (!Array.isArray(parsed)) return new Map();
+    return new Map(parsed.slice(0, MAX_PARTY)
+      .filter((item) => Array.isArray(item) && typeof item[0] === 'string')
+      .map(([key, name]) => [key, sanitizePlayerName(name)]));
+  } catch {
+    return new Map();
+  }
+}
+
 function sanitizeParty(entries) {
   if (!Array.isArray(entries)) return null;
   const seen = new Set();
@@ -235,7 +278,10 @@ function sanitizeParty(entries) {
     const key = typeof entry === 'string' ? entry : entry?.key;
     if (typeof key !== 'string' || !state.map.has(key) || seen.has(key)) continue;
     seen.add(key);
-    party.push({ key });
+    party.push({
+      key,
+      playerName: sanitizePlayerName(typeof entry === 'string' ? '' : entry?.playerName),
+    });
     if (party.length >= MAX_PARTY) break;
   }
   return party;
@@ -250,9 +296,11 @@ function saveState() {
   const sharedController = window.sharedPartySession;
   const savedParty = sharedController?.isActive && Array.isArray(sharedController.personalPartySnapshot)
     ? sharedController.personalPartySnapshot
-    : state.party.map((entry) => entry.key);
+    : state.party;
   const payload = {
-    party: savedParty.map((entry) => typeof entry === 'string' ? entry : entry.key),
+    party: savedParty.map((entry) => (typeof entry === 'string'
+      ? { key: entry, playerName: '' }
+      : { key: entry.key, playerName: sanitizePlayerName(entry.playerName) })),
     partySort: state.partySort,
     resourceSort: state.resourceSort,
     skillSortSlot: state.skillSortSlot,
@@ -277,6 +325,7 @@ function saveState() {
   if (sharedController?.isActive) {
     const params = new URLSearchParams(location.search);
     params.delete('p');
+    params.delete('pl');
     const query = params.toString();
     history.replaceState(null, '', location.pathname + (query ? '?' + query : '') + '#session=' + encodeURIComponent(sharedController.sessionId));
     sharedController.onPartyChanged();
@@ -289,8 +338,14 @@ function saveState() {
     // emit a URL that looks shareable but cannot reconstruct the custom persona elsewhere.
     if (state.party.length > 0 && !containsLocalOnlyPersona) {
       params.set('p', state.party.map((entry) => entry.key).join(','));
+      const namedEntries = state.party
+        .filter((entry) => sanitizePlayerName(entry.playerName))
+        .map((entry) => [entry.key, sanitizePlayerName(entry.playerName)]);
+      if (namedEntries.length) params.set('pl', JSON.stringify(namedEntries));
+      else params.delete('pl');
     } else {
       params.delete('p');
+      params.delete('pl');
     }
     const query = params.toString();
     history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
@@ -326,7 +381,12 @@ function init(data) {
     party = fromStore;
   }
   if (party === null) party = defaultParty();
-  state.party = party.slice(0, MAX_PARTY);
+  const urlPlayerNames = readUrlPlayerNames();
+  state.party = party.slice(0, MAX_PARTY).map((entry) => (
+    urlPlayerNames.has(entry.key)
+      ? { ...entry, playerName: urlPlayerNames.get(entry.key) }
+      : entry
+  ));
 
   if (stored && PARTY_SORTS.has(stored.partySort)) state.partySort = stored.partySort;
   if (stored && RESOURCE_SORTS.has(stored.resourceSort)) state.resourceSort = stored.resourceSort;
@@ -357,6 +417,22 @@ function bindEvents() {
   $('#add-member').addEventListener('click', () => openPicker(null));
   $('#import-tsv').addEventListener('click', openImport);
   $('#copy-tsv').addEventListener('click', copyTsv);
+  $('#party-cards').addEventListener('change', (event) => {
+    const input = event.target.closest('[data-player-name-index]');
+    if (!input) return;
+    const index = Number(input.dataset.playerNameIndex);
+    const entry = state.party[index];
+    if (!entry) return;
+    if (!canEditParty()) {
+      input.value = sanitizePlayerName(entry.playerName);
+      showToast('このセッションは閲覧のみです。');
+      return;
+    }
+    entry.playerName = sanitizePlayerName(input.value);
+    saveState();
+    renderMatrix();
+    showToast('担当PL名を保存しました。');
+  });
   $('#reset-party').addEventListener('click', resetParty);
   $('#import-apply').addEventListener('click', applyImport);
   $('#open-lbt-persona-import').addEventListener('click', openLbtPersonaImport);
@@ -560,7 +636,7 @@ function renderMatrix() {
     if (!persona) continue;
     const slot = state.party.findIndex((item) => item.key === entry.key) + 1;
     body += '<tr>';
-    body += `<th scope="row" class="member"><span class="member-label">枠 ${slot}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></th>`;
+    body += `<th scope="row" class="member"><span class="member-label">${escapeHtml(entry.playerName || 'PL未設定')}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></th>`;
     for (const skillSlot of persona.slots) {
       const chips = skillSlot.colors.map((sin) => (
         `<span class="slot-chip" style="--sin:${SIN_META[sin].color}">${escapeHtml(sin)}</span>`
@@ -612,7 +688,7 @@ function renderParty() {
     const persona = state.map.get(entry.key);
     if (!persona) continue;
     const originalIndex = state.party.findIndex((item) => item.key === entry.key);
-    const slot = originalIndex + 1;
+    const playerName = sanitizePlayerName(entry.playerName);
     const colorCount = state.selectedSin ? countColor(persona, state.selectedSin) : 0;
     const cardClass = [
       'persona-card',
@@ -663,7 +739,12 @@ function renderParty() {
         </div>
         <div class="card-head">
           <div class="card-id">
-            <span class="card-slot">SLOT ${slot}</span>
+            <label class="card-player-field">
+              <span>PL名</span>
+              <input class="card-player-input" type="text" maxlength="80"
+                data-player-name-index="${originalIndex}" value="${escapeHtml(playerName)}"
+                placeholder="PL名を入力" aria-label="${escapeHtml(persona.name)}の担当PL名" ${canEditParty() ? '' : 'disabled'}>
+            </label>
             <span class="kind-badge">${personaKindLabel(persona)}</span>
             <span class="card-no">${escapeHtml(personaNumberLabel(persona))}</span>
           </div>
@@ -679,9 +760,10 @@ function renderParty() {
           </div>
         </div>
         <dl class="stats">
-          <div><dt>HP</dt><dd>${escapeHtml(persona.hp)}</dd></div>
-          <div><dt>SAN</dt><dd>${escapeHtml(persona.san)}</dd></div>
-          <div><dt>速度</dt><dd>${escapeHtml(persona.speed)}</dd></div>
+          <div><dt>速度</dt><dd>${escapeHtml(persona.speed || '—')}</dd></div>
+          <div><dt>斬撃耐性</dt><dd>${escapeHtml(persona.resSlash || '—')}</dd></div>
+          <div><dt>貫通耐性</dt><dd>${escapeHtml(persona.resPierce || '—')}</dd></div>
+          <div><dt>打撃耐性</dt><dd>${escapeHtml(persona.resBlunt || '—')}</dd></div>
         </dl>
         <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
@@ -761,7 +843,7 @@ function renderLbtImportCandidates() {
             <span>${escapeHtml(persona.name)}</span>
             <span class="persona-source-badge">${escapeHtml(typeLabel)}</span>
           </span>
-          <span class="lbt-import-option-meta">${escapeHtml(persona.sourceAccount || 'LBT保存データ')} · ${escapeHtml(persona.sourceLabel || typeLabel)} · HP ${persona.hp} / SAN ${persona.san}</span>
+          <span class="lbt-import-option-meta">${escapeHtml(persona.sourceAccount || 'LBT保存データ')} · ${escapeHtml(persona.sourceLabel || typeLabel)} · 速度 ${escapeHtml(persona.speed || '—')} · 斬撃 ${escapeHtml(persona.resSlash || '—')} / 貫通 ${escapeHtml(persona.resPierce || '—')} / 打撃 ${escapeHtml(persona.resBlunt || '—')}</span>
           <span class="lbt-import-option-skills">${escapeHtml(skills || 'スキル・罪悪属性は未登録')}</span>
         </span>
       </label>
@@ -1053,8 +1135,9 @@ function deleteLocalPersona(key) {
   const persistedPartyKeys = Array.isArray(storedParty)
     ? storedParty.map((entry) => typeof entry === 'string' ? entry : entry?.key)
     : [];
-  if ((Array.isArray(savedPersonalKeys) && savedPersonalKeys.includes(key))
-    || persistedPartyKeys.includes(key)) {
+  if ((Array.isArray(savedPersonalKeys) && savedPersonalKeys.some((entry) => (
+    (typeof entry === 'string' ? entry : entry?.key) === key
+  ))) || persistedPartyKeys.includes(key)) {
     showToast('保存済みの個人編成で使用中の人格です。個人編成から外してから削除してください。');
     return;
   }
@@ -1087,9 +1170,13 @@ function choosePersona(key) {
       showToast(`編成は最大 ${MAX_PARTY} 名です。`);
       return;
     }
-    state.party.push({ key });
+    state.party.push({ key, playerName: defaultPlayerName() });
   } else if (state.pickerIndex !== null) {
-    state.party[state.pickerIndex] = { key };
+    const previous = state.party[state.pickerIndex];
+    state.party[state.pickerIndex] = {
+      key,
+      playerName: sanitizePlayerName(previous?.playerName) || defaultPlayerName(),
+    };
   }
 
   state.pickerIndex = null;
@@ -1134,7 +1221,10 @@ function applyImport() {
     return;
   }
 
-  state.party = result.party.map((entry) => ({ key: entry.key }));
+  state.party = result.party.map((entry) => ({
+    key: entry.key,
+    playerName: sanitizePlayerName(entry.playerName),
+  }));
   state.selectedSin = null;
   state.partySort = 'default';
   state.previousPartySort = 'default';
@@ -1163,6 +1253,7 @@ async function copyTsv() {
   const result = state.lastAggregate;
   const rows = [[
     '枠',
+    'PL名',
     '人格キー',
     '人格番号',
     '人格名',
@@ -1181,6 +1272,7 @@ async function copyTsv() {
     if (!persona) return;
     rows.push([
       index + 1,
+      sanitizePlayerName(entry.playerName),
       persona.key,
       sheetNumber(persona),
       persona.name,
@@ -1243,6 +1335,10 @@ async function boot() {
       const { initializeSharedSessionsUi } = await import('./shared-sessions-ui.mjs');
       await initializeSharedSessionsUi({
         getPartyKeys: () => state.party.map((entry) => entry.key),
+        getPartyEntries: () => state.party.map((entry) => ({
+          key: entry.key,
+          playerName: sanitizePlayerName(entry.playerName),
+        })),
         setPartyKeys: (keys, sharedPersonas = []) => applySharedPartySnapshot(keys, sharedPersonas),
         getPartyPersonas: getShareablePartyPersonas,
         renderAll,

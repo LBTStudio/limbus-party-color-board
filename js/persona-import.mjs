@@ -149,6 +149,9 @@ function normalizedPersonaFields(persona) {
     san: safeNumber(persona?.san, 45, 0, 9999),
     speed,
     speedAvg: safeNumber(persona?.speedAvg, speedAvg, 0, 999),
+    resSlash: text(persona?.resSlash ?? persona?.res_slash ?? persona?.resS, 40) || '—',
+    resPierce: text(persona?.resPierce ?? persona?.res_pierce ?? persona?.resP, 40) || '—',
+    resBlunt: text(persona?.resBlunt ?? persona?.res_blunt ?? persona?.resB, 40) || '—',
     keywords: [...new Set((Array.isArray(persona?.keywords) ? persona.keywords : [])
       .map((item) => text(item, 60)).filter(Boolean))].slice(0, 60),
     affiliation: text(persona?.affiliation, 100),
@@ -170,9 +173,9 @@ function currentSourceFromSnapshot(source, snapshot) {
   result.hp = stat('hp', base.hp);
   result.san = stat('san', base.san);
   result.speed = stat('speed', base.speed);
-  result.res_slash = snapshot.resS || base.res_slash;
-  result.res_pierce = snapshot.resP || base.res_pierce;
-  result.res_blunt = snapshot.resB || base.res_blunt;
+  result.res_slash = stat('resS', base.res_slash);
+  result.res_pierce = stat('resP', base.res_pierce);
+  result.res_blunt = stat('resB', base.res_blunt);
   if (record(snapshot.pas)) {
     result.passive_name = snapshot.pas.name ?? base.passive_name;
     result.passive_cond = snapshot.pas.cond ?? base.passive_cond;
@@ -209,6 +212,7 @@ function sameRelevantData(a, b) {
     keywords: [...(persona.keywords || [])].sort(), affiliation: persona.affiliation,
     passiveName: persona.passiveName, passiveCond: persona.passiveCond,
     passiveEffect: persona.passiveEffect,
+    resSlash: persona.resSlash, resPierce: persona.resPierce, resBlunt: persona.resBlunt,
     slots: (persona.slots || []).map((slot) => ({
       name: slot.name, type: slot.type, colors: [...slot.colors].sort(),
     })),
@@ -328,6 +332,7 @@ export function discoverLbtAccounts(storage, catalog = []) {
       ownedKeys: [...new Set(ownedKeys)],
       ownedIdentityKeys: [...identityKeys],
       ownedCount: new Set(ownedKeys).size,
+      playerName: text(account.state.plName, 80),
     };
   });
 }

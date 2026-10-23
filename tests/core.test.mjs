@@ -30,6 +30,9 @@ test('dataset keeps every persona and five tactic slots', () => {
   assert.equal(new Set(personas.map((persona) => persona.key)).size, personas.length);
 
   for (const persona of personas) {
+    assert.equal(typeof persona.resSlash, 'string', `${persona.key} slash resistance`);
+    assert.equal(typeof persona.resPierce, 'string', `${persona.key} pierce resistance`);
+    assert.equal(typeof persona.resBlunt, 'string', `${persona.key} blunt resistance`);
     assert.equal(persona.slots.length, 5, `${persona.key} ${persona.name}`);
     for (const slot of persona.slots) {
       assert.ok(slot.colors.length >= 1, `${persona.key} ${slot.rank}`);
@@ -186,6 +189,24 @@ test('spreadsheet formulas are escaped and formula-like names round-trip through
   assert.deepEqual(result.party, [{ key: identity.key }]);
 });
 
+
+test('TSV PL-name assignments round-trip without affecting older sheets', () => {
+  const text = [
+    '枠\tPL名\t人格キー\t人格番号\t人格名\t種別',
+    '1\tプレイヤーA\tn48\t48\t黒獣-卯\t通常',
+    '2\tプレイヤーB\tn34\t34\t北部ヂェーヴィチ協会4課フィクサー\t通常',
+  ].join('\n');
+  const result = parsePartySheet(text, personas);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.party, [
+    { key: 'n48', playerName: 'プレイヤーA' },
+    { key: 'n34', playerName: 'プレイヤーB' },
+  ]);
+
+  const legacy = parsePartySheet('枠\t人格番号\t人格名\n1\t48\t黒獣-卯', personas);
+  assert.deepEqual(legacy.errors, []);
+  assert.deepEqual(legacy.party, [{ key: 'n48' }]);
+});
 test('TSV import rejects unterminated quoted fields instead of merging the rest of the sheet', () => {
   const result = parsePartySheet([
     '枠\t人格番号\t人格名',

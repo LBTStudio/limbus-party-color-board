@@ -31,11 +31,11 @@ test('deleting an added persona protects persisted personal and active shared pa
   assert.ok(deleteStart >= 0 && deleteEnd > deleteStart);
   assert.match(deletion, /window\.sharedPartySession\?\.isActive/);
   assert.match(deletion, /window\.sharedPartySession\.personalPartySnapshot/);
-  assert.match(deletion, /savedPersonalKeys\.includes\(key\)/);
+  assert.match(deletion, /savedPersonalKeys\.some\(\(entry\) =>/);
   assert.match(deletion, /const storedParty = readStored\(\)\?\.party/);
   assert.match(deletion, /persistedPartyKeys\.includes\(key\)/);
   assert.ok(
-    deletion.indexOf('savedPersonalKeys.includes(key)') < deletion.indexOf('saveLocalPersonas('),
+    deletion.indexOf('savedPersonalKeys.some') < deletion.indexOf('saveLocalPersonas('),
     'protect the saved lineup before mutating the local persona library',
   );
   assert.ok(
@@ -146,4 +146,41 @@ test('passive resource costs and skill-specific resource sorting are wired into 
   assert.match(app, /state\.skillSortSlot/);
   assert.match(app, /sortParty\(state\.party, state\.partySort, state\.selectedSin, state\.map, state\.skillSortSlot\)/);
   assert.match(styles, /\.passive-sin \{/);
+});
+
+test('party member PL names persist in the matrix and detail cards show speed and resistances instead of HP/SAN', () => {
+  const matrixStart = app.indexOf('function renderMatrix()');
+  const partyStart = app.indexOf('function renderParty()');
+  const partyEnd = app.indexOf('function syncControls()', partyStart);
+  const detail = app.slice(partyStart, partyEnd);
+  const saveStart = app.indexOf('function saveState()');
+  const saveEnd = app.indexOf('function readUrlKeys()', saveStart);
+  const save = app.slice(saveStart, saveEnd);
+  assert.ok(matrixStart >= 0 && partyStart > matrixStart && partyEnd > partyStart);
+  assert.match(app.slice(matrixStart, partyStart), /entry\.playerName \|\| 'PL未設定'/);
+  assert.match(detail, /data-player-name-index/);
+  assert.match(detail, /persona\.speed/);
+  assert.match(detail, /persona\.resSlash/);
+  assert.match(detail, /persona\.resPierce/);
+  assert.match(detail, /persona\.resBlunt/);
+  assert.doesNotMatch(detail, /<dt>HP<\/dt>|<dt>SAN<\/dt>/);
+  assert.match(save, /playerName: sanitizePlayerName\(entry\.playerName\)/);
+  assert.match(app, /getPartyEntries: \(\) => state\.party\.map/);
+  assert.match(app, /assignmentOnly: true/);
+  assert.match(app, /playerNamesByKey/);
+  assert.match(styles, /\.card-player-input/);
+  assert.match(styles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});
+
+test('PL-name edit uses the normal persistence and shared-session save path', () => {
+  const start = app.indexOf("$('#party-cards').addEventListener('change'");
+  const end = app.indexOf("$('#reset-party').addEventListener", start);
+  const handler = app.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(handler, /data-player-name-index/);
+  assert.match(handler, /entry\.playerName = sanitizePlayerName\(input\.value\)/);
+  assert.match(handler, /saveState\(\)/);
+  assert.match(handler, /renderMatrix\(\)/);
+  assert.match(handler, /canEditParty\(\)/);
+  assert.doesNotMatch(handler, /renderAll\(\)/, 'do not replace the input/button while the user is clicking away');
 });

@@ -513,10 +513,13 @@ textarea.input {
 
 .member-label {
   display: block;
+  max-width: 190px;
+  overflow: hidden;
   color: var(--gold);
-  font-family: var(--f-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .member-name {
@@ -710,12 +713,42 @@ textarea.input {
   min-width: 0;
 }
 
-.card-slot {
+.card-player-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
   color: var(--gold);
-  font-family: var(--f-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 0.65rem;
+  font-weight: 650;
+}
+
+.card-player-input {
+  width: clamp(110px, 17vw, 190px);
+  min-width: 0;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid var(--gold-line);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--tx);
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.card-player-input::placeholder {
+  color: var(--tx-mute);
+  font-weight: 400;
+}
+
+.card-player-input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.card-player-input:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 
 .kind-badge {
@@ -808,7 +841,7 @@ textarea.input {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 5px;
   margin: 0;
 }
@@ -1323,7 +1356,23 @@ textarea.input {
   }
 
   .stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card-head {
+    flex-wrap: wrap;
+  }
+
+  .card-id {
+    max-width: 100%;
+  }
+
+  .card-player-field {
+    min-width: 0;
+  }
+
+  .card-player-input {
+    width: clamp(100px, 36vw, 170px);
   }
 
   .persona-name {

@@ -11,6 +11,7 @@ const forwardMigration = read('../supabase/migrations/202610230002_serialize_sha
 const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_session_lifecycle_cleanup.sql');
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const partyCapacityMigration = read('../supabase/migrations/20261023213614_allow_twenty_personas_per_party.sql');
+const playerAssignmentMigration = read('../supabase/migrations/20261024070000_add_party_player_assignments_and_resistances.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -508,8 +509,10 @@ test('untrusted persona fields are escaped before template-based HTML insertion'
     escapeHtml(payload),
     '&lt;/dd&gt;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
   );
-  assert.ok(app.includes('<dd>${escapeHtml(persona.hp)}</dd>'));
-  assert.ok(app.includes('<dd>${escapeHtml(persona.san)}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.speed || \'—\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resSlash || \'—\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resPierce || \'—\')}</dd>'));
+  assert.ok(app.includes('<dd>${escapeHtml(persona.resBlunt || \'—\')}</dd>'));
   assert.equal((app.match(/escapeHtml\(personaNumberLabel\(persona\)\)/g) || []).length, 2);
 });
 
@@ -651,4 +654,17 @@ test('LBT local persona snapshots are synchronized through authorized shared-ses
   assert.match(app, /元のLBT保存データは変更しません/);
   assert.doesNotMatch(app, /URL・クラウド共有には含まれません/);
   assert.doesNotMatch(app, /追加人格は現在のクラウド共有セッションでは使用できません/);
+});
+
+test('shared snapshots persist bounded PL names and resistance fields without weakening persona allowlists', () => {
+  assert.match(playerAssignmentMigration, /assignmentOnly/);
+  assert.match(playerAssignmentMigration, /public\.party_persona_keys official where official\.persona_key=v_key/i);
+  assert.match(playerAssignmentMigration, /char_length\(v_persona->>'playerName'\) > 80/i);
+  assert.match(playerAssignmentMigration, /'resSlash',coalesce\(v_persona->'resSlash'/);
+  assert.match(playerAssignmentMigration, /'resPierce',coalesce\(v_persona->'resPierce'/);
+  assert.match(playerAssignmentMigration, /'resBlunt',coalesce\(v_persona->'resBlunt'/);
+  assert.match(playerAssignmentMigration, /v_role not in \('owner','editor'\)/i);
+  assert.match(app, /assignmentOnly: true/);
+  assert.match(app, /playerNamesByKey\.set/);
+  assert.match(sharedUi, /currentPartyEntries\(\)/);
 });
