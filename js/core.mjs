@@ -228,17 +228,42 @@ export function normalizePersonaName(value) {
     .toLowerCase();
 }
 
-export function resolvePersona(personas, { name = '', no = '' } = {}) {
+export function resolvePersona(personas, { name = '', no = '', key = '', kind = '' } = {}) {
   const rawName = String(name ?? '').trim();
+  const rawKey = String(key ?? '').trim();
+  const rawKind = String(kind ?? '').trim().normalize('NFKC');
   const digits = String(no ?? '').match(/\d+/)?.[0];
   const numeric = digits === undefined ? null : Number(digits);
 
+  // A key from this browser's local persona library is the only unambiguous
+  // portable-in-the-same-profile reference for synced/custom variants.
+  if (rawKey) {
+    const exact = personas.find((persona) => persona.key === rawKey);
+    if (exact) {
+      if (rawName && normalizePersonaName(exact.name) !== normalizePersonaName(rawName)) {
+        return { error: `人格キー「${rawKey}」と名前「${rawName}」が一致しません。` };
+      }
+      return { persona: exact };
+    }
+  }
+
+  const matchesKind = (persona) => {
+    if (!rawKind) return true;
+    if (/同期/u.test(rawKind)) return persona.variantType === 'sync';
+    if (/創作|カスタム|手動/u.test(rawKind)) {
+      return persona.variantType === 'custom' || persona.variantType === 'manual' || persona.kind === 'custom';
+    }
+    if (/特異/u.test(rawKind)) return persona.kind === 'tokui';
+    if (/通常/u.test(rawKind)) return persona.kind === 'normal' && persona.variantType !== 'sync';
+    return true;
+  };
+
   let nameMatches = [];
   if (rawName) {
-    nameMatches = personas.filter((persona) => persona.name === rawName);
+    nameMatches = personas.filter((persona) => persona.name === rawName && matchesKind(persona));
     if (nameMatches.length === 0) {
       const normalized = normalizePersonaName(rawName);
-      nameMatches = personas.filter((persona) => normalizePersonaName(persona.name) === normalized);
+      nameMatches = personas.filter((persona) => normalizePersonaName(persona.name) === normalized && matchesKind(persona));
     }
   }
 
@@ -349,6 +374,8 @@ export function parsePartySheet(text, personas) {
   const column = (pattern) => header.findIndex((cell) => pattern.test(cell));
   const noIndex = column(/人格番号/u);
   const nameIndex = column(/人格名/u);
+  const keyIndex = column(/^人格キー$|^persona\s*key$/iu);
+  const kindIndex = column(/^種別$|^人格種別$/u);
 
   if (noIndex < 0 && nameIndex < 0) {
     return { party: [], errors: ['「人格番号」または「人格名」の列がありません。'] };
@@ -364,10 +391,12 @@ export function parsePartySheet(text, personas) {
 
     const no = noIndex >= 0 ? row[noIndex] : '';
     const name = nameIndex >= 0 ? row[nameIndex] : '';
+    const key = keyIndex >= 0 ? row[keyIndex] : '';
+    const kind = kindIndex >= 0 ? row[kindIndex] : '';
     if (/^#N\/A$/i.test(no) || /^#N\/A$/i.test(name)) continue;
-    if (!no && !name) continue;
+    if (!key && !no && !name) continue;
 
-    const resolved = resolvePersona(personas, { name, no });
+    const resolved = resolvePersona(personas, { key, name, no, kind });
     if (resolved.error) {
       errors.push(`${rowIndex + 1}行目: ${resolved.error}`);
       continue;
