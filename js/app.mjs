@@ -4,6 +4,7 @@ import {
   SIN_ORDER,
   aggregate,
   countColor,
+  escapeSpreadsheetCell,
   makePersonaMap,
   parsePartySheet,
   parsePassiveRequirements,
@@ -1096,7 +1097,7 @@ async function copyTsv() {
   }
 
   const tsv = rows
-    .map((row) => row.map((value) => String(value ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ')).join('\t'))
+    .map((row) => row.map(escapeSpreadsheetCell).join('\t'))
     .join('\n');
 
   try {

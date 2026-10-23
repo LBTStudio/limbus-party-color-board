@@ -100,6 +100,12 @@ test('LBT identity imports save active-party snapshot changes and block read-onl
   );
 });
 
+test('copied TSV cells are escaped against spreadsheet formula interpretation', () => {
+  assert.match(app, /escapeSpreadsheetCell,/);
+  assert.match(app, /row\.map\(escapeSpreadsheetCell\)/);
+  assert.doesNotMatch(app, /row\.map\(\(value\) => String\(value \?\? ''\)\.replace\(/);
+});
+
 test('numbered color strip maps indices above the unchanged 4px S0-S4 bar', () => {
   assert.match(html, /色帯の上にある数字0〜4は、左からS0→S4/);
   assert.match(app, /const stripLabels = persona\.slots\.map\(\(skillSlot, index\)/);
