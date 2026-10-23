@@ -50,7 +50,7 @@ Supabase Project Settings → Integrations の GitHub Integration で対象リ�
 
 ## 6. 人格DB更新時
 
-`data/personas.json` が更新されたら、`npm run build:supabase-seed` が `supabase/seed-persona-keys.sql` を再生成する。この seed SQL は DB の許可キー一覧へ追加するためのものなので、新しい人格キーが追加された場合は SQL Editor で `supabase/seed-persona-keys.sql` を再実行して DB 側の許可リストを同期する。通常の人格データ更新 workflow はこの seed を自動生成し、差分をコミットする。
+`data/personas.json` が更新されたら、`npm run build:supabase-seed` が `supabase/seed-persona-keys.sql` を再生成する。この seed SQL は DB の許可キー一覧を `data/personas.json` と完全一致させるため、新しいキーの追加だけでなく削除されたキーも反映します。人格データが更新された場合は SQL Editor で `supabase/seed-persona-keys.sql` を再実行して同期してください。通常の人格データ更新 workflow はこの seed を自動生成し、差分をコミットする。
 
 ## 未完了事項
 
