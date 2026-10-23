@@ -114,7 +114,7 @@ function renderAdmin(data) {
   const invitesRoot = $('#shared-invites');
   requestsRoot.replaceChildren(adminSection('参加申請', requests, '保留中の申請はありません。', (item) => adminItem(
     item.display_name,
-    new Date(item.requested_at).toLocaleString(),
+    new Date(item.requested_at).toLocaleString() + ' · ID ' + String(item.user_id).slice(0, 8),
     [
       makeActionButton('編集許可', 'shared-approve', { requestId: item.request_id, role: 'editor' }, true),
       makeActionButton('閲覧許可', 'shared-approve', { requestId: item.request_id, role: 'viewer' }),
@@ -123,8 +123,12 @@ function renderAdmin(data) {
   )));
   membersRoot.replaceChildren(adminSection('参加者', members, '参加者はいません。', (item) => adminItem(
     item.display_name,
-    roleLabel(item.role),
+    roleLabel(item.role) + ' · ID ' + String(item.user_id).slice(0, 8),
     item.role === 'owner' ? [] : [
+      makeActionButton(item.role === 'viewer' ? '編集者に変更' : '閲覧者に変更', 'shared-set-member-role', {
+        userId: item.user_id,
+        role: item.role === 'viewer' ? 'editor' : 'viewer',
+      }),
       makeActionButton('参加権限を剥奪', 'shared-remove-member', { userId: item.user_id }),
     ],
   )));
@@ -657,6 +661,8 @@ async function initializeRoute() {
   }
   if (!token) return;
 
+  // Remove the bearer token from the address/history before showing prompts or making API requests.
+  setRoute('');
   const provided = window.prompt('共有セッションで表示する名前を入力してください', displayName());
   if (!provided || !provided.trim()) {
     setStatus('参加申請をキャンセルしました。招待リンクを再度開くと申請できます。');
@@ -699,6 +705,11 @@ async function handleSharedClick(event) {
         break;
       case 'shared-remove-member':
         await removeMember(button.dataset.userId);
+        break;
+      case 'shared-set-member-role':
+        await getApi().setMemberRole(active.sessionId, button.dataset.userId, button.dataset.role);
+        await refreshAdmin();
+        setStatus('参加者の権限を' + roleLabel(button.dataset.role) + 'に変更しました。');
         break;
       case 'shared-revoke-invite':
         await revokeInvite(button.dataset.inviteId);
