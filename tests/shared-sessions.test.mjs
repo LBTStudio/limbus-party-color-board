@@ -262,14 +262,18 @@ test('forward migration updates already-deployed resource-cap RPCs and serialize
 
 test('shared session lifecycle clearly separates browser-local and cloud data', () => {
   const html = read('../index.html');
-  assert.match(html, /共有編成（クラウド保存）/);
+  assert.match(html, /編成の共同編集・同期/);
+  assert.match(html, /shared-title-short">共同編集/);
+  assert.match(html, /招待リンクから参加申請を受け付け/);
+  assert.match(html, /発行者が承認したメンバーと同じ編成を共同編集/);
+  assert.match(html, /共同編集スペースの保存期間と自動削除/);
   assert.match(html, /この端末の個人編成/);
   assert.match(html, /PERSONAL · THIS BROWSER/);
   assert.match(html, /SHARED · CLOUD DATABASE/);
   assert.match(html, /30日間/);
   assert.match(html, /7日後/);
   assert.match(html, /この端末で閉じる/);
-  assert.match(html, /共有編成を終了/);
+  assert.match(html, /共同編集スペースを終了/);
   assert.match(sharedUi, /last_activity_at/);
   assert.match(sharedUi, /共有データは7日後に完全削除/);
 });
@@ -361,7 +365,7 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(matrixStart > resourcesStart && personaStart > matrixStart);
   assert.ok(sharingStart > personaStart, 'sharing controls should not displace the primary lineup workflow');
   assert.ok(html.includes('<details class="toolbar-more">'));
-  assert.ok(html.includes('href="#shared-panel">共有編成・同期へ</a>'));
+  assert.ok(html.includes('href="#shared-panel">共同編集・同期へ</a>'));
   assert.ok(html.includes('<details class="shared-info">'));
   assert.ok(html.includes('id="shared-panel-toggle"'));
   assert.ok(html.includes('id="shared-panel-content"'));
