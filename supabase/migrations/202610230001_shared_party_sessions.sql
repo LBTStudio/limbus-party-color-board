@@ -278,6 +278,10 @@ create index if not exists session_requests_pending_idx
   on public.session_access_requests (session_id, requested_at) where status = 'pending';
 create index if not exists session_invites_active_idx
   on public.session_invites (session_id, expires_at) where revoked_at is null;
+create index if not exists session_events_actor_created_idx
+  on public.session_events (actor_user_id, created_at desc);
+create index if not exists session_events_session_created_idx
+  on public.session_events (session_id, created_at desc);
 
 alter table public.party_persona_keys enable row level security;
 alter table public.party_sessions enable row level security;
@@ -355,6 +359,14 @@ begin
       where s.owner_user_id = v_user_id and s.created_at > now() - interval '1 hour') >= 10 then
     raise exception 'SESSION_CREATE_RATE_LIMIT' using errcode = '53300';
   end if;
+  if (select count(*) from public.party_sessions s
+      where s.owner_user_id = v_user_id and s.archived_at is null) >= 20 then
+    raise exception 'ACTIVE_SESSION_LIMIT' using errcode = '53300';
+  end if;
+  if (select count(*) from public.party_sessions s
+      where s.owner_user_id = v_user_id and s.created_at > now() - interval '30 days') >= 50 then
+    raise exception 'SESSION_STORAGE_LIMIT' using errcode = '53300';
+  end if;
   if v_name = '' then v_name := '編成主'; end if;
   insert into public.party_sessions (title, owner_user_id)
   values (v_title, v_user_id) returning id into v_session_id;
@@ -406,6 +418,10 @@ begin
   if (select count(*) from public.session_invites i
       where i.created_by = v_user_id and i.created_at > now() - interval '1 hour') >= 20 then
     raise exception 'INVITE_CREATE_RATE_LIMIT' using errcode = '53300';
+  end if;
+  if (select count(*) from public.session_invites i
+      where i.session_id = p_session_id and i.revoked_at is null and i.expires_at > now()) >= 10 then
+    raise exception 'ACTIVE_INVITE_LIMIT' using errcode = '53300';
   end if;
   -- Two UUIDs provide about 244 random bits in a 64-character hex token; only its hash is stored.
   v_token := lower(replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''));
@@ -471,6 +487,13 @@ begin
   on conflict (session_id,user_id) do update
     set display_name=excluded.display_name,status='pending',requested_at=now(),decided_by=null,decided_at=null
     where public.session_access_requests.status in ('denied','revoked');
+
+  if not exists (select 1 from public.session_access_requests r
+      where r.session_id=v_session_id and r.user_id=v_user_id)
+     and (select count(*) from public.session_access_requests r
+       where r.session_id=v_session_id and r.status='pending') >= 100 then
+    raise exception 'PENDING_REQUEST_LIMIT' using errcode = '53300';
+  end if;
 
   select r.status into v_status from public.session_access_requests r
     where r.session_id=v_session_id and r.user_id=v_user_id;
@@ -568,6 +591,13 @@ begin
   if p_expected_revision is null or p_expected_revision <> v_revision then
     return public._party_session_snapshot(p_session_id) || jsonb_build_object('status','conflict');
   end if;
+  if (select count(*) from public.session_events e
+      where e.actor_user_id=v_user_id and e.created_at > now() - interval '1 minute') >= 60 then
+    raise exception 'PARTY_EDIT_RATE_LIMIT' using errcode = '53300';
+  end if;
+  -- Keep only a bounded idempotency/audit window for this session.
+  delete from public.session_events e
+    where e.session_id=p_session_id and e.created_at < now() - interval '30 days';
   if p_party_keys is null or cardinality(p_party_keys) > 6 then
     raise exception 'PARTY_MUST_HAVE_ZERO_TO_SIX_PERSONAS' using errcode = '22023';
   end if;
@@ -649,6 +679,11 @@ begin
 
   if p_decision='approve' then
     if p_role not in ('editor','viewer') then raise exception 'ROLE_MUST_BE_EDITOR_OR_VIEWER' using errcode = '22023'; end if;
+    if not exists (select 1 from public.session_members m
+        where m.session_id=v_request.session_id and m.user_id=v_request.user_id)
+       and (select count(*) from public.session_members m where m.session_id=v_request.session_id) >= 20 then
+      raise exception 'SESSION_MEMBER_LIMIT' using errcode = '53300';
+    end if;
     insert into public.session_members(session_id,user_id,role,display_name)
       values (v_request.session_id,v_request.user_id,p_role,v_request.display_name)
       on conflict (session_id,user_id) do update
