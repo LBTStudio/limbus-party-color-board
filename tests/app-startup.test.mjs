@@ -38,6 +38,28 @@ test('deleting an added persona cannot remove one referenced by the saved person
   );
 });
 
+test('manual and LBT imports do not bypass the local-persona cap through memory-only fallback', () => {
+  const manualStart = app.indexOf('function saveManualPersonaFromDialog()');
+  const manualEnd = app.indexOf('\nfunction renderPickerList(', manualStart);
+  const manual = app.slice(manualStart, manualEnd);
+  assert.ok(manualStart >= 0 && manualEnd > manualStart);
+  assert.match(manual, /failure\?\.code === 'LOCAL_PERSONA_LIMIT'/);
+  assert.ok(
+    manual.indexOf("failure?.code === 'LOCAL_PERSONA_LIMIT'") < manual.indexOf('state.localPersonas = [...state.localPersonas.filter'),
+    'manual persona creation must reject the cap before memory-only fallback',
+  );
+
+  const importStart = app.indexOf('function applyLbtPersonaImport()');
+  const importEnd = app.indexOf('\nfunction renderManualSkillFields(', importStart);
+  const importer = app.slice(importStart, importEnd);
+  assert.ok(importStart >= 0 && importEnd > importStart);
+  assert.match(importer, /error\?\.code === 'LOCAL_PERSONA_LIMIT'/);
+  assert.ok(
+    importer.indexOf("error?.code === 'LOCAL_PERSONA_LIMIT'") < importer.indexOf('mergeLocalPersonasInMemory(selected)'),
+    'LBT import must reject the cap before memory-only fallback',
+  );
+});
+
 test('party color strip retains the compact legacy design and explains the S0-S4 order', () => {
   assert.match(html, /色帯は左からS0→S4の順です/);
   assert.match(app, /class="color-strip" role="img" aria-label="色帯は左からS0、S1、S2、S3、S4の罪悪属性です"/);

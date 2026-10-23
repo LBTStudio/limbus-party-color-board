@@ -731,6 +731,10 @@ function applyLbtPersonaImport() {
     refreshPersonaPool(result.personas);
     showToast(`LBT人格を${result.added}件追加、${result.updated}件更新しました。`);
   } catch (error) {
+    if (error?.code === 'LOCAL_PERSONA_LIMIT') {
+      $('#lbt-import-status').textContent = error.message;
+      return;
+    }
     mergeLocalPersonasInMemory(selected);
     showToast('今回の追加データをメモリ上に読み込みました。永続保存はできませんでした: ' + (error.message || '保存エラー'));
   }
@@ -823,7 +827,12 @@ function saveManualPersonaFromDialog() {
   try {
     const storage = browserStorage();
     state.localPersonas = saveLocalPersonas(storage, [...loadLocalPersonas(storage), persona]);
-  } catch {
+  } catch (failure) {
+    if (failure?.code === 'LOCAL_PERSONA_LIMIT') {
+      error.textContent = failure.message;
+      error.hidden = false;
+      return;
+    }
     state.localPersonas = [...state.localPersonas.filter((item) => item.key !== persona.key), persona];
     showToast('人格を一時追加しましたが、ブラウザへ永続保存できませんでした。');
   }
