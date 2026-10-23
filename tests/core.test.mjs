@@ -30,6 +30,9 @@ test('dataset keeps every persona and five tactic slots', () => {
   assert.equal(new Set(personas.map((persona) => persona.key)).size, personas.length);
 
   for (const persona of personas) {
+    assert.equal(typeof persona.resSlash, 'string', `${persona.key} slash resistance`);
+    assert.equal(typeof persona.resPierce, 'string', `${persona.key} pierce resistance`);
+    assert.equal(typeof persona.resBlunt, 'string', `${persona.key} blunt resistance`);
     assert.equal(persona.slots.length, 5, `${persona.key} ${persona.name}`);
     for (const slot of persona.slots) {
       assert.ok(slot.colors.length >= 1, `${persona.key} ${slot.rank}`);
