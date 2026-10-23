@@ -7,6 +7,7 @@ import {
   SIN_ORDER,
   aggregate,
   countColor,
+  escapeSpreadsheetCell,
   makePersonaMap,
   parsePartySheet,
   parsePassiveRequirements,
@@ -165,6 +166,32 @@ test('TSV import resolves all four sample personas', () => {
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.party.map((entry) => entry.key), ['n48', 'n34', 'n78', 'n49']);
   assert.ok(result.party.every((entry) => Object.keys(entry).length === 1));
+});
+
+test('spreadsheet formulas are escaped and formula-like names round-trip through TSV import', () => {
+  const formulaName = '=HYPERLINK("https://example.invalid","click")';
+  assert.equal(escapeSpreadsheetCell(formulaName), "'" + formulaName);
+  assert.equal(escapeSpreadsheetCell('  +SUM(1,2)'), "'  +SUM(1,2)");
+  assert.equal(escapeSpreadsheetCell('ordinary persona name'), 'ordinary persona name');
+
+  const identity = { ...personas[0], key: 'manual-formula-roundtrip', name: formulaName };
+  const safeName = escapeSpreadsheetCell(identity.name);
+  const text = [
+    '枠\t人格キー\t人格番号\t人格名\t種別',
+    `1\t${identity.key}\t${identity.no}\t${safeName}\t通常`,
+  ].join('\n');
+  const result = parsePartySheet(text, [...personas, identity]);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.party, [{ key: identity.key }]);
+});
+
+test('TSV import rejects unterminated quoted fields instead of merging the rest of the sheet', () => {
+  const result = parsePartySheet([
+    '枠\t人格番号\t人格名',
+    '1\t1\t"引用符が閉じていない',
+  ].join('\n'), personas);
+  assert.equal(result.party.length, 0);
+  assert.match(result.errors.join(' '), /引用符が閉じていないセル/);
 });
 
 test('TSV import reports ambiguous legacy numbers instead of guessing', () => {
