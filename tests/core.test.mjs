@@ -102,10 +102,10 @@ test('sorting by a selected color promotes the identities that provide it', () =
 });
 
 test('party sorting by number, name and speed is deterministic', () => {
-  assert.equal(sortParty(DEFAULT_PARTY, 'no-asc', null, map)[0].key, 'n34');
-  assert.equal(sortParty(DEFAULT_PARTY, 'name', null, map)[0].key, 'n78');
-  assert.equal(sortParty(DEFAULT_PARTY, 'speed-desc', null, map)[0].key, 'n48');
-  assert.equal(sortParty(DEFAULT_PARTY, 'pattern', null, map).length, 4);
+  assert.equal(sortParty(SAMPLE_PARTY, 'no-asc', null, map)[0].key, 'n34');
+  assert.equal(sortParty(SAMPLE_PARTY, 'name', null, map)[0].key, 'n78');
+  assert.equal(sortParty(SAMPLE_PARTY, 'speed-desc', null, map)[0].key, 'n48');
+  assert.equal(sortParty(SAMPLE_PARTY, 'pattern', null, map).length, 4);
 });
 
 test('speed dice average is parsed for sorting', () => {
