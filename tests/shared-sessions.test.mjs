@@ -374,7 +374,7 @@ test('member capacity supports 16 participants and workspace lists show the crea
   assert.match(listFunction, /owner_display_name/);
   assert.match(listFunction, /owner_member\.display_name/);
   assert.match(listFunction, /owner_member\.user_id = s\.owner_user_id/);
-  assert.match(sharedUi, /'發行者: ' \+ \(item\.owner_display_name \|\| '編成主'\)/);
+  assert.match(sharedUi, /'発行者: ' \+ \(item\.owner_display_name \|\| '編成主'\)/);
   assert.match(sharedUi, /'発行者: ' \+ active\.ownerDisplayName/);
   assert.match(design, /16名全員が常時アクティブの場合/);
 });
