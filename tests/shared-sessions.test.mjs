@@ -119,6 +119,15 @@ test('browser config rejects privileged keys and allows supported public-key for
   assert.match(supabaseConfig, /\[remotes\.main\.db\.seed\]/);
   assert.match(supabaseConfig, /sql_paths = \["\.\/seed-persona-keys\.sql"\]/);
 });
+test('Turnstile token is wired into anonymous signup', () => {
+  assert.match(config, /TURNSTILE_SITE_KEY/);
+  assert.match(client, /isTurnstileConfigured/);
+  assert.match(client, /captchaToken/);
+  assert.match(client, /supabase-captcha-reset/);
+  assert.match(sharedUi, /turnstile\.render/);
+  assert.match(sharedUi, /challenges\.cloudflare\.com\/turnstile/);
+});
+
 test('polling avoids hidden-tab churn and offers explicit conflict handling', () => {
   assert.match(sharedUi, /document\.hidden/);
   assert.match(sharedUi, /5000/);
