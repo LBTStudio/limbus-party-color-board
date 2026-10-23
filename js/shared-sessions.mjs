@@ -1,0 +1,108 @@
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './supabase-config.mjs';
+
+const PLACEHOLDER_KEY = 'REPLACE_WITH_SUPABASE_PUBLISHABLE_KEY';
+let clientPromise;
+
+export function isSharedSessionsConfigured() {
+  return Boolean(
+    /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)
+    && SUPABASE_PUBLISHABLE_KEY
+    && SUPABASE_PUBLISHABLE_KEY !== PLACEHOLDER_KEY
+    && !SUPABASE_PUBLISHABLE_KEY.toLowerCase().includes('secret'),
+  );
+}
+
+async function getClient() {
+  if (!isSharedSessionsConfigured()) {
+    throw new Error('Supabase の publishable key が未設定です。js/supabase-config.mjs を設定してください。');
+  }
+  if (!clientPromise) {
+    clientPromise = import('https://esm.sh/@supabase/supabase-js@2?target=es2022').then(({ createClient }) => (
+      createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false,
+        },
+        global: {
+          headers: { 'x-application-name': 'limbus-party-color-board' },
+        },
+      })
+    )).catch((error) => {
+      clientPromise = null;
+      throw new Error(`Supabase client を読み込めませんでした: ${error.message}`);
+    });
+  }
+  return clientPromise;
+}
+
+async function rpc(name, args = {}, displayName = '') {
+  const client = await getClient();
+  const { data: authData, error: authError } = await client.auth.getSession();
+  if (authError) throw authError;
+  if (!authData.session) {
+    const { error } = await client.auth.signInAnonymously({
+      options: displayName ? { data: { display_name: displayName.slice(0, 40) } } : {},
+    });
+    if (error) {
+      if (/anonymous|disabled|signups not allowed/i.test(error.message)) {
+        throw new Error('Supabase の匿名ログインが有効ではありません。Authentication 設定で Anonymous Sign-Ins を有効にしてください。');
+      }
+      throw error;
+    }
+  }
+  const { data, error } = await client.rpc(name, args);
+  if (error) {
+    const translated = new Error(error.message || `RPC ${name} failed`);
+    translated.code = error.code;
+    throw translated;
+  }
+  return data;
+}
+
+export function createSharedSessions() {
+  return {
+    async listSessions(displayName) {
+      return rpc('list_my_party_sessions', {}, displayName);
+    },
+    async createSession(title, displayName) {
+      return rpc('create_party_session', { p_title: title, p_display_name: displayName }, displayName);
+    },
+    async createInvite(sessionId, expiresHours = 168) {
+      return rpc('create_party_invite', { p_session_id: sessionId, p_expires_hours: expiresHours });
+    },
+    async revokeInvite(inviteId) {
+      return rpc('revoke_party_invite', { p_invite_id: inviteId });
+    },
+    async requestAccess(token, displayName) {
+      return rpc('request_party_access', { p_token: token, p_display_name: displayName }, displayName);
+    },
+    async checkAccess(sessionId, displayName) {
+      return rpc('check_my_party_access', { p_session_id: sessionId }, displayName);
+    },
+    async pollSession(sessionId, afterRevision = -1) {
+      return rpc('poll_party_session', { p_session_id: sessionId, p_after_revision: afterRevision });
+    },
+    async applyParty(sessionId, expectedRevision, operationId, partyKeys, operation = 'party_update') {
+      return rpc('apply_party_edit', {
+        p_session_id: sessionId,
+        p_expected_revision: expectedRevision,
+        p_operation_id: operationId,
+        p_party_keys: partyKeys,
+        p_operation: operation,
+      });
+    },
+    async getAdmin(sessionId) {
+      return rpc('list_party_session_admin', { p_session_id: sessionId });
+    },
+    async decideRequest(requestId, decision, role = 'editor') {
+      return rpc('decide_party_access_request', { p_request_id: requestId, p_decision: decision, p_role: role });
+    },
+    async removeMember(sessionId, userId) {
+      return rpc('remove_party_session_member', { p_session_id: sessionId, p_user_id: userId });
+    },
+    async archiveSession(sessionId) {
+      return rpc('archive_party_session', { p_session_id: sessionId });
+    },
+  };
+}
