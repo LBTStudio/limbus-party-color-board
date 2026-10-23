@@ -43,7 +43,7 @@ function currentKeys() {
 
 function canEdit() {
   return !active
-    || (!active.accessRevoked && active.status !== 'closed'
+    || (!active.accessRevoked && active.status !== 'closed' && !active.incomingState
       && ['owner', 'editor'].includes(active.role));
 }
 
@@ -239,8 +239,9 @@ async function createSession() {
 }
 
 async function activateSession(sessionId, prefetched = null) {
-  if (active && !sameKeys(currentKeys(), active.lastSavedKeys)) {
-    throw new Error('未保存の編集があります。競合を解決するか、保存を確認してから切り替えてください。');
+  if (active && (active.saveBusy || active.retry || active.incomingState
+    || !sameKeys(currentKeys(), active.lastSavedKeys))) {
+    throw new Error('未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。');
   }
   const snapshot = prefetched && Array.isArray(prefetched.party_keys)
     ? prefetched
@@ -314,7 +315,10 @@ async function pollSession() {
   session.pollBusy = true;
   try {
     const result = await getApi().pollSession(session.sessionId, session.revision);
-    if (active !== session) return;
+    if (active !== session) {
+      session.pollBusy = false;
+      return;
+    }
     session.failures = 0;
     if (result.status === 'closed') {
       session.status = 'closed';
@@ -346,6 +350,7 @@ async function pollSession() {
         session.localDraft = localKeys;
         session.status = 'conflict';
         statusMessage = '別の利用者が先に編集を保存しました。採用する編成を選択してください。';
+        bridge.renderAll();
       }
     } else if (result.revision !== undefined) {
       session.revision = Math.max(session.revision, Number(result.revision) || 0);
@@ -432,6 +437,7 @@ async function sendSave(session, operation) {
       session.retry = null;
       session.status = 'conflict';
       statusMessage = '保存競合を検出しました。サーバー版かローカル版を選択してください。';
+      bridge.renderAll();
       bridge.showToast('他の利用者が先に編集を保存しました。');
       return;
     }
