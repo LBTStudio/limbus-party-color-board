@@ -168,6 +168,23 @@ test('edit role is rechecked after the session row lock', () => {
   assert.match(applyEdit, /EDITOR_REQUIRED/);
 });
 
+test('approved access remains pending if session activation is blocked by unsaved edits', () => {
+  const checkStart = sharedUi.indexOf('async function checkAccess(quiet = false)');
+  const checkEnd = sharedUi.indexOf('function captureInitialRoute()', checkStart);
+  const check = sharedUi.slice(checkStart, checkEnd);
+  const approvedStart = check.indexOf("if (result.status === 'approved')");
+  const deniedStart = check.indexOf("} else if (['denied', 'revoked', 'not_requested', 'closed'].includes(result.status))", approvedStart);
+  assert.ok(checkStart >= 0 && checkEnd > checkStart);
+  assert.ok(approvedStart >= 0 && deniedStart > approvedStart);
+  const approved = check.slice(approvedStart, deniedStart);
+  assert.ok(
+    approved.indexOf('await activateSession(sessionId)') < approved.indexOf('pendingRequestSessionId = null'),
+    'do not clear the approved request before the destination session actually opens',
+  );
+  assert.match(approved, /catch \(error\)[\s\S]*?scheduleAccessCheck\(15000\)/);
+  assert.match(approved, /参加が承認されましたが、現在の編成を切り替えられません/);
+});
+
 test('session switching preserves the personal snapshot and ignores stale admin responses', () => {
   assert.match(sharedUi, /if \(!active && !personalPartySnapshot\)/);
   assert.match(sharedUi, /if \(active !== session \|\| session\.role !== 'owner'\) return;/);
