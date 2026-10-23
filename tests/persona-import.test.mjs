@@ -241,6 +241,34 @@ test('legacy monolithic LBT save can be discovered without an account index', ()
   assert.equal(candidates[0].sourceAccount, '旧保存');
 });
 
+test('active LBT account is still discovered when the account index exceeds the safety cap', () => {
+  const storage = new MemoryStorage();
+  const accountIds = Array.from({ length: 31 }, (_, index) => `acct-${index}`);
+  storage.setItem(LBT_INDEX, JSON.stringify({
+    accounts: accountIds.map((id, index) => ({ id, name: `アカウント${index}`, createdAt: index, updatedAt: index })),
+  }));
+  storage.setItem(LBT_ACTIVE, 'acct-30');
+
+  for (const id of accountIds) {
+    const isActive = id === 'acct-30';
+    storage.setItem(`lbt_account_${id}`, JSON.stringify(isActive ? {
+      personaMode: 'custom',
+      personaNo: 'active-custom',
+      personaSrc: lbtSource({ name: '現在のアカウントの創作人格', no: 999, custom: true }),
+      syncedManual: false,
+      roster: { personas: [] },
+    } : {
+      personaMode: null,
+      personaNo: null,
+      personaSrc: null,
+      roster: { personas: [] },
+    }));
+  }
+
+  const candidates = discoverLbtPersonaCandidates(storage, []);
+  assert.ok(candidates.some((persona) => persona.name === '現在のアカウントの創作人格'));
+});
+
 test('local persona import is repeatable and updates the same saved identity rather than duplicating it', () => {
   const storage = new MemoryStorage();
   const source = lbtSource({ name: '同期人格', no: 4 });
