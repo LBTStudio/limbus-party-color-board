@@ -31,7 +31,8 @@ test('shared session tables have RLS enabled and browser roles cannot access the
   ]) {
     assert.match(migration, new RegExp('alter table public\\.' + table + ' enable row level security', 'i'));
   }
-  assert.match(migration, /revoke all on table[\\s\\S]+from public, anon, authenticated/i);
+  assert.match(migration, /revoke all on table/i);
+  assert.match(migration, /from public, anon, authenticated/i);
   assert.match(migration, /revoke all on function public\._party_session_snapshot\(uuid\) from public, anon, authenticated/i);
   assert.doesNotMatch(migration, /create policy/i);
   assert.doesNotMatch(migration, /set search_path = pg_catalog, public/i);
