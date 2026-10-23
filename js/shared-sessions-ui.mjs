@@ -1,4 +1,5 @@
-import { createSharedSessions, isSharedSessionsConfigured } from './shared-sessions.mjs';
+import { createSharedSessions, isSharedSessionsConfigured, isTurnstileConfigured, setCaptchaToken } from './shared-sessions.mjs';
+import { TURNSTILE_SITE_KEY } from './supabase-config.mjs';
 
 const $ = (selector) => document.querySelector(selector);
 let api = null;
@@ -723,6 +724,54 @@ async function handleSharedClick(event) {
   }
 }
 
+async function initializeTurnstile() {
+  const container = $('#shared-captcha-widget');
+  const hint = $('#shared-captcha-hint');
+  if (!container || !isTurnstileConfigured()) {
+    if (container) container.hidden = true;
+    if (hint) hint.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  if (hint) hint.hidden = false;
+  try {
+    if (!window.turnstile) {
+      await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-turnstile-loader]');
+        if (existing) {
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', reject, { once: true });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstileLoader = 'true';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Turnstile スクリプトを読み込めませんでした'));
+        document.head.append(script);
+      });
+    }
+    if (!window.turnstile) throw new Error('Turnstile が初期化されませんでした');
+    const widgetId = window.turnstile.render(container, {
+      sitekey: TURNSTILE_SITE_KEY,
+      callback: (token) => setCaptchaToken(token),
+      'expired-callback': () => setCaptchaToken(''),
+      'error-callback': () => {
+        setCaptchaToken('');
+        setStatus('不正利用防止の確認に失敗しました。ページを再読み込みしてやり直してください。');
+      },
+    });
+    window.addEventListener('supabase-captcha-reset', () => {
+      setCaptchaToken('');
+      if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
+    });
+  } catch (error) {
+    setStatus('CAPTCHA を読み込めませんでした: ' + (error.message || '通信エラー'));
+  }
+}
+
 export async function initializeSharedSessionsUi(callbacks) {
   bridge = callbacks;
   try {
@@ -757,5 +806,6 @@ export async function initializeSharedSessionsUi(callbacks) {
     if (pendingRequestSessionId) scheduleAccessCheck(500);
   });
   render();
+  await initializeTurnstile();
   await initializeRoute();
 }
