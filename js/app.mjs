@@ -1,5 +1,4 @@
 import {
-  DEFAULT_PARTY,
   MAX_PARTY,
   SIN_META,
   SIN_ORDER,
@@ -81,11 +80,8 @@ function sanitizeParty(entries) {
 }
 
 function defaultParty() {
-  const entries = DEFAULT_PARTY
-    .map((entry) => ({ key: entry.key }))
-    .filter((entry) => state.map.has(entry.key));
-  if (entries.length > 0) return entries;
-  return state.personas.slice(0, 4).map((persona) => ({ key: persona.key }));
+  // A new or reset board intentionally starts with no selected identities.
+  return [];
 }
 
 function saveState() {
@@ -122,10 +118,18 @@ function init(data) {
   const urlKeys = readUrlKeys();
   const fromUrl = urlKeys === null ? null : sanitizeParty(urlKeys);
   const fromStore = stored && Array.isArray(stored.party) ? sanitizeParty(stored.party) : null;
+  const storedKeys = Array.isArray(stored?.party)
+    ? stored.party.map((entry) => typeof entry === 'string' ? entry : entry?.key)
+    : null;
+  // The previous release automatically saved this four-person sample party. Migrate
+  // only that exact legacy default to empty; retain any party a user actually chose.
+  const isLegacySample = JSON.stringify(storedKeys) === JSON.stringify(['n48', 'n34', 'n78', 'n49']);
 
   let party = null;
   if (fromUrl !== null && (fromUrl.length > 0 || urlKeys.length === 0)) {
     party = fromUrl;
+  } else if (isLegacySample) {
+    party = [];
   } else {
     party = fromStore;
   }
