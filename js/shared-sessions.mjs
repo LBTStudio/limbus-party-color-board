@@ -130,12 +130,13 @@ export function createSharedSessions() {
     async pollSession(sessionId, afterRevision = -1) {
       return rpc('poll_party_session', { p_session_id: sessionId, p_after_revision: afterRevision });
     },
-    async applyParty(sessionId, expectedRevision, operationId, partyKeys, operation = 'party_update') {
-      return rpc('apply_party_edit', {
+    async applyParty(sessionId, expectedRevision, operationId, partyKeys, partyPersonas = [], operation = 'party_update') {
+      return rpc('apply_party_edit_v2', {
         p_session_id: sessionId,
         p_expected_revision: expectedRevision,
         p_operation_id: operationId,
         p_party_keys: partyKeys,
+        p_party_personas: Array.isArray(partyPersonas) ? partyPersonas : [],
         p_operation: operation,
       });
     },
