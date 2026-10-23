@@ -31,6 +31,7 @@ const PARTY_SORTS = new Set([
 ]);
 const RESOURCE_SORTS = new Set(['count-desc', 'count-asc', 'personas-desc', 'sin-order', 'name']);
 const SKILL_SORT_SLOTS = new Set(['all', 'S0', 'S1', 'S2', 'S3', 'S4']);
+let localOnlyPersistenceWarningShown = false;
 
 const state = {
   data: null,
@@ -185,10 +186,22 @@ function saveState() {
     resourceSort: state.resourceSort,
     skillSortSlot: state.skillSortSlot,
   };
+  let storageSaved = false;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    storageSaved = true;
   } catch {
-    // Storage can be unavailable in private windows; the URL still carries the party.
+    // Storage can be unavailable in private windows.
+  }
+  const hasLocalOnlySnapshot = savedParty.some((entry) => {
+    const key = typeof entry === 'string' ? entry : entry?.key;
+    return Boolean(state.map.get(key)?.localOnly);
+  });
+  if (storageSaved) {
+    localOnlyPersistenceWarningShown = false;
+  } else if (hasLocalOnlySnapshot && !localOnlyPersistenceWarningShown) {
+    showToast('ブラウザに編成を保存できませんでした。追加人格を含む編成はURLに退避できないため、保存が復旧するまで再読み込みやタブを閉じると編成が失われます。');
+    localOnlyPersistenceWarningShown = true;
   }
   if (sharedController?.isActive) {
     const params = new URLSearchParams(location.search);
