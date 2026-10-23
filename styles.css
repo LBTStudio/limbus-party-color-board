@@ -2646,3 +2646,43 @@ h2 {
     font-size: .78rem;
   }
 }
+
+
+.picker-item-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  min-width: 0;
+  border-bottom: 1px solid var(--line-dim);
+}
+
+.picker-item-wrap > .picker-item {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-bottom-color: transparent;
+}
+
+.picker-delete-local {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 34px;
+  min-height: 34px;
+  border-color: var(--line-dim);
+  color: var(--tx-mute);
+  font-size: 1.15rem;
+}
+
+.picker-delete-local:hover {
+  border-color: var(--danger);
+  color: #f1a49a;
+}
+
+@media (max-width: 640px) {
+  .picker-item-wrap {
+    gap: 3px;
+  }
+  .picker-delete-local {
+    width: 38px;
+    min-height: 38px;
+  }
+}
