@@ -674,6 +674,11 @@ async function decideRequest(requestId, decision, role = 'viewer') {
 async function archiveActive() {
   const session = active;
   if (!session || session.role !== 'owner') return;
+  const switchError = sessionSwitchError();
+  if (switchError) {
+    setStatus(switchError + ' 未解決の編集がある間は共同編集スペースを終了できません。');
+    return;
+  }
   if (!window.confirm('「' + session.title + '」を終了しますか？以後、参加者はアクセスできません。共有データは7日後に完全削除されます。')) return;
   try {
     await getApi().archiveSession(session.sessionId);
