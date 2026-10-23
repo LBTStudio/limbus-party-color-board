@@ -199,6 +199,7 @@ function render() {
   $('#shared-archive').hidden = !owner;
   $('#shared-leave').disabled = active.saveBusy;
   $('#shared-retry-save').hidden = !active.retry || active.status !== 'unsaved';
+  $('#shared-archive').disabled = active.saveBusy || Boolean(active.retry) || Boolean(active.incomingState);
   $('#shared-conflict').hidden = !active.incomingState;
   if (active.incomingState) {
     $('#shared-conflict-message').textContent =
