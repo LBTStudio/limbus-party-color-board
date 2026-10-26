@@ -14,20 +14,7 @@
       "傲慢",
       "嫉妬"
     ],
-    "defaultParty": [
-      {
-        "key": "n48"
-      },
-      {
-        "key": "n34"
-      },
-      {
-        "key": "n78"
-      },
-      {
-        "key": "n49"
-      }
-    ],
+    "defaultParty": [],
     "note": "戦術0〜4の罪悪属性を1スロット1資源として集計。二属性スキルは両方に数える。"
   },
   "personas": [
@@ -40,6 +27,9 @@
       "san": 48,
       "speed": "1d5",
       "speedAvg": 3,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -87,10 +77,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n2",
@@ -101,6 +88,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "破裂",
@@ -150,10 +140,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n3",
@@ -164,6 +151,9 @@
       "san": 48,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "呼吸"
       ],
@@ -211,10 +201,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n4",
@@ -225,6 +212,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸"
       ],
@@ -272,10 +262,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n5",
@@ -286,6 +273,9 @@
       "san": 58,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血",
         "火傷",
@@ -335,10 +325,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n6",
@@ -349,6 +336,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "振動",
         "火傷"
@@ -397,10 +387,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n7",
@@ -411,6 +398,9 @@
       "san": 55,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "指令",
@@ -460,10 +450,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n8",
@@ -474,6 +461,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血",
         "麻痺"
@@ -522,10 +512,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n9",
@@ -536,6 +523,9 @@
       "san": 54,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "出血"
       ],
@@ -583,10 +573,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n10",
@@ -597,6 +584,9 @@
       "san": 55,
       "speed": "2d2+1",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -644,10 +634,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n11",
@@ -658,6 +645,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -705,10 +695,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n12",
@@ -719,6 +706,9 @@
       "san": 55,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "呼吸",
         "沈潜"
@@ -767,10 +757,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n13",
@@ -781,6 +768,9 @@
       "san": 47,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血",
         "恐慌",
@@ -830,10 +820,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n14",
@@ -844,6 +831,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "呼吸"
@@ -892,10 +882,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n15",
@@ -906,6 +893,9 @@
       "san": 57,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "呼吸"
@@ -954,10 +944,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n16",
@@ -968,6 +955,9 @@
       "san": 50,
       "speed": "1d3+2",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "破裂"
       ],
@@ -1015,10 +1005,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n17",
@@ -1029,6 +1016,9 @@
       "san": 46,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動"
       ],
@@ -1076,10 +1066,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n18",
@@ -1090,6 +1077,9 @@
       "san": 48,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "煙"
@@ -1138,10 +1128,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "普通",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n19",
@@ -1152,6 +1139,9 @@
       "san": 48,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -1199,10 +1189,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n20",
@@ -1213,6 +1200,9 @@
       "san": 54,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -1260,10 +1250,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n21",
@@ -1274,6 +1261,9 @@
       "san": 45,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -1321,10 +1311,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n22",
@@ -1335,6 +1322,9 @@
       "san": 53,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -1382,10 +1372,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n23",
@@ -1396,6 +1383,9 @@
       "san": 45,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "シ協会",
       "passiveName": "絆",
@@ -1441,10 +1431,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "普通",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n24",
@@ -1455,6 +1442,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸"
       ],
@@ -1502,10 +1492,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n25",
@@ -1516,6 +1503,9 @@
       "san": 54,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸"
       ],
@@ -1563,10 +1553,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n26",
@@ -1577,6 +1564,9 @@
       "san": 53,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "破裂"
@@ -1625,10 +1615,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n27",
@@ -1639,6 +1626,9 @@
       "san": 50,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "呼吸",
         "火傷"
@@ -1687,10 +1677,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n28",
@@ -1701,6 +1688,9 @@
       "san": 55,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "火傷"
       ],
@@ -1748,10 +1738,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n29",
@@ -1762,6 +1749,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "火傷"
       ],
@@ -1809,10 +1799,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n30",
@@ -1823,6 +1810,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "火傷"
       ],
@@ -1870,10 +1860,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n31",
@@ -1884,6 +1871,9 @@
       "san": 52,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂",
         "麻痺"
@@ -1932,10 +1922,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n32",
@@ -1946,6 +1933,9 @@
       "san": 50,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "破裂",
         "麻痺"
@@ -1994,10 +1984,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n33",
@@ -2008,6 +1995,9 @@
       "san": 45,
       "speed": "1d7+1",
       "speedAvg": 5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "破裂",
         "麻痺"
@@ -2056,10 +2046,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n34",
@@ -2070,6 +2057,9 @@
       "san": 57,
       "speed": "1d3+3",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "破裂"
       ],
@@ -2117,10 +2107,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n35",
@@ -2131,6 +2118,9 @@
       "san": 50,
       "speed": "1d5+2",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "沈潜"
       ],
@@ -2178,10 +2168,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n36",
@@ -2192,6 +2179,9 @@
       "san": 50,
       "speed": "1d3+3",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動"
       ],
@@ -2239,10 +2229,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n37",
@@ -2253,6 +2240,9 @@
       "san": 55,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "充電",
         "振動",
@@ -2302,10 +2292,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n38",
@@ -2316,6 +2303,9 @@
       "san": 55,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "充電",
         "振動"
@@ -2364,10 +2354,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n39",
@@ -2378,6 +2365,9 @@
       "san": 55,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "破裂"
       ],
@@ -2425,10 +2415,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n40",
@@ -2439,6 +2426,9 @@
       "san": 50,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "沈潜",
         "麻痺"
@@ -2487,10 +2477,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n41",
@@ -2501,6 +2488,9 @@
       "san": 55,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "呼吸",
@@ -2551,10 +2541,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n42",
@@ -2565,6 +2552,9 @@
       "san": 54,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "充電"
       ],
@@ -2612,10 +2602,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n43",
@@ -2626,6 +2613,9 @@
       "san": 50,
       "speed": "1d4+1",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血",
         "破裂"
@@ -2674,10 +2664,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n44",
@@ -2688,6 +2675,9 @@
       "san": 45,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "火傷"
       ],
@@ -2735,10 +2725,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n45",
@@ -2749,6 +2736,9 @@
       "san": 47,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -2796,10 +2786,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n46",
@@ -2810,6 +2797,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "破裂"
       ],
@@ -2857,10 +2847,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n47",
@@ -2871,6 +2858,9 @@
       "san": 50,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "沈潜"
       ],
@@ -2918,10 +2908,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n48",
@@ -2932,6 +2919,9 @@
       "san": 50,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "破裂"
       ],
@@ -2979,10 +2969,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n49",
@@ -2993,6 +2980,9 @@
       "san": 50,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "毒",
@@ -3042,10 +3032,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n50",
@@ -3056,6 +3043,9 @@
       "san": 50,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動",
         "破裂"
@@ -3104,10 +3094,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n51",
@@ -3118,6 +3105,9 @@
       "san": 55,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "火傷",
         "破裂"
@@ -3166,10 +3156,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n52",
@@ -3180,6 +3167,9 @@
       "san": 50,
       "speed": "2d2+1",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "充電",
         "破裂"
@@ -3228,10 +3218,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n53",
@@ -3242,6 +3229,9 @@
       "san": 46,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血"
       ],
@@ -3289,10 +3279,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n54",
@@ -3303,6 +3290,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂"
       ],
@@ -3350,10 +3340,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n55",
@@ -3364,6 +3351,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "破裂"
       ],
@@ -3411,10 +3401,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n56",
@@ -3425,6 +3412,9 @@
       "san": 55,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂"
       ],
@@ -3472,10 +3462,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n57",
@@ -3486,6 +3473,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動",
         "破裂"
@@ -3534,10 +3524,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n58",
@@ -3548,6 +3535,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "振動",
@@ -3597,10 +3587,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n59",
@@ -3611,6 +3598,9 @@
       "san": 50,
       "speed": "1d4",
       "speedAvg": 2.5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "麻痺"
@@ -3659,10 +3649,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n60",
@@ -3673,6 +3660,9 @@
       "san": 55,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -3720,10 +3710,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n61",
@@ -3734,6 +3721,9 @@
       "san": 50,
       "speed": "2d2+1",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -3781,10 +3771,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n62",
@@ -3795,6 +3782,9 @@
       "san": 50,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "充電",
         "破裂"
@@ -3843,10 +3833,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n63",
@@ -3857,6 +3844,9 @@
       "san": 60,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "充電",
         "沈潜"
@@ -3905,10 +3895,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n64",
@@ -3919,6 +3906,9 @@
       "san": 45,
       "speed": "1d5",
       "speedAvg": 3,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "充電",
         "出血"
@@ -3967,10 +3957,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n65",
@@ -3981,6 +3968,9 @@
       "san": 50,
       "speed": "2d2",
       "speedAvg": 3,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動",
         "麻痺"
@@ -4029,10 +4019,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n66",
@@ -4043,6 +4030,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動"
       ],
@@ -4090,10 +4080,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n67",
@@ -4104,6 +4091,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "充電",
         "破裂"
@@ -4152,10 +4142,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n68",
@@ -4166,6 +4153,9 @@
       "san": 50,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "充電",
         "破裂"
@@ -4214,10 +4204,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n69",
@@ -4228,6 +4215,9 @@
       "san": 45,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "沈潜",
         "破裂"
@@ -4276,10 +4266,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n70",
@@ -4290,6 +4277,9 @@
       "san": 55,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "破裂",
         "麻痺"
@@ -4338,10 +4328,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n71",
@@ -4352,6 +4339,9 @@
       "san": 40,
       "speed": "2d2",
       "speedAvg": 3,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動",
         "破裂",
@@ -4401,10 +4391,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n72",
@@ -4415,6 +4402,9 @@
       "san": 48,
       "speed": "1d5",
       "speedAvg": 3,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "破裂"
       ],
@@ -4462,10 +4452,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n73",
@@ -4476,6 +4463,9 @@
       "san": 50,
       "speed": "1d4+1",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "振動",
         "麻痺"
@@ -4524,10 +4514,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n74",
@@ -4538,6 +4525,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "火傷"
@@ -4586,10 +4576,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n75",
@@ -4600,6 +4587,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "沈潜"
       ],
@@ -4647,10 +4637,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n76",
@@ -4661,6 +4648,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "恐慌",
         "沈潜"
@@ -4709,10 +4699,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n77",
@@ -4723,6 +4710,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂"
       ],
@@ -4770,10 +4760,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n78",
@@ -4784,6 +4771,9 @@
       "san": 50,
       "speed": "1d3+3",
       "speedAvg": 5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂"
       ],
@@ -4831,10 +4821,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n79",
@@ -4845,6 +4832,9 @@
       "san": 50,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "火傷"
       ],
@@ -4892,10 +4882,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n80",
@@ -4906,6 +4893,9 @@
       "san": 55,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "麻痺"
@@ -4954,10 +4944,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n81",
@@ -4968,6 +4955,9 @@
       "san": 55,
       "speed": "1d7+1",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "沈潜"
@@ -5016,10 +5006,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n82",
@@ -5030,6 +5017,9 @@
       "san": 50,
       "speed": "1d6+2",
       "speedAvg": 5.5,
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通",
       "keywords": [
         "出血"
       ],
@@ -5077,10 +5067,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "普通",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n83",
@@ -5091,6 +5078,9 @@
       "san": 50,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血"
       ],
@@ -5138,10 +5128,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n84",
@@ -5152,6 +5139,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "充電",
         "麻痺"
@@ -5200,10 +5190,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n85",
@@ -5214,6 +5201,9 @@
       "san": 60,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂"
       ],
@@ -5261,10 +5251,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n86",
@@ -5275,6 +5262,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "破裂"
       ],
@@ -5322,10 +5312,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n87",
@@ -5336,6 +5323,9 @@
       "san": 55,
       "speed": "1d5",
       "speedAvg": 3,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "火傷"
       ],
@@ -5383,10 +5373,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n88",
@@ -5397,6 +5384,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "火傷"
       ],
@@ -5444,10 +5434,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n89",
@@ -5458,6 +5445,9 @@
       "san": 45,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "麻痺"
@@ -5506,10 +5496,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n90",
@@ -5520,6 +5507,9 @@
       "san": 53,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "棒派",
       "passiveName": "棒派魂",
@@ -5565,10 +5555,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n91",
@@ -5579,6 +5566,9 @@
       "san": 57,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "恐慌"
@@ -5627,10 +5617,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n92",
@@ -5641,6 +5628,9 @@
       "san": 49,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "呼吸",
         "火傷",
@@ -5690,10 +5680,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n93",
@@ -5704,6 +5691,9 @@
       "san": 50,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "呼吸",
         "煙"
@@ -5752,10 +5742,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n94",
@@ -5766,6 +5753,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "火傷"
       ],
@@ -5813,10 +5803,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n95",
@@ -5827,6 +5814,9 @@
       "san": 48,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "恐慌",
         "破裂"
@@ -5875,10 +5865,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n96",
@@ -5889,6 +5876,9 @@
       "san": 54,
       "speed": "1d5",
       "speedAvg": 3,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動",
         "破裂"
@@ -5937,10 +5927,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n97",
@@ -5951,6 +5938,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸",
         "破裂"
@@ -5999,10 +5989,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n98",
@@ -6013,6 +6000,9 @@
       "san": 50,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "破裂"
@@ -6061,10 +6051,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n99",
@@ -6075,6 +6062,9 @@
       "san": 50,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "火傷"
       ],
@@ -6122,10 +6112,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n100",
@@ -6136,6 +6123,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "恐慌",
         "破裂"
@@ -6184,10 +6174,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n101",
@@ -6198,6 +6185,9 @@
       "san": 50,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "出血"
       ],
@@ -6245,10 +6235,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n102",
@@ -6259,6 +6246,9 @@
       "san": 50,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -6306,10 +6296,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n103",
@@ -6320,6 +6307,9 @@
       "san": 53,
       "speed": "1d2+2",
       "speedAvg": 3.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -6367,10 +6357,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n104",
@@ -6381,6 +6368,9 @@
       "san": 47,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "マッチロック工房",
       "passiveName": "点火",
@@ -6426,10 +6416,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n105",
@@ -6440,6 +6427,9 @@
       "san": 58,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "振動"
       ],
@@ -6487,10 +6477,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n106",
@@ -6501,6 +6488,9 @@
       "san": 52,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "呼吸"
       ],
@@ -6548,10 +6538,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n107",
@@ -6562,6 +6549,9 @@
       "san": 56,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "毒",
         "沈潜"
@@ -6610,10 +6600,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n108",
@@ -6624,6 +6611,9 @@
       "san": 49,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "ク事務所",
       "passiveName": "状況判断",
@@ -6669,10 +6659,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n109",
@@ -6683,6 +6670,9 @@
       "san": 50,
       "speed": "1d5+2",
       "speedAvg": 5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血"
       ],
@@ -6730,10 +6720,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n110",
@@ -6744,6 +6731,9 @@
       "san": 52,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "麻痺"
       ],
@@ -6791,10 +6781,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n111",
@@ -6805,6 +6792,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "雲の障壁",
@@ -6850,10 +6840,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n112",
@@ -6864,6 +6851,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "黒雲道",
@@ -6909,10 +6899,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n113",
@@ -6923,6 +6910,9 @@
       "san": 60,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "交渉決裂だ",
@@ -6968,10 +6958,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n114",
@@ -6982,6 +6969,9 @@
       "san": 45,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "頼れる背中",
@@ -7027,10 +7017,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n115",
@@ -7041,6 +7028,9 @@
       "san": 50,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "素敵な生地",
@@ -7086,10 +7076,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n116",
@@ -7100,6 +7087,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "電気ショック",
@@ -7145,10 +7135,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n117",
@@ -7159,6 +7146,9 @@
       "san": 55,
       "speed": "2d2",
       "speedAvg": 3,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "煙"
       ],
@@ -7206,10 +7196,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n118",
@@ -7220,6 +7207,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "義理",
@@ -7265,10 +7255,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n119",
@@ -7279,6 +7266,9 @@
       "san": 45,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "仕返し帳簿",
@@ -7324,10 +7314,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n120",
@@ -7338,6 +7325,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "点々",
@@ -7383,10 +7373,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n121",
@@ -7397,6 +7384,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "満ちゆく着想",
@@ -7442,10 +7432,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n122",
@@ -7456,6 +7443,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "満ちゆく着想",
@@ -7501,10 +7491,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n123",
@@ -7515,6 +7502,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "死の弓",
@@ -7560,10 +7550,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n124",
@@ -7574,6 +7561,9 @@
       "san": 45,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "いなす",
@@ -7619,10 +7609,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n125",
@@ -7633,6 +7620,9 @@
       "san": 45,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "草炎玉球",
@@ -7678,10 +7668,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n126",
@@ -7692,6 +7679,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "内なる熱血",
@@ -7737,10 +7727,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n127",
@@ -7751,6 +7738,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "鍵を覗き込む",
@@ -7796,10 +7786,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n128",
@@ -7810,6 +7797,9 @@
       "san": 50,
       "speed": "1d5",
       "speedAvg": 3,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "熱狂",
@@ -7855,10 +7845,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n129",
@@ -7869,6 +7856,9 @@
       "san": 55,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "抜き取り",
@@ -7914,10 +7904,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n130",
@@ -7928,6 +7915,9 @@
       "san": 50,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "黒獣化[未]",
@@ -7973,10 +7963,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n131",
@@ -7987,6 +7974,9 @@
       "san": 55,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "苦難",
@@ -8032,10 +8022,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n132",
@@ -8046,6 +8033,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "蜘蛛の糸",
@@ -8091,10 +8081,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n133",
@@ -8105,6 +8092,9 @@
       "san": 55,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "満たされない虚空",
@@ -8150,10 +8140,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n134",
@@ -8164,6 +8151,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "枯れない花",
@@ -8209,10 +8199,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n135",
@@ -8223,6 +8210,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "胞子拡散",
@@ -8268,10 +8258,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n136",
@@ -8282,6 +8269,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "しぶとい生命力",
@@ -8327,10 +8317,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n137",
@@ -8341,6 +8328,9 @@
       "san": 55,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "次元逃走",
@@ -8386,10 +8376,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n138",
@@ -8400,6 +8387,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "押送差備",
@@ -8445,10 +8435,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n139",
@@ -8459,6 +8446,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "痕跡追跡",
@@ -8504,10 +8494,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n140",
@@ -8518,6 +8505,9 @@
       "san": 55,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "次元屈折刃",
@@ -8563,10 +8553,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n141",
@@ -8577,6 +8564,9 @@
       "san": 55,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "整理業務",
@@ -8622,10 +8612,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n142",
@@ -8636,6 +8623,9 @@
       "san": 45,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "反作用",
@@ -8681,10 +8671,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "n143",
@@ -8695,6 +8682,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "粛々とした狩り",
@@ -8741,10 +8731,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "n144",
@@ -8755,6 +8742,9 @@
       "san": 55,
       "speed": "1d3+3",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "執行からは逃れられない",
@@ -8800,10 +8790,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "n145",
@@ -8814,6 +8801,9 @@
       "san": 44,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "生命線を手繰るSOS",
@@ -8859,10 +8849,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t1",
@@ -8873,6 +8860,9 @@
       "san": 53,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "麻痺"
@@ -8921,10 +8911,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t2",
@@ -8935,6 +8922,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血",
         "火傷",
@@ -8984,10 +8974,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t3",
@@ -8998,6 +8985,9 @@
       "san": 50,
       "speed": "1d5+2",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "振動",
         "沈潜"
@@ -9046,10 +9036,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t4",
@@ -9060,6 +9047,9 @@
       "san": 55,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "呼吸"
@@ -9108,10 +9098,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t5",
@@ -9122,6 +9109,9 @@
       "san": 53,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "呼吸",
@@ -9171,10 +9161,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t6",
@@ -9185,6 +9172,9 @@
       "san": 59,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "沈潜"
       ],
@@ -9232,10 +9222,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t7",
@@ -9246,6 +9233,9 @@
       "san": 55,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "呼吸"
       ],
@@ -9293,10 +9283,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t8",
@@ -9307,6 +9294,9 @@
       "san": 47,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "沈潜"
       ],
@@ -9354,10 +9344,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t9",
@@ -9368,6 +9355,9 @@
       "san": 60,
       "speed": "1d6+2",
       "speedAvg": 5.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "沈潜"
@@ -9416,10 +9406,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t10",
@@ -9430,6 +9417,9 @@
       "san": 58,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血"
       ],
@@ -9477,10 +9467,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t11",
@@ -9491,6 +9478,9 @@
       "san": 49,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "出血",
         "破裂"
@@ -9539,10 +9529,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t12",
@@ -9553,6 +9540,9 @@
       "san": 55,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "破裂"
@@ -9601,10 +9591,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t13",
@@ -9615,6 +9602,9 @@
       "san": 57,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [
         "呼吸",
         "破裂"
@@ -9663,10 +9653,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t14",
@@ -9677,6 +9664,9 @@
       "san": 50,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "普通",
+      "resBlunt": "普通",
       "keywords": [
         "振動",
         "火傷"
@@ -9725,10 +9715,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "普通",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t15",
@@ -9739,6 +9726,9 @@
       "san": 50,
       "speed": "1d7+1",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "出血"
       ],
@@ -9786,10 +9776,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t16",
@@ -9800,6 +9787,9 @@
       "san": 55,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸"
       ],
@@ -9848,10 +9838,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t17",
@@ -9862,6 +9849,9 @@
       "san": 59,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "出血",
         "沈潜",
@@ -9911,10 +9901,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t18",
@@ -9925,6 +9912,9 @@
       "san": 58,
       "speed": "2d2+2",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [
         "振動"
       ],
@@ -9972,10 +9962,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t19",
@@ -9986,6 +9973,9 @@
       "san": 58,
       "speed": "2d2+2",
       "speedAvg": 5,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [
         "呼吸"
       ],
@@ -10033,10 +10023,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t20",
@@ -10047,6 +10034,9 @@
       "san": 50,
       "speed": "3d2+1",
       "speedAvg": 5.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [
         "出血",
         "振動",
@@ -10098,10 +10088,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t21",
@@ -10112,6 +10099,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "恐れの嘆息",
@@ -10157,10 +10147,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t22",
@@ -10171,6 +10158,9 @@
       "san": 50,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "穿たれた刺青",
@@ -10216,10 +10206,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t23",
@@ -10230,6 +10217,9 @@
       "san": 50,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "爆発する感情",
@@ -10275,10 +10265,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t24",
@@ -10289,6 +10276,9 @@
       "san": 40,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "掛け間違えたボタン",
@@ -10334,10 +10324,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t25",
@@ -10348,6 +10335,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "梅が如く咲き出る血",
@@ -10393,10 +10383,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t26",
@@ -10407,6 +10394,9 @@
       "san": 48,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "コンジェスチョンクリーニング・アーマー",
@@ -10452,10 +10442,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t27",
@@ -10466,6 +10453,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "「血をまとい、仮面を被り、血が命ずるがままに」",
@@ -10511,10 +10501,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t28",
@@ -10525,6 +10512,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "ファミリーの粛正人",
@@ -10570,10 +10560,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t29",
@@ -10584,6 +10571,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "鴻園禁断-全黒仙丸/黒獣の轡",
@@ -10631,10 +10621,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t30",
@@ -10645,6 +10632,9 @@
       "san": 60,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "ホルスのセプター - レプリカ",
@@ -10690,10 +10680,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t31",
@@ -10704,6 +10691,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "鬼火腰撃",
@@ -10751,10 +10741,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t32",
@@ -10765,6 +10752,9 @@
       "san": 50,
       "speed": "1d4",
       "speedAvg": 2.5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "灯りのような眼",
@@ -10810,10 +10800,7 @@
             "傲慢"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t33",
@@ -10824,6 +10811,9 @@
       "san": 55,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "天究星",
@@ -10869,10 +10859,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t34",
@@ -10883,6 +10870,9 @@
       "san": 45,
       "speed": "1d7+1",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "ぶつかり合う血闘",
@@ -10928,10 +10918,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t35",
@@ -10942,6 +10929,9 @@
       "san": 45,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "黒風馬脚",
@@ -10987,10 +10977,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t36",
@@ -11001,6 +10988,9 @@
       "san": 55,
       "speed": "1d7+1",
       "speedAvg": 5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "指揮",
@@ -11046,10 +11036,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t37",
@@ -11060,6 +11047,9 @@
       "san": 60,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "共振スパナ稼働",
@@ -11105,10 +11095,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t38",
@@ -11119,6 +11106,9 @@
       "san": 45,
       "speed": "2d3",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "抵抗",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "振動癒着変形戦闘杖（未認可発明品）",
@@ -11164,10 +11154,7 @@
             "暴食"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "抵抗",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t39",
@@ -11178,6 +11165,9 @@
       "san": 55,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "弱点",
+      "resPierce": "普通",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "怨恨の刺青の共鳴",
@@ -11223,10 +11213,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "普通",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t40",
@@ -11237,6 +11224,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "野獣派-野性的な色彩",
@@ -11282,10 +11272,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t41",
@@ -11296,6 +11283,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "デュエロ・ディスペラート",
@@ -11341,10 +11331,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t42",
@@ -11355,6 +11342,9 @@
       "san": 60,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "解禁/開花E.G.O::代行",
@@ -11400,10 +11390,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t43",
@@ -11414,6 +11401,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "中指は忘れない",
@@ -11459,10 +11449,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t44",
@@ -11473,6 +11460,9 @@
       "san": 50,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "大切な作品、ファシア",
@@ -11519,10 +11509,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t45",
@@ -11533,6 +11520,9 @@
       "san": 55,
       "speed": "3d2",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "精神一到",
@@ -11578,10 +11568,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t46",
@@ -11592,6 +11579,9 @@
       "san": 50,
       "speed": "4d2",
       "speedAvg": 6,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "ボニャテッリ家の恥",
@@ -11639,10 +11629,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t47",
@@ -11653,6 +11640,9 @@
       "san": 50,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "神託代行者\n神託端末機[カドゥケウス]",
@@ -11698,10 +11688,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t48",
@@ -11712,6 +11699,9 @@
       "san": 45,
       "speed": "1d6",
       "speedAvg": 3.5,
+      "resSlash": "普通",
+      "resPierce": "弱点",
+      "resBlunt": "抵抗",
       "keywords": [],
       "affiliation": "",
       "passiveName": "封印された剣[レーヴァテイン]",
@@ -11757,10 +11747,7 @@
             "嫉妬"
           ]
         }
-      ],
-      "resSlash": "普通",
-      "resPierce": "弱点",
-      "resBlunt": "抵抗"
+      ]
     },
     {
       "key": "t49",
@@ -11771,6 +11758,9 @@
       "san": 50,
       "speed": "1d8",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "普通",
+      "resBlunt": "弱点",
       "keywords": [],
       "affiliation": "",
       "passiveName": "生涯の作品、ティビア",
@@ -11817,10 +11807,7 @@
             "色欲"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "普通",
-      "resBlunt": "弱点"
+      ]
     },
     {
       "key": "t50",
@@ -11831,6 +11818,9 @@
       "san": 55,
       "speed": "2d3+1",
       "speedAvg": 5,
+      "resSlash": "弱点",
+      "resPierce": "抵抗",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "クラップドライバー",
@@ -11876,10 +11866,7 @@
             "憂鬱"
           ]
         }
-      ],
-      "resSlash": "弱点",
-      "resPierce": "抵抗",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t51",
@@ -11890,6 +11877,9 @@
       "san": 60,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "こんなときこそ！",
@@ -11935,10 +11925,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t52",
@@ -11949,6 +11936,9 @@
       "san": 55,
       "speed": "1d7",
       "speedAvg": 4,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "最善の選択",
@@ -11994,10 +11984,7 @@
             "怠惰"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t53",
@@ -12008,6 +11995,9 @@
       "san": 50,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "フォイヤファルター[スティグマ工房]",
@@ -12053,10 +12043,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     },
     {
       "key": "t54",
@@ -12067,6 +12054,9 @@
       "san": 55,
       "speed": "1d6+1",
       "speedAvg": 4.5,
+      "resSlash": "抵抗",
+      "resPierce": "弱点",
+      "resBlunt": "普通",
       "keywords": [],
       "affiliation": "",
       "passiveName": "激情\n不安定な自我の殻",
@@ -12112,10 +12102,7 @@
             "憤怒"
           ]
         }
-      ],
-      "resSlash": "抵抗",
-      "resPierce": "弱点",
-      "resBlunt": "普通"
+      ]
     }
   ]
 }
