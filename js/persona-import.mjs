@@ -134,9 +134,13 @@ function normalizedSkillSlots(skills) {
     .filter(({ rank }) => !rank?.derived)
     .map(({ rank }) => rank?.number)
     .filter((number) => Number.isInteger(number));
-  // LBT normally uses ranks 0–4. Also accept 1–5 ranks from text/manual imports,
-  // where 1-2 is a variant of skill 1 rather than the second board slot.
-  const oneBased = !rankNumbers.includes(0) && rankNumbers.includes(5);
+  const allRankNumbers = ranked
+    .map(({ rank }) => rank?.number)
+    .filter((number) => Number.isInteger(number));
+  // Prefer primary ranks to determine indexing. If the source contains only -1/-2
+  // variants, use those ranks as a fallback so one-based 1–5 data maps correctly.
+  const indexingNumbers = rankNumbers.length ? rankNumbers : allRankNumbers;
+  const oneBased = !indexingNumbers.includes(0) && indexingNumbers.includes(5);
   const roots = Array(5).fill(null);
   const colors = Array.from({ length: 5 }, () => []);
 
@@ -158,16 +162,27 @@ function normalizedSkillSlots(skills) {
     colors[slotIndex].push(...colorsFromSkill(skill));
   });
 
+  // If a slot has no unsuffixed root row, promote its first ranked variant (-1)
+  // to the visible name; later variants remain derived names.
+  for (let slotIndex = 0; slotIndex < 5; slotIndex += 1) {
+    if (roots[slotIndex]) continue;
+    const variants = ranked
+      .filter(({ rank }) => rank?.derived && Number.isInteger(rank.number)
+        && rank.number - (oneBased ? 1 : 0) === slotIndex)
+      .sort((a, b) => {
+        const subrank = (item) => Number(String(item.skill?.rank ?? item.skill?.slot ?? '').match(/-(\d+)$/)?.[1] ?? Number.MAX_SAFE_INTEGER);
+        return subrank(a) - subrank(b);
+      });
+    if (variants.length) roots[slotIndex] = variants[0].skill;
+  }
+
   const derivedNames = Array.from({ length: 5 }, () => []);
   ranked.forEach(({ skill, rank }) => {
     if (!rank?.derived || !Number.isInteger(rank.number)) return;
-    const explicitRank = String(skill?.rank ?? skill?.slot ?? '').trim();
-    const oneBased = !rankNumbers.includes(0) && rankNumbers.includes(5);
     const slotIndex = rank.number - (oneBased ? 1 : 0);
+    if (slotIndex < 0 || slotIndex >= 5 || roots[slotIndex] === skill) return;
     const name = text(skill?.name, 120);
-    if (slotIndex >= 0 && slotIndex < 5 && name && !derivedNames[slotIndex].includes(name)) {
-      derivedNames[slotIndex].push(name);
-    }
+    if (name && !derivedNames[slotIndex].includes(name)) derivedNames[slotIndex].push(name);
   });
 
   return {
@@ -189,7 +204,11 @@ function normalizedSlots(persona) {
       return {
         rank: `S${index}`,
         name: text(slot.name, 120) || text(skill?.name, 120),
-        derivedNames: derivedNames[index],
+        derivedNames: derivedNames[index].length
+          ? derivedNames[index]
+          : (Array.isArray(slot.derivedNames)
+            ? [...new Set(slot.derivedNames.map((name) => text(name, 120)).filter(Boolean))]
+            : []),
         type: text(slot.type, 80) || text(skill?.type, 80),
         // Prefer actual LBT skill records (including derived variants). Fall back to
         // an older slot snapshot only when no color could be recovered from skills.
