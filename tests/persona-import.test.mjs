@@ -7,6 +7,7 @@ import {
   discoverLbtPersonaCandidates,
   importLocalPersonas,
   isPersonaOwnedByLbtAccount,
+  preserveDerivedSkillNames,
   loadLocalPersonas,
   sanitizeLocalPersona,
   saveLocalPersonas,
@@ -894,4 +895,32 @@ test('derived skill names survive sanitizing and saving a slot-only shared snaps
   saveLocalPersonas(storage, [snapshot]);
   const loaded = loadLocalPersonas(storage);
   assert.deepEqual(loaded[0].slots[0].derivedNames, ['反転技', '派生技B']);
+});
+
+
+test('older shared snapshots preserve locally known derived names without overriding newer incoming names', () => {
+  const local = {
+    key: 'manual-derived-cache',
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`, name: `元スキル${index}`, type: '斬撃', colors: [],
+      derivedNames: index === 0 ? ['既知の派生技'] : [],
+    })),
+  };
+  const olderSnapshot = {
+    key: local.key,
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`, name: `共有スキル${index}`, type: '斬撃', colors: [],
+    })),
+  };
+  const mergedOld = preserveDerivedSkillNames(olderSnapshot, local);
+  assert.deepEqual(mergedOld.slots[0].derivedNames, ['既知の派生技']);
+
+  const currentSnapshot = {
+    ...olderSnapshot,
+    slots: olderSnapshot.slots.map((slot, index) => ({
+      ...slot, derivedNames: index === 0 ? ['共有元の新しい派生技'] : [],
+    })),
+  };
+  const mergedNew = preserveDerivedSkillNames(currentSnapshot, local);
+  assert.deepEqual(mergedNew.slots[0].derivedNames, ['共有元の新しい派生技']);
 });
