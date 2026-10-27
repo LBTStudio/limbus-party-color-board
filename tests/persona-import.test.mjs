@@ -709,7 +709,7 @@ test('synced and original LBT personas retain sin colors from empty color arrays
     no: 17,
     colors: ['憤怒', '色欲', '怠惰', '暴食', '憂鬱'],
   });
-  const syncedSkills = syncedBase.skills.map((skill) => ({ ...skill, colors: [] }));
+  const syncedSkills = syncedBase.skills.map((skill, index) => ({ ...skill, colors: index === 1 ? ['嫉妬'] : [] }));
   syncedSkills.push({
     rank: 'スキル0-2',
     derived_from: 'スキル0',
@@ -743,7 +743,9 @@ test('synced and original LBT personas retain sin colors from empty color arrays
   }));
   originalSkills.push({
     rank: 'スキル1-2',
-    derived_from: 'スキル1',
+    // A legacy source can carry a zero-based parent pointer beside a one-based display rank.
+    // The explicit "-2" rank must keep this skill attached to the visible S1 / first slot.
+    derived_from: 'スキル0',
     derived_index: 2,
     name: 'オリジナル人格 S1 派生',
     type: '貫通',
@@ -819,5 +821,6 @@ test('synced and original LBT personas retain sin colors from empty color arrays
   assert.ok(synced, 'the synced identity should be discovered');
   assert.ok(original, 'the original identity should be discovered');
   assert.deepEqual(synced.slots[0].colors, ['憤怒', '傲慢'], 'the derived skill color belongs to the parent slot');
-  assert.deepEqual(original.slots[0].colors, ['色欲', '嫉妬'], 'one-based 1-2 derived ranks map to the first slot');
+  assert.deepEqual(synced.slots[1].colors, ['嫉妬'], 'a non-empty explicit colors list takes precedence over stale sin metadata');
+  assert.deepEqual(original.slots[0].colors, ['色欲', '嫉妬'], 'one-based 1-2 derived ranks map to the first slot even if derived_from uses a legacy index');
 });
