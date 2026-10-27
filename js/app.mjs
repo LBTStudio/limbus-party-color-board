@@ -24,6 +24,7 @@ import {
   discoverLbtPersonaCandidates,
   importLocalPersonas,
   isPersonaOwnedByLbtAccount,
+  preserveDerivedSkillNames,
   loadLocalPersonas,
   sanitizeLocalPersona,
   saveLocalPersonas,
@@ -287,11 +288,13 @@ function applySharedPartySnapshot(keys, sharedPersonas = []) {
       playerNamesByKey.set(snapshot.key, sanitizePlayerName(snapshot.playerName));
     }
   }
+  const byKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
   const incoming = sharedSnapshots
     .filter((persona) => persona?.assignmentOnly !== true)
-    .map(sanitizeLocalPersona)
+    .map((persona) => sanitizeLocalPersona(
+      preserveDerivedSkillNames(persona, byKey.get(persona?.key)),
+    ))
     .filter(Boolean);
-  const byKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
   for (const persona of incoming) byKey.set(persona.key, persona);
   const nextLocal = [...byKey.values()];
   try {
