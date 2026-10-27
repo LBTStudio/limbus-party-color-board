@@ -1,4 +1,4 @@
-import { SIN_ORDER, parseSpeedAverage } from './core.mjs';
+import { SIN_META, SIN_ORDER, parseSpeedAverage } from './core.mjs';
 
 export const LOCAL_PERSONA_STORAGE_KEY = 'lbt_party_color_board_local_personas_v1';
 const LOCAL_PERSONA_NAMESPACE_KEY = 'lbt_party_color_board_installation_id_v1';
@@ -82,55 +82,103 @@ function validColors(value) {
   const values = Array.isArray(value) ? value : [value];
   const colors = [];
   for (const item of values) {
-    const candidate = String(item ?? '');
+    const candidate = String(item ?? '').trim();
+    if (!candidate) continue;
+    const normalized = candidate.toLocaleLowerCase();
     for (const sin of SIN_ORDER) {
-      if ((candidate === sin || candidate.includes(sin)) && !colors.includes(sin)) colors.push(sin);
+      const english = String(SIN_META[sin]?.en ?? '').toLocaleLowerCase();
+      if ((candidate.includes(sin) || (english && normalized.includes(english))) && !colors.includes(sin)) {
+        colors.push(sin);
+      }
     }
   }
   return colors;
 }
 
 function colorsFromSkill(skill) {
-  if (Array.isArray(skill?.colors)) return validColors(skill.colors);
-  return validColors(skill?.sin ?? skill?.sin_type ?? skill?.color ?? []);
+  if (!record(skill)) return [];
+  // Some LBT snapshots carry an empty colors array alongside the authoritative sin field.
+  // Treat the empty array as missing, not as an override.
+  const values = Array.isArray(skill.colors) ? [...skill.colors] : [];
+  for (const field of ['sin', 'sin_type', 'sinType', 'color', 'attribute', 'attr']) {
+    if (skill[field] !== undefined && skill[field] !== null && skill[field] !== '') values.push(skill[field]);
+  }
+  return validColors(values);
 }
 
-function skillIndex(skill) {
-  const rank = String(skill?.rank ?? skill?.slot ?? '');
+function skillRankInfo(skill) {
+  const rank = String(skill?.rank ?? skill?.slot ?? '').trim();
+  const derivedFrom = String(skill?.derived_from ?? skill?.derivedFrom ?? '').trim();
+  const parentMatch = derivedFrom.match(/^(?:S|スキル)?\s*(\d+)$/i);
+  if (parentMatch) return { number: Number(parentMatch[1]), derived: true };
+
   const match = rank.match(/^(?:S|スキル)?\s*(\d+)(?:-(\d+))?$/i);
-  if (!match) return null;
-  if (match[2]) return null; // A derived skill belongs to the parent action, not a new S0–S4 slot.
-  const number = Number(match[1]);
-  return Number.isInteger(number) && number >= 0 && number <= 4 ? number : null;
+  if (match) return { number: Number(match[1]), derived: Boolean(match[2]) };
+  if (!rank) return { number: null, derived: false };
+  return { number: Number.NaN, derived: false };
+}
+
+function normalizedSkillSlots(skills) {
+  const sourceSkills = Array.isArray(skills) ? skills.filter(record) : [];
+  const ranked = sourceSkills.map((skill) => ({ skill, rank: skillRankInfo(skill) }));
+  const rankNumbers = ranked
+    .map(({ rank }) => rank?.number)
+    .filter((number) => Number.isInteger(number));
+  // LBT normally uses ranks 0–4. Also accept 1–5 ranks from text/manual imports,
+  // where 1-2 is a variant of skill 1 rather than the second board slot.
+  const oneBased = !rankNumbers.includes(0) && rankNumbers.includes(5);
+  const roots = Array(5).fill(null);
+  const colors = Array.from({ length: 5 }, () => []);
+
+  ranked.forEach(({ skill, rank }, arrayIndex) => {
+    const explicitRank = String(skill?.rank ?? skill?.slot ?? '').trim();
+    let slotIndex;
+    if (rank && Number.isInteger(rank.number)) {
+      slotIndex = rank.number - (oneBased ? 1 : 0);
+    } else if (!explicitRank) {
+      slotIndex = arrayIndex;
+    } else {
+      return;
+    }
+    if (slotIndex < 0 || slotIndex >= 5) return;
+
+    if (!rank?.derived && !roots[slotIndex]) roots[slotIndex] = skill;
+    // Derived skills are alternate forms of their parent action, not new slots;
+    // their sin colors still belong to that parent slot and must be represented.
+    colors[slotIndex].push(...colorsFromSkill(skill));
+  });
+
+  return {
+    roots,
+    colors: colors.map((values) => validColors(values)),
+  };
 }
 
 function normalizedSlots(persona) {
+  const skills = Array.isArray(persona?.skills) ? persona.skills.filter(record) : [];
+  const { roots, colors } = normalizedSkillSlots(skills);
+
   if (Array.isArray(persona?.slots)) {
     return Array.from({ length: 5 }, (_, index) => {
       const slot = persona.slots.find((item) => Number(String(item?.rank ?? '').replace(/^S/i, '')) === index)
         || persona.slots[index] || {};
+      const skill = roots[index];
       return {
         rank: `S${index}`,
-        name: text(slot.name, 120),
-        type: text(slot.type, 80),
-        colors: validColors(slot.colors),
+        name: text(slot.name, 120) || text(skill?.name, 120),
+        type: text(slot.type, 80) || text(skill?.type, 80),
+        // Prefer actual LBT skill records (including derived variants). Fall back to
+        // an older slot snapshot only when no color could be recovered from skills.
+        colors: colors[index].length ? colors[index] : colorsFromSkill(slot),
       };
     });
   }
 
-  const skills = Array.isArray(persona?.skills) ? persona.skills.filter(record) : [];
-  const roots = Array(5).fill(null);
-  for (let index = 0; index < skills.length; index++) {
-    const skill = skills[index];
-    const rankIndex = skillIndex(skill);
-    const slotIndex = rankIndex === null ? (String(skill?.rank ?? '').trim() ? -1 : index) : rankIndex;
-    if (slotIndex >= 0 && slotIndex < 5 && !roots[slotIndex]) roots[slotIndex] = skill;
-  }
   return roots.map((skill, index) => ({
     rank: `S${index}`,
     name: text(skill?.name, 120),
     type: text(skill?.type, 80),
-    colors: skill ? colorsFromSkill(skill) : [],
+    colors: colors[index],
   }));
 }
 
