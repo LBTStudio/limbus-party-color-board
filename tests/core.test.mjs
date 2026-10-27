@@ -37,9 +37,12 @@ test('dataset keeps every persona and five tactic slots', () => {
     assert.equal(persona.slots.length, 5, `${persona.key} ${persona.name}`);
     for (const slot of persona.slots) {
       assert.ok(slot.colors.length >= 1, `${persona.key} ${slot.rank}`);
+      assert.ok(Array.isArray(slot.derivedNames), `${persona.key} ${slot.rank} derived names`);
       for (const color of slot.colors) assert.ok(SIN_ORDER.includes(color), `${persona.key} ${color}`);
     }
   }
+  assert.ok(personas.some((persona) => persona.slots.some((slot) => slot.derivedNames.length > 0)),
+    'the generated catalog must retain current LBT derived skill names');
 });
 
 test('dual-color derived slots are preserved', () => {
