@@ -457,6 +457,29 @@ export function discoverLbtAccounts(storage, catalog = []) {
 }
 
 /** Whether a picker candidate belongs to an LBT account's owned roster. */
+/**
+ * Older shared-session snapshots may not contain derivedNames. Preserve locally
+ * known names for the same identity rather than replacing them with empty arrays.
+ * Non-empty names from the incoming snapshot remain authoritative.
+ */
+export function preserveDerivedSkillNames(persona, fallbackPersona) {
+  if (!record(persona) || !Array.isArray(persona.slots) || !record(fallbackPersona)) return persona;
+  const fallbackSlots = Array.isArray(fallbackPersona.slots) ? fallbackPersona.slots : [];
+  return {
+    ...persona,
+    slots: persona.slots.map((slot, index) => {
+      if (!record(slot)) return slot;
+      const names = Array.isArray(slot.derivedNames)
+        ? slot.derivedNames.map((name) => text(name, 120)).filter(Boolean)
+        : [];
+      const fallbackNames = Array.isArray(fallbackSlots[index]?.derivedNames)
+        ? fallbackSlots[index].derivedNames.map((name) => text(name, 120)).filter(Boolean)
+        : [];
+      return { ...slot, derivedNames: names.length ? names : fallbackNames };
+    }),
+  };
+}
+
 export function isPersonaOwnedByLbtAccount(persona, account) {
   if (!persona || !account || !text(account.id, 120)) return false;
   if (!persona.localOnly) {
