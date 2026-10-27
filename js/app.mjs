@@ -925,7 +925,7 @@ function renderLbtImportCandidates() {
   list.innerHTML = candidates.map((persona, index) => {
     const skills = persona.slots
       .filter((slot) => slot.name)
-      .map((slot) => `${slot.rank} ${slot.name}${slot.colors.length ? `（${slot.colors.join('・')}）` : ''}`)
+      .map((slot) => `${slot.rank} ${slot.name}${slot.derivedNames?.length ? `（派生: ${slot.derivedNames.join('・')}）` : ''}${slot.colors.length ? `（${slot.colors.join('・')}）` : ''}`)
       .join(' / ');
     const typeLabel = persona.variantType === 'sync' ? '同期データ' : 'オリジナル人格';
     return `

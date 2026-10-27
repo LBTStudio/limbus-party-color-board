@@ -821,6 +821,8 @@ test('synced and original LBT personas retain sin colors from empty color arrays
   assert.ok(synced, 'the synced identity should be discovered');
   assert.ok(original, 'the original identity should be discovered');
   assert.deepEqual(synced.slots[0].colors, ['憤怒', '傲慢'], 'the derived skill color belongs to the parent slot');
+  assert.deepEqual(synced.slots[0].derivedNames, ['同期人格 S0 派生'], 'the derived skill name is retained on its parent slot');
   assert.deepEqual(synced.slots[1].colors, ['嫉妬'], 'a non-empty explicit colors list takes precedence over stale sin metadata');
   assert.deepEqual(original.slots[0].colors, ['色欲', '嫉妬'], 'one-based 1-2 derived ranks map to the first slot even if derived_from uses a legacy index');
+  assert.deepEqual(original.slots[0].derivedNames, ['オリジナル人格 S1 派生'], 'the original persona derived skill name is retained');
 });
