@@ -938,8 +938,23 @@ textarea.input {
   overflow: hidden;
   color: var(--tx-2);
   font-size: 0.72rem;
+}
+
+.slot-root-name {
+  display: block;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.slot-derived-names {
+  display: block;
+  margin-top: 2px;
+  color: var(--tx-mute);
+  font-size: 0.62rem;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .slot-sins {

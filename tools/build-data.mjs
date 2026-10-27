@@ -36,11 +36,16 @@ function extractSlots(persona) {
     if (chosen.length === 0) {
       throw new Error(`${persona.name}: スキル${index} が見つかりません`);
     }
+    // Some LBT identities have only -1/-2 variants and no unsuffixed root row.
+    // Use the first variant as the visible skill, and retain later names separately.
+    const displaySkills = exact.length > 0 ? exact : chosen.slice(0, 1);
+    const derivedNames = exact.length > 0 ? derived : chosen.slice(1);
     slots.push({
       rank: `S${index}`,
-      name: [...new Set(chosen.map((skill) => skill.name))].join(' / '),
+      name: [...new Set(displaySkills.map((skill) => skill.name))].join(' / '),
       type: [...new Set(chosen.map((skill) => skill.type))].join(' / '),
-      colors: [...new Set(chosen.map((skill) => skill.sin))],
+      colors: [...new Set([...exact, ...derived].map((skill) => skill.sin))],
+      derivedNames: [...new Set(derivedNames.map((skill) => skill.name))],
     });
   }
   return slots;

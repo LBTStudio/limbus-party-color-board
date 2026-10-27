@@ -7,6 +7,7 @@ import {
   discoverLbtPersonaCandidates,
   importLocalPersonas,
   isPersonaOwnedByLbtAccount,
+  preserveDerivedSkillNames,
   loadLocalPersonas,
   sanitizeLocalPersona,
   saveLocalPersonas,
@@ -825,4 +826,101 @@ test('synced and original LBT personas retain sin colors from empty color arrays
   assert.deepEqual(synced.slots[1].colors, ['嫉妬'], 'a non-empty explicit colors list takes precedence over stale sin metadata');
   assert.deepEqual(original.slots[0].colors, ['色欲', '嫉妬'], 'one-based 1-2 derived ranks map to the first slot even if derived_from uses a legacy index');
   assert.deepEqual(original.slots[0].derivedNames, ['オリジナル人格 S1 派生'], 'the original persona derived skill name is retained');
+});
+
+
+test('one-based slots with only -1/-2 variants expose the first name and retain later variants', () => {
+  const storage = new MemoryStorage();
+  const base = lbtSource({ name: '派生のみ人格', no: 17, colors: SIN_ORDER.slice(0, 5) });
+  const skills = base.skills.map((skill, index) => ({
+    ...skill,
+    rank: `スキル${index + 1}-1`,
+    name: `基本技S${index}`,
+    colors: [],
+    sin: SIN_ORDER[index],
+  }));
+  skills.push({
+    ...skills[0],
+    rank: 'スキル1-2',
+    derived_from: 'スキル0',
+    name: '分岐技S0',
+    colors: [],
+    sin: '傲慢',
+  });
+  const source = { ...base, skills };
+  writeAccount(storage, {
+    personaMode: 'n',
+    personaNo: 17,
+    personaSrc: source,
+    syncedManual: true,
+    skills,
+    hp: 100,
+    san: 40,
+    speed: '1d5',
+    resS: '普通',
+    resP: '普通',
+    resB: '普通',
+    pas: { name: '派生パッシブ', cond: '憤怒x1', effect: '派生効果' },
+    roster: { personas: [] },
+  });
+  const catalogSource = lbtSource({ name: '基準人格', no: 17 });
+  const candidates = discoverLbtPersonaCandidates(storage, [
+    makeCatalogSource(catalogSource, 'n17', 'normal'),
+  ], 'acct-1');
+  const candidate = candidates.find((persona) => persona.name === '派生のみ人格');
+  assert.ok(candidate);
+  assert.equal(candidate.slots[0].name, '基本技S0');
+  assert.deepEqual(candidate.slots[0].derivedNames, ['分岐技S0']);
+  assert.deepEqual(candidate.slots[0].colors, ['憤怒', '傲慢']);
+});
+
+test('derived skill names survive sanitizing and saving a slot-only shared snapshot', () => {
+  const storage = new MemoryStorage();
+  const snapshot = sanitizeLocalPersona({
+    key: 'manual-derived-roundtrip',
+    kind: 'custom',
+    no: 999,
+    name: '共有派生人格',
+    variantType: 'manual',
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`,
+      name: `スキル${index}`,
+      type: '斬撃',
+      colors: [],
+      derivedNames: index === 0 ? ['反転技', '派生技B'] : [],
+    })),
+  });
+  assert.ok(snapshot);
+  assert.deepEqual(snapshot.slots[0].derivedNames, ['反転技', '派生技B']);
+  saveLocalPersonas(storage, [snapshot]);
+  const loaded = loadLocalPersonas(storage);
+  assert.deepEqual(loaded[0].slots[0].derivedNames, ['反転技', '派生技B']);
+});
+
+
+test('older shared snapshots preserve locally known derived names without overriding newer incoming names', () => {
+  const local = {
+    key: 'manual-derived-cache',
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`, name: `元スキル${index}`, type: '斬撃', colors: [],
+      derivedNames: index === 0 ? ['既知の派生技'] : [],
+    })),
+  };
+  const olderSnapshot = {
+    key: local.key,
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`, name: `共有スキル${index}`, type: '斬撃', colors: [],
+    })),
+  };
+  const mergedOld = preserveDerivedSkillNames(olderSnapshot, local);
+  assert.deepEqual(mergedOld.slots[0].derivedNames, ['既知の派生技']);
+
+  const currentSnapshot = {
+    ...olderSnapshot,
+    slots: olderSnapshot.slots.map((slot, index) => ({
+      ...slot, derivedNames: index === 0 ? ['共有元の新しい派生技'] : [],
+    })),
+  };
+  const mergedNew = preserveDerivedSkillNames(currentSnapshot, local);
+  assert.deepEqual(mergedNew.slots[0].derivedNames, ['共有元の新しい派生技']);
 });
