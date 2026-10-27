@@ -266,6 +266,7 @@ function personaSnapshotForShare(persona, playerName = '') {
       name: slot.name || '',
       type: slot.type || '',
       colors: [...(slot.colors || [])],
+      derivedNames: [...(slot.derivedNames || [])],
     })),
   };
 }
@@ -734,7 +735,8 @@ function renderMatrix() {
       const chips = skillSlot.colors.map((sin) => (
         `<span class="slot-chip" style="--sin:${SIN_META[sin].color}">${escapeHtml(sin)}</span>`
       )).join('');
-      body += `<td class="slot-cell" title="${escapeHtml(`${skillSlot.rank} ${skillSlot.name} / ${skillSlot.type}`)}"><span class="slot-chips">${chips || '–'}</span></td>`;
+      const derivedLabel = skillSlot.derivedNames?.length ? ` / 派生: ${skillSlot.derivedNames.join('・')}` : '';
+      body += `<td class="slot-cell" title="${escapeHtml(`${skillSlot.rank} ${skillSlot.name}${derivedLabel} / ${skillSlot.type}`)}"><span class="slot-chips">${chips || '–'}</span></td>`;
     }
     for (const sin of SIN_ORDER) {
       const count = countColor(persona, sin);
@@ -797,7 +799,8 @@ function renderParty() {
     )).join('');
     const strip = persona.slots.map((skillSlot) => {
       const sins = skillSlot.colors.length ? skillSlot.colors.join('・') : '罪悪属性なし';
-      const label = `${skillSlot.rank} ${skillSlot.name} / ${skillSlot.type} / ${sins}`;
+      const derivedLabel = skillSlot.derivedNames?.length ? ` / 派生: ${skillSlot.derivedNames.join('・')}` : '';
+      const label = `${skillSlot.rank} ${skillSlot.name}${derivedLabel} / ${skillSlot.type} / ${sins}`;
       return `<span style="background:${gradientFor(skillSlot.colors)}" title="${escapeHtml(label)}"></span>`;
     }).join('');
 
@@ -806,10 +809,15 @@ function renderParty() {
       const sins = skillSlot.colors.map((sin) => (
         `<span class="sin-chip" style="--sin:${SIN_META[sin].color}">${escapeHtml(sin)}</span>`
       )).join('');
+      const derivedNames = Array.isArray(skillSlot.derivedNames) ? skillSlot.derivedNames : [];
+      const derivedLabel = derivedNames.length ? ` / 派生: ${derivedNames.join('・')}` : '';
       return `
-        <div class="slot-row" style="--sin:${firstColor}" title="${escapeHtml(`${skillSlot.name} / ${skillSlot.type}`)}">
+        <div class="slot-row" style="--sin:${firstColor}" title="${escapeHtml(`${skillSlot.name}${derivedLabel} / ${skillSlot.type}`) }">
           <span class="slot-rank">${escapeHtml(skillSlot.rank)}</span>
-          <span class="slot-name">${escapeHtml(skillSlot.name)}</span>
+          <span class="slot-name">
+            <span class="slot-root-name">${escapeHtml(skillSlot.name)}</span>
+            ${derivedNames.length ? `<span class="slot-derived-names">派生：${escapeHtml(derivedNames.join('・'))}</span>` : ''}
+          </span>
           <span class="slot-sins">${sins || '–'}</span>
         </div>
       `;
