@@ -158,15 +158,28 @@ function normalizedSkillSlots(skills) {
     colors[slotIndex].push(...colorsFromSkill(skill));
   });
 
+  const derivedNames = Array.from({ length: 5 }, () => []);
+  ranked.forEach(({ skill, rank }) => {
+    if (!rank?.derived || !Number.isInteger(rank.number)) return;
+    const explicitRank = String(skill?.rank ?? skill?.slot ?? '').trim();
+    const oneBased = !rankNumbers.includes(0) && rankNumbers.includes(5);
+    const slotIndex = rank.number - (oneBased ? 1 : 0);
+    const name = text(skill?.name, 120);
+    if (slotIndex >= 0 && slotIndex < 5 && name && !derivedNames[slotIndex].includes(name)) {
+      derivedNames[slotIndex].push(name);
+    }
+  });
+
   return {
     roots,
     colors: colors.map((values) => validColors(values)),
+    derivedNames,
   };
 }
 
 function normalizedSlots(persona) {
   const skills = Array.isArray(persona?.skills) ? persona.skills.filter(record) : [];
-  const { roots, colors } = normalizedSkillSlots(skills);
+  const { roots, colors, derivedNames } = normalizedSkillSlots(skills);
 
   if (Array.isArray(persona?.slots)) {
     return Array.from({ length: 5 }, (_, index) => {
@@ -176,6 +189,7 @@ function normalizedSlots(persona) {
       return {
         rank: `S${index}`,
         name: text(slot.name, 120) || text(skill?.name, 120),
+        derivedNames: derivedNames[index],
         type: text(slot.type, 80) || text(skill?.type, 80),
         // Prefer actual LBT skill records (including derived variants). Fall back to
         // an older slot snapshot only when no color could be recovered from skills.
@@ -187,6 +201,7 @@ function normalizedSlots(persona) {
   return roots.map((skill, index) => ({
     rank: `S${index}`,
     name: text(skill?.name, 120),
+    derivedNames: derivedNames[index] || [],
     type: text(skill?.type, 80),
     colors: colors[index],
   }));
@@ -272,7 +287,7 @@ function sameRelevantData(a, b) {
     passiveEffect: persona.passiveEffect,
     resSlash: persona.resSlash, resPierce: persona.resPierce, resBlunt: persona.resBlunt,
     slots: (persona.slots || []).map((slot) => ({
-      name: slot.name, type: slot.type, colors: [...slot.colors].sort(),
+      name: slot.name, derivedNames: [...(slot.derivedNames || [])].sort(), type: slot.type, colors: [...slot.colors].sort(),
     })),
   });
   return select(a) === select(b);
@@ -297,6 +312,7 @@ function relevantDataDifferenceScore(persona, base) {
     // Skill names, attack types, and sin colors are the exact fields that must
     // reflect synchronized LBT edits, so prefer the snapshot with those changes.
     if ((a.name ?? '') !== (b.name ?? '')) score += 100;
+    if (JSON.stringify(a.derivedNames || []) !== JSON.stringify(b.derivedNames || [])) score += 100;
     if ((a.type ?? '') !== (b.type ?? '')) score += 100;
     const colors = (slot) => JSON.stringify([...(slot.colors || [])].sort());
     if (colors(a) !== colors(b)) score += 100;
