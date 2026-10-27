@@ -13,6 +13,7 @@ import {
   parsePartySheet,
   parsePassiveRequirements,
   parseSpeedAverage,
+  resolveInitialParty,
   personaNumberLabel,
   resolvePersona,
   sortParty,
@@ -306,4 +307,33 @@ test('TSV persona keys disambiguate local synced variants that share an official
   });
   assert.match(uppercaseMissingKey.error, /ローカル追加人格キー/);
   assert.equal(uppercaseMissingKey.persona, undefined, 'case-altered local keys must not bypass the namespace guard');
+});
+
+
+test('an explicit party URL never falls back to an unrelated stored lineup when its keys are stale', () => {
+  const storedParty = [{ key: 'n48' }];
+  assert.deepEqual(resolveInitialParty({
+    urlParamPresent: true,
+    urlParty: [],
+    storedParty,
+  }), [], 'an explicit empty/invalid URL is kept as URL state rather than showing old local data');
+
+  assert.deepEqual(resolveInitialParty({
+    urlParamPresent: true,
+    urlParty: [{ key: 'n34' }],
+    storedParty,
+  }), [{ key: 'n34' }], 'valid URL entries take precedence over the saved lineup');
+
+  assert.deepEqual(resolveInitialParty({
+    urlParamPresent: false,
+    urlParty: null,
+    storedParty,
+  }), storedParty, 'without a URL parameter, the local saved lineup is retained');
+
+  assert.deepEqual(resolveInitialParty({
+    urlParamPresent: false,
+    urlParty: null,
+    storedParty,
+    isLegacySample: true,
+  }), [], 'the legacy sample migration still wins when no URL lineup was supplied');
 });
