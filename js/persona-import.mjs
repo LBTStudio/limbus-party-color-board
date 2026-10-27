@@ -97,23 +97,30 @@ function validColors(value) {
 
 function colorsFromSkill(skill) {
   if (!record(skill)) return [];
-  // Some LBT snapshots carry an empty colors array alongside the authoritative sin field.
-  // Treat the empty array as missing, not as an override.
-  const values = Array.isArray(skill.colors) ? [...skill.colors] : [];
+  // A non-empty colors list can intentionally represent a dual-color skill.
+  // Keep it authoritative; only fall back to legacy sin fields when it is empty
+  // or contains no recognized values, otherwise stale sin metadata can add colors.
+  const explicitColors = validColors(skill.colors);
+  if (explicitColors.length) return explicitColors;
   for (const field of ['sin', 'sin_type', 'sinType', 'color', 'attribute', 'attr']) {
-    if (skill[field] !== undefined && skill[field] !== null && skill[field] !== '') values.push(skill[field]);
+    const colors = validColors(skill[field]);
+    if (colors.length) return colors;
   }
-  return validColors(values);
+  return [];
 }
 
 function skillRankInfo(skill) {
   const rank = String(skill?.rank ?? skill?.slot ?? '').trim();
   const derivedFrom = String(skill?.derived_from ?? skill?.derivedFrom ?? '').trim();
   const parentMatch = derivedFrom.match(/^(?:S|スキル)?\s*(\d+)$/i);
-  if (parentMatch) return { number: Number(parentMatch[1]), derived: true };
-
   const match = rank.match(/^(?:S|スキル)?\s*(\d+)(?:-(\d+))?$/i);
-  if (match) return { number: Number(match[1]), derived: Boolean(match[2]) };
+
+  // An explicit derived rank such as "スキル1-2" identifies its parent more
+  // reliably than stale derived_from metadata. Conversely, legacy saves sometimes
+  // kept a root-like rank while carrying derived_from, so retain that fallback.
+  if (match?.[2]) return { number: Number(match[1]), derived: true };
+  if (parentMatch) return { number: Number(parentMatch[1]), derived: true };
+  if (match) return { number: Number(match[1]), derived: false };
   if (!rank) return { number: null, derived: false };
   return { number: Number.NaN, derived: false };
 }
@@ -121,7 +128,10 @@ function skillRankInfo(skill) {
 function normalizedSkillSlots(skills) {
   const sourceSkills = Array.isArray(skills) ? skills.filter(record) : [];
   const ranked = sourceSkills.map((skill) => ({ skill, rank: skillRankInfo(skill) }));
+  // Only primary skills establish whether the source ranks slots from 0 or 1.
+  // A derived_from value can refer to a parent rank and must not skew this decision.
   const rankNumbers = ranked
+    .filter(({ rank }) => !rank?.derived)
     .map(({ rank }) => rank?.number)
     .filter((number) => Number.isInteger(number));
   // LBT normally uses ranks 0–4. Also accept 1–5 ranks from text/manual imports,
