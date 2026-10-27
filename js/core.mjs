@@ -13,6 +13,16 @@ export const SIN_META = {
 // New boards start empty. Keep the former example party as a test/sample fixture only.
 export const DEFAULT_PARTY = [];
 
+/**
+ * Resolve the initial lineup with URL state as the explicit source of truth.
+ * A present but invalid/stale URL must not silently display an unrelated saved lineup.
+ */
+export function resolveInitialParty({ urlParamPresent = false, urlParty = null, storedParty = null, isLegacySample = false } = {}) {
+  if (urlParamPresent) return Array.isArray(urlParty) ? urlParty : [];
+  if (isLegacySample) return [];
+  return Array.isArray(storedParty) ? storedParty : [];
+}
+
 export const SAMPLE_PARTY = [
   { key: 'n48' },
   { key: 'n34' },
