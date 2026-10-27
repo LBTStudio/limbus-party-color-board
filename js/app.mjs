@@ -8,6 +8,7 @@ import {
   makePersonaMap,
   parsePartySheet,
   parsePassiveRequirements,
+  resolveInitialParty,
   personaKindLabel,
   personaNumberLabel,
   sheetNumber,
@@ -459,15 +460,13 @@ function init(data) {
   // only that exact legacy default to empty; retain any party a user actually chose.
   const isLegacySample = JSON.stringify(storedKeys) === JSON.stringify(['n48', 'n34', 'n78', 'n49']);
 
-  let party = null;
-  if (fromUrl !== null && (fromUrl.length > 0 || urlKeys.length === 0)) {
-    party = fromUrl;
-  } else if (isLegacySample) {
-    party = [];
-  } else {
-    party = fromStore;
-  }
-  if (party === null) party = defaultParty();
+  const party = resolveInitialParty({
+    urlParamPresent: urlKeys !== null,
+    urlParty: fromUrl,
+    storedParty: fromStore,
+    isLegacySample,
+  });
+  const missingUrlKeys = urlKeys === null ? [] : urlKeys.filter((key) => !state.map.has(key));
   const urlPlayerNames = readUrlPlayerNames();
   state.party = party.slice(0, MAX_PARTY).map((entry) => (
     urlPlayerNames.has(entry.key)
@@ -482,6 +481,12 @@ function init(data) {
 
   bindEvents();
   renderAll();
+  if (urlKeys !== null && missingUrlKeys.length > 0) {
+    const missingLocalPersona = missingUrlKeys.some((key) => /^(?:lbt-sync-|lbt-original-|manual-)/iu.test(key));
+    showToast(missingLocalPersona
+      ? 'URLに含まれる追加人格がこのブラウザにありません。元の共有セッションを開くか、人格を再取り込みしてください。'
+      : `URLの人格キーを${missingUrlKeys.length}件読み込めませんでした。リンクが古い可能性があります。`);
+  }
 }
 
 function bindEvents() {
