@@ -700,3 +700,124 @@ test('re-import reflects the latest saved LBT skill names, attributes, and passi
   assert.equal(secondImport.personas[0].passiveEffect, '更新後効果');
   assert.equal(loadLocalPersonas(storage).length, 1);
 });
+
+
+test('synced and original LBT personas retain sin colors from empty color arrays and derived skill ranks', () => {
+  const storage = new MemoryStorage();
+  const syncedBase = lbtSource({
+    name: '同期人格',
+    no: 17,
+    colors: ['憤怒', '色欲', '怠惰', '暴食', '憂鬱'],
+  });
+  const syncedSkills = syncedBase.skills.map((skill) => ({ ...skill, colors: [] }));
+  syncedSkills.push({
+    rank: 'スキル0-2',
+    derived_from: 'スキル0',
+    derived_index: 2,
+    name: '同期人格 S0 派生',
+    type: '斬撃',
+    colors: [],
+    sin: '傲慢',
+  });
+  const syncedSource = {
+    ...syncedBase,
+    // Simulate an older embedded slot snapshot whose empty colors must not shadow LBT skills.
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`,
+      name: `古いスロット${index}`,
+      type: '斬撃',
+      colors: [],
+    })),
+  };
+
+  const originalBase = lbtSource({
+    name: 'オリジナル人格',
+    no: 999,
+    custom: true,
+    colors: ['色欲', '暴食', '怠惰', '憂鬱', '憤怒'],
+  });
+  const originalSkills = originalBase.skills.map((skill, index) => ({
+    ...skill,
+    rank: `スキル${index + 1}`,
+    colors: [],
+  }));
+  originalSkills.push({
+    rank: 'スキル1-2',
+    derived_from: 'スキル1',
+    derived_index: 2,
+    name: 'オリジナル人格 S1 派生',
+    type: '貫通',
+    colors: [],
+    sin: '嫉妬',
+  });
+  const originalSource = {
+    ...originalBase,
+    skills: originalSkills,
+    // This path can contain slots and skills at once, unlike the equipped-build path.
+    slots: Array.from({ length: 5 }, (_, index) => ({
+      rank: `S${index}`,
+      name: '',
+      type: '',
+      colors: [],
+    })),
+  };
+
+  writeAccount(storage, {
+    personaMode: 'n',
+    personaNo: 17,
+    personaSrc: syncedSource,
+    syncedManual: true,
+    skills: syncedSkills,
+    hp: 100,
+    san: 40,
+    speed: '1d5',
+    resS: '普通',
+    resP: '普通',
+    resB: '普通',
+    pas: { name: '同期パッシブ', cond: '憤怒x1', effect: '同期効果' },
+    roster: {
+      personas: [
+        {
+          uid: 'n17',
+          no: 17,
+          mode: 'n',
+          synced: true,
+          syncRank: '00',
+          syncMax: false,
+          build: {
+            personaSrc: syncedSource,
+            skills: syncedSkills,
+            syncedManual: true,
+            hp: 100,
+            san: 40,
+            speed: '1d5',
+            resS: '普通',
+            resP: '普通',
+            resB: '普通',
+            pas: { name: '同期パッシブ', cond: '憤怒x1', effect: '同期効果' },
+          },
+        },
+        {
+          uid: 'custom-999',
+          no: 999,
+          mode: 'custom',
+          syncRank: null,
+          syncMax: false,
+          src: originalSource,
+        },
+      ],
+    },
+  });
+
+  const catalogSource = lbtSource({ name: '同期元人格', no: 17 });
+  const candidates = discoverLbtPersonaCandidates(storage, [
+    makeCatalogSource(catalogSource, 'n17', 'normal'),
+  ], 'acct-1');
+
+  const synced = candidates.find((persona) => persona.name === '同期人格');
+  const original = candidates.find((persona) => persona.name === 'オリジナル人格');
+  assert.ok(synced, 'the synced identity should be discovered');
+  assert.ok(original, 'the original identity should be discovered');
+  assert.deepEqual(synced.slots[0].colors, ['憤怒', '傲慢'], 'the derived skill color belongs to the parent slot');
+  assert.deepEqual(original.slots[0].colors, ['色欲', '嫉妬'], 'one-based 1-2 derived ranks map to the first slot');
+});
