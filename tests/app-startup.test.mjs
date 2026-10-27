@@ -226,7 +226,7 @@ test('persona detail resource summaries show all seven sins including explicit z
 
 
 test('derived skill names appear in persona details and survive shared snapshots', () => {
-  const migration = readFileSync(new URL('../supabase/migrations/20261027110000_preserve_derived_skill_names.sql', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../supabase/migrations/20261027111058_preserve_derived_skill_names.sql', import.meta.url), 'utf8');
   assert.match(app, /slot-derived-names/);
   assert.match(app, /derivedNames: \[\.\.\.\(slot\.derivedNames \|\| \[\]\)\]/);
   assert.match(personaImport, /Array\.isArray\(slot\.derivedNames\)/);
