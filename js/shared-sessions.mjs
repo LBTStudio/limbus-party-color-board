@@ -13,6 +13,10 @@ export function setCaptchaToken(token) {
   captchaToken = typeof token === 'string' ? token : '';
 }
 
+export function isCaptchaReady() {
+  return Boolean(captchaToken);
+}
+
 function isPrivilegedKey(key) {
   const value = String(key || '').trim();
   const lower = value.toLowerCase();
@@ -109,6 +113,62 @@ async function rpc(name, args = {}, displayName = '') {
 
 export function createSharedSessions() {
   return {
+    async readPublicSession(sessionId, { force = false } = {}) {
+      const cacheKey = 'lpc-public-session:' + String(sessionId);
+      if (!force && typeof sessionStorage !== 'undefined') {
+        try {
+          const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+          if (cached && Date.now() - cached.savedAt < 60000 && cached.data?.status === 'ok') {
+            return { ...cached.data, _fromCache: true };
+          }
+        } catch { /* Ignore malformed or unavailable session cache. */ }
+      }
+      const client = await getClient();
+      const { data, error } = await client.rpc('read_public_party_session', { p_session_id: sessionId });
+      if (error) {
+        const translated = new Error(error.message || '公開編成を読み込めませんでした。');
+        translated.code = error.code;
+        throw translated;
+      }
+      if (data?.status === 'ok' && typeof sessionStorage !== 'undefined') {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), data }));
+        } catch { /* Cache is optional and must not block viewing. */ }
+      }
+      return data;
+    },
+    async joinPublicSession(sessionId, displayName) {
+      return rpc('join_public_party_session', {
+        p_session_id: sessionId,
+        p_display_name: String(displayName || '参加者').slice(0, 40),
+      }, displayName);
+    },
+    async setPublicAccess(sessionId, publicViewEnabled, publicEditEnabled) {
+      return rpc('set_public_party_access', {
+        p_session_id: sessionId,
+        p_public_view_enabled: Boolean(publicViewEnabled),
+        p_public_edit_enabled: Boolean(publicEditEnabled),
+      });
+    },
+    async subscribeSession(sessionId, onChange, onStatus) {
+      const client = await getClient();
+      const { data, error } = await client.auth.getSession();
+      if (error) throw error;
+      if (!data.session) throw new Error('編集参加の認証が必要です。');
+      await client.realtime.setAuth();
+      const channel = client
+        .channel('party:' + sessionId, { config: { private: true } })
+        .on('broadcast', { event: 'party_changed' }, (message) => {
+          onChange?.(message?.payload || message || {});
+        })
+        .subscribe((status, errorInfo) => onStatus?.(status, errorInfo));
+      return channel;
+    },
+    async removeChannel(channel) {
+      if (!channel || !clientPromise) return;
+      const client = await getClient();
+      await client.removeChannel(channel);
+    },
     async listSessions(displayName) {
       return rpc('list_my_party_sessions', {}, displayName);
     },
