@@ -92,6 +92,23 @@ Realtime Broadcastは送信1件に加え、配信を受けた各クライアン�
 
 各スモーク試験後の確認では、新しいカラム・関数・トリガー・Realtime policyは0件で、テスト用auth.users／party_sessionsレコードも0件だった。つまりテスト用のユーザー・スペース・membershipも含め、ロールバックによってDBに残っていない。これはRPCとPostgreSQL権限のスモーク試験であり、実ブラウザのTurnstile・WebSocket・負荷試験の代わりではない。
 
+### 本番DBへの適用とロール別検証（2026-11-17）
+
+Supabase本番PostgreSQL 17.11に `20261117155808_public_view_open_edit_realtime` として適用済み。migration履歴にはこのversionが1件だけ存在し、Git側のファイル名も同じversionへ揃えた。GitHub Integrationが後からこのリポジトリを処理しても、同じmigrationを未適用として二重登録しない。
+
+適用直後の確認結果：
+
+- `public_view_enabled` と `public_edit_enabled` はともに `NOT NULL DEFAULT false`。
+- 既存の共有スペース5件は全件とも2つのflagがfalse。既存の編成・参加者・人格データは変更していない。
+- `anon` は `read_public_party_session` のみ実行でき、join・owner設定・member削除RPCは実行できない。
+- `authenticated` はjoin・owner設定・member削除RPCを実行できる。`anon` / `authenticated` には `party_sessions` の直接SELECT権限がない。
+- `realtime.messages` のBroadcast SELECT policyと、revision / membership通知triggerが作成済み。
+- 既存ownerのJWTを模擬した読み取りでは、非公開spaceのroleがownerとして返り、Broadcast membership predicateはtrue。
+- 既存spaceの公開flagをトランザクション内で一時的にtrueにした匿名読み取りでは、role `public-viewer` と必要最小限の編成スナップショットが返り、membersやuser_idは含まれなかった。テストはrollbackし、実データを非公開へ戻した。
+
+Security Advisorでは、この実装により`read_public_party_session`がanonから実行できるSECURITY DEFINER関数として警告される。公開閲覧機能そのものに必要な入口であり、関数内で公開flag・アーカイブ状態・member権限を検査し、返却フィールドを限定する。Realtime policyに対する匿名Auth警告も出るが、匿名AuthユーザーはPostgresの`authenticated` roleを使う仕様のためで、実際の許可はowner/editor membership predicateで制限している。アプリケーションテーブルへの直接SELECT権限は与えていない。
+
+この検証は本番DB上の権限・RPC・DDL確認であり、Supabase DashboardのAnonymous Sign-Ins / CAPTCHA / private channel設定、実WebSocket接続、別ブラウザ間のE2E、負荷試験が成功したことを意味しない。
 ### 本番DBの移行前ベースライン（2026-11-17）
 
 Supabase PostgreSQLの `pg_stat_statements` を読み取り専用で確認した。統計のリセット日時は2026-10-23 11:07 UTCであり、約25日分のプロジェクト集計である。以下は共有セッション関連RPCの観測値で、将来の利用量や容量を保証するものではない。
