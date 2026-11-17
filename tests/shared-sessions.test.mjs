@@ -697,8 +697,17 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(joinFn, /r\.status = 'revoked'/);
   assert.match(accessFn, /if not found or v_owner <> v_user_id then raise exception 'OWNER_REQUIRED'/);
   assert.match(accessFn, /delete from public\.session_members[\s\S]*?role <> 'owner'/);
-  assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default true/i);
-  assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default true/i);
+  assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default false/i);
+  assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default false/i);
+  assert.match(publicViewMigration, /set public_view_enabled = false,[\s\S]*?public_edit_enabled = false/);
+  const createSession = publicViewMigration.slice(
+    publicViewMigration.indexOf('create or replace function public.create_party_session'),
+    readStart,
+  );
+  assert.match(createSession, /insert into public\.party_sessions[\s\S]*?values \(v_title, v_user_id, true, true\)/);
+  assert.match(accessFn, /PUBLIC_EDIT_REQUIRES_VIEW/);
+  assert.equal((publicViewMigration.match(/as \$\$/g) || []).length, (publicViewMigration.match(/^\$\$;$/gm) || []).length);
+  assert.doesNotMatch(publicViewMigration, /as \$\n|^\$;$/m);
 });
 
 test('Realtime only broadcasts revision metadata to current authenticated editors', () => {
