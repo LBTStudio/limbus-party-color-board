@@ -198,15 +198,19 @@ test('session switching preserves the personal snapshot and ignores stale admin 
   assert.match(sharedUi, /if \(active !== session \|\| session\.role !== 'owner'\) return;/);
 });
 
-test('docs describe the implemented shared-session feature', () => {
+test('docs describe the implemented shared-session feature and deployment blockers', () => {
   const readme = read('../README.md');
   const design = read('../docs/shared-sessions-design.md');
   const failureModes = read('../docs/shared-sessions-failure-modes.md');
+  const setup = read('../docs/shared-sessions-setup.md');
   assert.doesNotMatch(readme, /複数人の編集は同期されません/);
   assert.doesNotMatch(design, /共有セッションは未実装/);
   assert.doesNotMatch(failureModes, /共有セッション機能がまだない/);
   assert.match(readme, /初回取得後は自動ポーリングやRealtime接続を行わず/);
   assert.match(readme, /招待・承認なしで編集参加/);
+  assert.match(setup, /MIGRATIONS_FAILED/);
+  assert.match(setup, /202610260002_reject_anonymous_vault_access/);
+  assert.match(setup, /20261026001049_drop_stale_lbt_vault_policies/);
 });
 
 test('per-session resource caps are protected by parent-row locks', () => {
