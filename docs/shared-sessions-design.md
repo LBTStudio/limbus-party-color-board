@@ -55,7 +55,7 @@ SupabaseのAnonymous Authユーザーは自動削除されない。公式ドキ�
 
 編集者のみが `party:<session_id>` のprivate Broadcastチャンネルへ接続する。Realtime AuthorizationのRLSポリシーは `session_members` にowner/editorとして存在する認証ユーザーだけに受信を許可する。Supabase DashboardのRealtime Settingsでは `Allow public access to channels` をOFFにして、このprivate channel RLS認可を強制する。
 
-Postgresのrevision更新トリガーは `realtime.send()` で `party_changed` イベントを送る。payloadにはrevision番号だけを含め、`party_keys` や `party_personas` は含めない。通知を受けたクライアントは既存の認可付きpoll RPCで最新版を取得する。送信者自身は保存RPCの応答を利用する。
+Postgresのrevision更新トリガーは `realtime.send()` で `party_changed` イベントを送る。payloadにはrevision番号だけを含め、`party_keys` や `party_personas` は含めない。通知を受けたクライアントは既存の認可付きpoll RPCで最新版を取得する。送信者自身は保存RPCの応答を利用する。Realtimeへの接続が成立した直後にも1回だけrevisionを再照合し、初回スナップショット取得から購読開始までの間に確定した更新を取りこぼさない。購読中は同じ画面からの重複接続を防ぎ、タブ非表示・画面切替で開始待ちの接続試行も破棄する。
 
 Realtimeが利用できない場合、編集画面のみ30秒（操作直後）／60秒（アイドル）の確認通信へ切り替え、失敗時は指数バックオフで最大120秒まで延ばす。非表示タブでは接続・pollを停止し、復帰時に最新revisionを確認して再接続する。閲覧モードにはこのフォールバックを適用しない。
 
