@@ -54,7 +54,7 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 
 公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
 
-## 5.1 Supabase Branching の健全性確認
+### 5.1 Supabase Branching の健全性確認
 
 2026-11-17のSupabase Branch一覧では、既定の `main` ブランチが `MIGRATIONS_FAILED` と表示されていました（`updated_at` は 2026-10-23）。一方、このPRの `Supabase Preview` チェックは、feature branchがSupabase Branchに関連付いていないため `skipped` です。プレビューDBで今回のmigrationが実行されたとは扱わないでください。
 
@@ -63,7 +63,7 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 本番反映前にDashboard → Branches → `main` → **View logs** で失敗したworkflow stepとSQLエラーを確認し、どのリポジトリが該当migrationを管理するかを照合してください。原因が分かるまではpreview branchのreset/rebase/deleteやmigration repairを行わないでください。Supabase公式の [MIGRATIONS_FAILED troubleshooting](https://supabase.com/kb/troubleshooting/branch-in-migrations-failed-status) も参照してください。
 
 **手動でSQL Editorから同じmigrationを実行するのは、GitHub連携で適用しない場合だけにしてください。** 両方を使うと migration 履歴がずれる可能性があります。
-### 5.1 Realtimeのprivate channel設定
+### 5.2 Realtimeのprivate channel設定
 
 Supabase Dashboard → Project Settings → Realtime → **Allow public access to channels** を **OFF** にしてください。これにより、private channelへの接続時に `realtime.messages` のRLSポリシーが評価されます。このプロジェクトでは、セッションのowner/editorだけを `party:<session_id>` のBroadcast受信者として許可します。ONのままの場合、public channelに対してRLS認可が実行されず、意図したアクセス境界と異なるため、公開前の必須設定です。
 
