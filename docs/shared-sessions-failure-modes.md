@@ -11,7 +11,7 @@
 | 閲覧キャッシュから編集権限が復元される | ログアウト後の古いowner/editor権限でUIが開く | sessionStorageのキャッシュには常にpublic-viewer roleを保存・返却する。書き込みはサーバー側membershipで再検証 | owner/editorで取得後にページ再読込し、キャッシュから書き込み権限が復元されない |
 | 編集参加の連打・参加枠超過 | membership行の乱造、スペース容量超過 | join RPCがセッション行をロックし、発行者込み20名・ユーザーごと20スペースを検証する。Anonymous AuthにTurnstileを併用できる | 同時joinでも上限を超えず、既存memberの再参加で重複行が作られない |
 | ownerが特定編集者を解除する | 公開リンクから同じ人が再参加する | `remove_party_session_member` が `session_access_requests.status='revoked'` の拒否記録を残し、join RPCが照合する。表示名でなくAuth user IDで判定する | 解除した同じ匿名ユーザーは再参加できず、別のユーザーは参加できる |
-| ownerが既存スペースを移行する | 旧来の非公開セッションが自動的に公開される | 新規カラムの `DEFAULT false` で既存スペースは非公開のまま維持する。移行で既存行を上書きしない。ownerが新UIで個別に有効化し、新規スペースのみ初期値true | 既存セッションはanon readで拒否され、ownerのみ読取・設定変更できる。新規作成は公開フラグtrueになる |
+| ownerが既存スペースを移行する | 旧来の非公開セッションが自動的に公開される | 新規カラムの `DEFAULT false` で既存スペースは非公開のまま維持する。移行で既存行を上書きしない。DB関数で作成した新規スペースも両方falseで開始し、新UIが作成直後にowner専用RPCで公開・編集を有効化する。旧UIからの作成は非公開のまま | 既存セッションはanon readで拒否され、ownerのみ読取・設定変更できる。新UIから作成した場合だけ公開フラグtrueになる |
 | 編集参加が無認証で直接呼ばれる | membershipの偽造 | join RPCはauth.uid()を必須にし、SECURITY DEFINERのサーバー処理だけでmembershipを作る。anonには実行権限を与えない | anonロールでjoin RPCを呼ぶと拒否される |
 | 閲覧者がwrite RPCを直接呼ぶ | UI制御を迂回して編集する | apply_party_edit_v2が毎回membership/roleを検証する。read-only public RPCは書き込み処理を持たない | public-viewer / anonからwrite RPCを呼んでも拒否される |
 | 発行者が公開編集を停止する | 既存メンバーまで意図せず退出させる | 公開編集フラグは新規join RPCだけを止め、既存membershipとwrite権限は維持する。特定メンバーの解除は別のowner専用RPCを使う | 編集OFF後の新規joinだけが拒否され、既存editorの保存・同期は継続する |
