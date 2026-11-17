@@ -696,7 +696,9 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(sharedUi, /\$\('#shared-public-edit-enabled'\)\.disabled = active\.publicViewEnabled === false/);
   assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default false/i);
-  assert.match(publicViewMigration, /set public_view_enabled = false,[\s\S]*?public_edit_enabled = false/);
+  assert.match(publicViewMigration, /public_view_enabled boolean not null default false/i);
+  assert.match(publicViewMigration, /public_edit_enabled boolean not null default false/i);
+  assert.doesNotMatch(publicViewMigration, /update public\.party_sessions\s+set public_view_enabled = false/i);
   const createSession = publicViewMigration.slice(
     publicViewMigration.indexOf('create or replace function public.create_party_session'),
     readStart,
@@ -753,6 +755,8 @@ test('removing an editor blocks rejoining with the same anonymous account', () =
   assert.match(removeFn, /insert into public\.session_access_requests/);
   assert.match(removeFn, /status = 'revoked'/);
   assert.match(removeFn, /rejoin_blocked',true/);
+  assert.match(publicViewMigration, /revoke all on function public\.remove_party_session_member\(uuid,uuid\) from public, anon/i);
+  assert.match(publicViewMigration, /grant execute on function public\.remove_party_session_member\(uuid,uuid\) to authenticated/i);
   assert.match(joinFn, /r\.status = 'revoked'/);
   assert.match(publicViewMigration, /create trigger party_session_member_broadcast[\s\S]*?after insert or delete or update of role on public\.session_members/i);
   assert.match(publicViewMigration, /event => 'membership_changed'/);
@@ -770,7 +774,9 @@ test('migration preserves existing private workspaces and initializes new worksp
   const createFn = publicViewMigration.slice(createStart, readStart);
   assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default false/i);
-  assert.match(publicViewMigration, /set public_view_enabled = false,[\s\S]*?public_edit_enabled = false/);
+  assert.match(publicViewMigration, /public_view_enabled boolean not null default false/i);
+  assert.match(publicViewMigration, /public_edit_enabled boolean not null default false/i);
+  assert.doesNotMatch(publicViewMigration, /update public\.party_sessions\s+set public_view_enabled = false/i);
   assert.match(createFn, /values \(v_title, v_user_id, true, true\)/);
   assert.match(design, /既存スペースの両方をfalse/);
   assert.match(design, /新規作成時に両方true/);
