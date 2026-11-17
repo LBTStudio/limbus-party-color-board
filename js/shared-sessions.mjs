@@ -115,7 +115,15 @@ export function createSharedSessions() {
   return {
     async readPublicSession(sessionId, { force = false } = {}) {
       const cacheKey = 'lpc-public-session:' + String(sessionId);
-      if (!force && typeof sessionStorage !== 'undefined') {
+      const client = await getClient();
+      const { data: authData, error: authError } = await client.auth.getSession();
+      if (authError) throw authError;
+      const authenticated = Boolean(authData.session);
+
+      // Only anonymous viewers use the short cache. Authenticated members must
+      // revalidate their role so an owner/editor can never be downgraded by a
+      // cached public-viewer snapshot.
+      if (!force && !authenticated && typeof sessionStorage !== 'undefined') {
         try {
           const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
           if (cached && Date.now() - cached.savedAt < 60000 && cached.data?.status === 'ok') {
@@ -123,16 +131,18 @@ export function createSharedSessions() {
           }
         } catch { /* Ignore malformed or unavailable session cache. */ }
       }
-      const client = await getClient();
       const { data, error } = await client.rpc('read_public_party_session', { p_session_id: sessionId });
       if (error) {
         const translated = new Error(error.message || '公開編成を読み込めませんでした。');
         translated.code = error.code;
         throw translated;
       }
-      if (data?.status === 'ok' && typeof sessionStorage !== 'undefined') {
+      if (!authenticated && data?.status === 'ok' && typeof sessionStorage !== 'undefined') {
         try {
-          sessionStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), data: { ...data, role: 'public-viewer' } }));
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            savedAt: Date.now(),
+            data: { ...data, role: 'public-viewer' },
+          }));
         } catch { /* Cache is optional and must not block viewing. */ }
       }
       return data;
