@@ -235,3 +235,17 @@ test('derived skill names appear in persona details and survive shared snapshots
   assert.match(styles, /\.slot-derived-names \{/);
   assert.match(migration, /'derivedNames',\s*to_jsonb\(v_derived_names\)/);
 });
+
+
+test('desktop board fits one viewport and reveals one selected persona while mobile retains the full list', () => {
+  assert.match(html, /class="panel matrix-panel"/);
+  assert.match(html, /class="panel party-panel"/);
+  assert.match(html, /id="party-title">選択人格の詳細/);
+  assert.match(app, /selectedDetailKey/);
+  assert.match(app, /data-action="select-persona"/);
+  assert.match(styles, /@media \(min-width: 1120px\) and \(min-height: 720px\)/);
+  assert.match(styles, /grid-template-areas:[\s\S]*?"matrix party"/);
+  assert.match(styles, /html,[\s\S]*?body \{[\s\S]*?height: 100%;[\s\S]*?overflow: hidden;/);
+  assert.match(styles, /\.persona-card:not\(\.is-selected-detail\) \{\s*display: none;/);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*?\.persona-card:not\(\.is-selected-detail\) \{\s*display: flex;/);
+});
