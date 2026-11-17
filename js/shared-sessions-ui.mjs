@@ -511,6 +511,7 @@ async function pollSession() {
     session.failures = 0;
     if (result.status === 'closed') {
       session.status = 'closed';
+      stopRealtime();
       statusMessage = '発行者がこのセッションを終了しました。編集は保存できません。';
       bridge.renderAll();
       render();
@@ -518,7 +519,9 @@ async function pollSession() {
       return;
     }
     const previousRole = session.role;
-    if (result.role) session.role = result.role;
+    if (result.role) session.role = result.role === 'viewer' ? 'public-viewer' : result.role;
+    if (result.public_view_enabled !== undefined) session.publicViewEnabled = result.public_view_enabled !== false;
+    if (result.public_edit_enabled !== undefined) session.publicEditEnabled = result.public_edit_enabled !== false;
     if (Array.isArray(result.members)) {
       session.ownerDisplayName = snapshotOwnerDisplayName(result, session.ownerDisplayName);
     }
@@ -552,16 +555,13 @@ async function pollSession() {
       session.revision = Math.max(session.revision, Number(result.revision) || 0);
     }
     render();
-    if (active === session && session.role === 'owner'
-      && Date.now() - (session.adminUpdatedAt || 0) >= 15000) {
-      await refreshAdmin();
-    }
   } catch (error) {
     if (/SESSION_ACCESS_DENIED|42501|permission denied|OWNER_REQUIRED/i.test(String(error.code || '') + ' ' + String(error.message || ''))) {
       session.accessRevoked = true;
       session.status = 'closed';
-      statusMessage = 'アクセス権が失効したか、セッションが終了されています。共有セッションを閉じてください。';
+      statusMessage = '編集参加権限が失効したか、セッションが終了されています。閲覧リンクが有効なら閲覧モードで開き直せます。';
       stopPolling();
+      stopRealtime();
       bridge.renderAll();
       render();
       session.pollBusy = false;
