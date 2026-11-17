@@ -632,9 +632,8 @@ async function updatePublicAccess() {
     const result = await getApi().setPublicAccess(active.sessionId, viewEnabled, editEnabled);
     active.publicViewEnabled = result.public_view_enabled !== false;
     active.publicEditEnabled = result.public_edit_enabled !== false;
-    if (!active.publicEditEnabled) admin = null;
-    else await refreshAdmin();
-    setStatus('公開設定を更新しました。' + (!active.publicEditEnabled ? ' 既存の編集参加者の編集権限も解除しました。' : ''));
+    await refreshAdmin();
+    setStatus('公開設定を更新しました。' + (!active.publicEditEnabled ? ' 新しい編集参加は停止しました。既存の編集参加者は個別に解除できます。' : ''));
   } catch (error) {
     $('#shared-public-view-enabled').checked = active.publicViewEnabled !== false;
     $('#shared-public-edit-enabled').checked = active.publicEditEnabled !== false;
