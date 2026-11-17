@@ -516,9 +516,8 @@ test('member capacity supports 16 within the 20-person cap and workspace lists s
   assert.match(design, /2,000,000\/月/);
 });
 
-test('shared links use a single view-and-edit URL without invite issuance', () => {
-  assert.match(html, /id="shared-tool-url"/);
-  assert.match(html, /id="shared-copy-tool-url">ツールURLをコピー/);
+test('shared links only expose the room-specific view-and-edit link', () => {
+  assert.doesNotMatch(html, /shared-tool-url|shared-copy-tool-url|ツールURL/);
   assert.match(html, /id="shared-copy-session-link">閲覧・編集リンクをコピー/);
   assert.match(html, /既に表示された情報やブラウザ内の60秒キャッシュは回収できません/);
   assert.match(html, /id="shared-join-edit"[^>]*>編集に参加/);
@@ -526,6 +525,8 @@ test('shared links use a single view-and-edit URL without invite issuance', () =
   assert.match(sharedUi, /function publicToolUrl\(\) \{\s*return location\.origin \+ location\.pathname;/);
   assert.match(sharedUi, /publicToolUrl\(\) \+ '#session='/);
   assert.match(sharedUi, /navigator\.clipboard\.writeText\(value\)/);
+  assert.match(sharedUi, /document\.execCommand\('copy'\)/);
+  assert.doesNotMatch(sharedUi, /shared-tool-url|shared-copy-tool-url|copyToolUrl/);
   assert.doesNotMatch(sharedUi, /addEventListener\('click', \(\) => issueInvite\(\)\)/);
 });
 
