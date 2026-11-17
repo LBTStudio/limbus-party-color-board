@@ -3651,7 +3651,7 @@ h2 {
 /* Desktop keeps the single-viewport board, with a 10px+ floor for dense table labels. */
 @media (min-width: 1120px) and (min-height: 720px) {
   .brand-kicker {
-    font-size: .66rem;
+    font-size: .7rem;
   }
 
   .topbar-meta,
@@ -3668,7 +3668,7 @@ h2 {
   .stats dt,
   .sin-chip,
   .res-chip {
-    font-size: .66rem;
+    font-size: .7rem;
   }
 
   .toolbar-more > summary,
@@ -3680,11 +3680,11 @@ h2 {
   .card-player-input,
   .passive,
   .slot-name {
-    font-size: .72rem;
+    font-size: .76rem;
   }
 
   .matrix thead th {
-    font-size: .68rem;
+    font-size: .7rem;
   }
 
   .matrix tbody th,
