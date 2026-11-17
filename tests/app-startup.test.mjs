@@ -243,6 +243,7 @@ test('desktop board fits one viewport and reveals one selected persona while mob
   assert.match(html, /id="party-title">選択人格の詳細/);
   assert.match(app, /selectedDetailKey/);
   assert.match(app, /data-action="select-persona"/);
+  assert.match(app, /class="passive" title=/);
   assert.match(styles, /@media \(min-width: 1120px\) and \(min-height: 720px\)/);
   assert.match(styles, /grid-template-areas:[\s\S]*?"matrix party"/);
   assert.match(styles, /html,[\s\S]*?body \{[\s\S]*?height: 100%;[\s\S]*?overflow: hidden;/);
