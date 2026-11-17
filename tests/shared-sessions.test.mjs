@@ -814,7 +814,7 @@ test('database creation stays private until the new client explicitly enables pu
   assert.ok(createFn.includes('values (v_title, v_user_id, false, false)'));
   assert.match(design, /追加カラムの `DEFAULT false` により既存スペースは従来どおり非公開/);
   assert.match(design, /公開編集を停止すると新規参加だけを拒否する/);
-  assert.match(design, /公開編集OFFは新規joinを拒否する一方、既存editorのreadとBroadcast認可を維持する/);
+  assert.match(design, /公開編集OFFは新しいjoinを拒否する一方、既存editorのreadとBroadcast認可を維持する/);
   assert.match(design, /ownerによる個別解除後は、同じ匿名Auth IDの再joinが `42501` で拒否され/);
   assert.doesNotMatch(design, /編集停止後に非owner membershipが消え/);
   assert.match(design, /テスト用auth.users／party_sessionsレコードも0件だった/);
