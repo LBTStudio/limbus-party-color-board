@@ -185,6 +185,25 @@ test('Realtime subscription closes revision gaps and cancels stale in-flight cha
   assert.match(connect, /schedulePoll\(15000\)/);
   assert.match(connect, /await getApi\(\)\.removeChannel\(pendingChannel\)/);
 });
+  
+test('snapshot polling queues overlapping revisions and ignores a save echo until the write resolves', () => {
+  const connectStart = sharedUi.indexOf('async function startRealtime(session)');
+  const connectEnd = sharedUi.indexOf('function stopPolling()', connectStart);
+  const pollStart = sharedUi.indexOf('async function pollSession()');
+  const pollEnd = sharedUi.indexOf('function applySnapshot(', pollStart);
+  const saveStart = sharedUi.indexOf('async function sendSave(session, operation)');
+  const saveEnd = sharedUi.indexOf('async function retrySave()', saveStart);
+  const connect = sharedUi.slice(connectStart, connectEnd);
+  const poll = sharedUi.slice(pollStart, pollEnd);
+  const save = sharedUi.slice(saveStart, saveEnd);
+  assert.match(connect, /if \(session\.saveBusy\) return/);
+  assert.match(connect, /if \(session\.saveBusy\) session\.pollQueued = true/);
+  assert.match(poll, /if \(session\.saveBusy \|\| session\.pollBusy\)/);
+  assert.match(poll, /session\.pollQueued = true/);
+  assert.match(poll, /const queued = finishPoll\(\)/);
+  assert.match(save, /if \(session\.pollQueued && !session\.accessRevoked/);
+});
+
 
 
 test('pending-request cap is checked before the request is inserted', () => {
