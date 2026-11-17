@@ -67,15 +67,28 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 
 現在の接続先は複数リポジトリで共有されているため、GitHub Integrationがどのリポジトリを参照しているかをコネクタから確認できていません。実際のIntegration設定を見ずに、mergeだけでこのPRのmigrationが本番に届くと判断しないでください。
 
-### 5.1 Supabase Branching の健全性確認
+### 5.1 Supabase Branching と既存migration履歴
 
-2026-11-17のSupabase Branch一覧では、既定の `main` ブランチが `MIGRATIONS_FAILED` と表示されていました（`updated_at` は 2026-10-23）。一方、このPRの `Supabase Preview` チェックは、feature branchがSupabase Branchに関連付いていないため `skipped` です。プレビューDBで今回のmigrationが実行されたとは扱わないでください。
+2026-11-17のSupabase Branch一覧では、既定の `main` branchが `MIGRATIONS_FAILED` と表示されていた。`updated_at` は2026-10-23のままで、新しい共有編成migrationの適用時刻とは一致しない。実際の失敗内容はDashboard → Branches → `main` → **View logs** で確認する必要がある。
 
-同じ時点で本番DBのmigration履歴には `lbt_account_vaults` 系の5件が記録されています。対応する現行SQLは別リポジトリ `LBTStudio/LIMBUS_BUILD_TERMINAL` に4ファイル確認できました。Git履歴では、初期バックアップmigrationの重複版 `202610260001` を削除し、残すファイル名を本番適用済みの `20261025211015` に合わせたこと、payload hash migrationも `20261026012000` から本番履歴の `20261025232745` へ改名したことを確認できました。一方、現行ファイル `202610260002_reject_anonymous_vault_access.sql` に対して本番履歴は `20261025215542_reject_anonymous_vault_access` で番号が異なり、本番履歴の `20261026001049_drop_stale_lbt_vault_policies` は現行ファイル一覧にありません。Git履歴で確認できる名称変更だけでは後者の出所を説明できず、現在の `MIGRATIONS_FAILED` の直接原因も確定していません。Supabaseプロジェクトが複数リポジトリで共有されているため、該当機能側の移行管理元とDashboardの失敗ログを照合してください。これらをこのリポジトリへ空のmigrationとして追加したり、履歴を推測でrepairしたりしないでください。
+ただし、今回の共有編成migrationはPreview branch経由ではなく、本番PostgreSQL 17.11に直接適用し、Postgres migration履歴に `20261117155808_public_view_open_edit_realtime` として登録されたことを確認済みである。追加カラム、RPC、Realtime policy、triggerも本番DBで確認した。**このversionを本番へ再度手動適用してはいけない。** 現在のGitブランチにも同じversion名のSQLファイルがあり、将来のmigration履歴照合に使える。
 
-本番反映前にDashboard → Branches → `main` → **View logs** で失敗したworkflow stepとSQLエラーを確認し、どのリポジトリが該当migrationを管理するかを照合してください。原因が分かるまではpreview branchのreset/rebase/deleteやmigration repairを行わないでください。Supabase公式の [MIGRATIONS_FAILED troubleshooting](https://supabase.com/kb/troubleshooting/branch-in-migrations-failed-status) も参照してください。
+このSupabaseプロジェクトはFreeプランで、Supabase BranchingのPreview環境は作成していない。GitHubの `Supabase Preview` がskipされても、この機能migrationの本番適用が失敗したことを意味しない。GitHub ActionsのNodeテストは別途成功している。
 
-**手動でSQL Editorから同じmigrationを実行するのは、GitHub連携で適用しない場合だけにしてください。** 両方を使うと migration 履歴がずれる可能性があります。
+このSupabaseプロジェクトは複数リポジトリで共有されている。本番migration履歴にはLBTアカウント保管機能の次のversionが記録されている。
+
+- `20261025211015_lbt_account_vaults`
+- `20261025212903_lbt_account_vault_access_hardening`
+- `20261025215542_reject_anonymous_vault_access`
+- `20261025232745_lbt_account_payload_hashes`
+- `20261026001049_drop_stale_lbt_vault_policies`
+
+現行の `LBTStudio/LIMBUS_BUILD_TERMINAL` には4つのmigrationファイルがあり、`202610260002_reject_anonymous_vault_access.sql` は本番履歴の `20261025215542` とversionが異なる。また `20261026001049_drop_stale_lbt_vault_policies` は現行ファイル一覧で見つからなかった。これらの既存差分がBranching `MIGRATIONS_FAILED` と関係する可能性はあるが、Dashboardの失敗ログなしに原因を断定しない。
+
+本番DBに今回のmigrationが適用済みであることと、Supabase GitHub Integrationが現在どのrepositoryをproduction branchとして参照しているかは別問題である。Project Settings → Integrationsで対象repository・Working directory・Production branch・Deploy to productionを確認すること。自動適用を利用する場合は、対象versionがmigration履歴に存在するため再実行されないことを確認し、SQL Editorから同じversionを重ねて実行しない。別リポジトリが管理元なら、既存migrationの復旧はそのリポジトリの管理下で行う。
+
+Branching `MIGRATIONS_FAILED` の原因を確定するまでは、branchのreset/rebase/deleteやmigration repairをしない。Supabase公式の [Branching troubleshooting](https://supabase.com/docs/guides/deployment/branching/troubleshooting) を参照。
+
 ### 5.2 Realtimeのprivate channel設定
 
 Supabase Dashboard → Project Settings → Realtime → **Allow public access to channels** を **OFF** にしてください。これにより、private channelへの接続時に `realtime.messages` のRLSポリシーが評価されます。このプロジェクトでは、セッションのowner/editorだけを `party:<session_id>` のBroadcast受信者として許可します。ONのままの場合、public channelに対してRLS認可が実行されず、意図したアクセス境界と異なるため、公開前の必須設定です。
