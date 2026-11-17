@@ -252,6 +252,21 @@ test('desktop board fits one viewport and reveals one selected persona while mob
 });
 
 
+test('desktop typography overrides raise matrix, toolbar, controls, chips, and supporting labels to a readable scale', () => {
+  const start = styles.lastIndexOf('/* Desktop readability correction:');
+  assert.ok(start >= 0, 'the final desktop readability correction is present');
+  const desktop = styles.slice(start);
+  assert.match(desktop, /@media \(min-width: 1120px\)/);
+  assert.match(desktop, /\.matrix \{\s*font-size: \.82rem;/);
+  assert.match(desktop, /\.matrix thead th,[\s\S]*?font-size: \.78rem;/);
+  assert.match(desktop, /\.member-label \{\s*font-size: \.76rem;/);
+  assert.match(desktop, /\.resource-name \{\s*font-size: \.9rem;/);
+  assert.match(desktop, /\.control label,[\s\S]*?font-size: \.8rem;/);
+  assert.match(desktop, /\.shared-join-choice \.hint \{\s*font-size: \.8rem;/);
+  assert.match(desktop, /\.stats dd \{\s*font-size: \.92rem;/);
+  assert.doesNotMatch(desktop, /font-size:\s*\.5[0-9]rem/);
+});
+
 test('typography audit keeps supporting text and compact desktop labels above the tiny-text range', () => {
   const auditStart = styles.lastIndexOf('/* Typography audit:');
   assert.ok(auditStart >= 0, 'the audited type scale is documented at the end of the stylesheet');
