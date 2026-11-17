@@ -55,6 +55,12 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
 
 **手動でSQL Editorから同じmigrationを実行するのは、GitHub連携で適用しない場合だけにしてください。** 両方を使うと migration 履歴がずれる可能性があります。
+### 5.1 Realtimeのprivate channel設定
+
+Supabase Dashboard → Project Settings → Realtime → **Allow public access to channels** を **OFF** にしてください。これにより、private channelへの接続時に `realtime.messages` のRLSポリシーが評価されます。このプロジェクトでは、セッションのowner/editorだけを `party:<session_id>` のBroadcast受信者として許可します。ONのままの場合、public channelに対してRLS認可が実行されず、意図したアクセス境界と異なるため、公開前の必須設定です。
+
+フロントエンドも `config.private: true` で接続し、DB側の `realtime.send(..., private => true)` と一致させます。どちらか一方だけprivateにしても配信は成立しません。詳しくはSupabaseの [Realtime Authorization](https://supabase.com/docs/guides/realtime/authorization)、[Realtime Settings](https://supabase.com/docs/guides/realtime/settings)、[Broadcast](https://supabase.com/docs/guides/realtime/broadcast) を参照してください。
+
 ## 6. 動作確認
 
 新しい読み取り・直接編集方式を使うには、既存マイグレーションの後に `202611170001_public_view_open_edit_realtime.sql` を適用し、その後GitHub Pagesを更新してください。フロントエンドだけ先に公開すると新RPCが見つからず共有機能が利用できません。既存の共有スペースは公開閲覧・公開編集ともOFFのまま移行されます。新規作成スペースは両方ONで作成されます。
