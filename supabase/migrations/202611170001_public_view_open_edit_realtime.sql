@@ -4,11 +4,6 @@ alter table public.party_sessions
   add column if not exists public_view_enabled boolean not null default false,
   add column if not exists public_edit_enabled boolean not null default false;
 
-update public.party_sessions
-set public_view_enabled = false,
-    public_edit_enabled = false
-where archived_at is null;
-
 create or replace function public.create_party_session(
   p_title text,
   p_display_name text default '編成主'
@@ -459,6 +454,7 @@ using (
 revoke all on function public.read_public_party_session(uuid) from public;
 revoke all on function public.join_public_party_session(uuid,text) from public, anon;
 revoke all on function public.set_public_party_access(uuid,boolean,boolean) from public, anon;
+revoke all on function public.remove_party_session_member(uuid,uuid) from public, anon;
 revoke all on function public.can_receive_party_broadcast(text) from public, anon;
 revoke all on function public.broadcast_party_revision() from public, anon, authenticated;
 revoke all on function public.broadcast_party_membership_change() from public, anon, authenticated;
@@ -466,4 +462,5 @@ revoke all on function public.broadcast_party_membership_change() from public, a
 grant execute on function public.read_public_party_session(uuid) to anon, authenticated;
 grant execute on function public.join_public_party_session(uuid,text) to authenticated;
 grant execute on function public.set_public_party_access(uuid,boolean,boolean) to authenticated;
+grant execute on function public.remove_party_session_member(uuid,uuid) to authenticated;
 grant execute on function public.can_receive_party_broadcast(text) to authenticated;
