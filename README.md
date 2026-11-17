@@ -68,7 +68,7 @@ LBTのセーブデータを直接読めるのは、**同じブラウザプロフ
 
 Supabase Freeの通常Egress枠は月5GBです。したがって50,000回の最大サイズ相当取得は、他の通信を含める前に余裕が小さくなります。実際の閲覧スナップショットは60KB未満のことが多いものの、利用量を見ずに大量アクセスへの耐性を保証するものではありません。
 
-Realtimeの通知量は「編集保存回数 × (送信1件＋その時点で受信する編集者数)」で増えます。Supabase FreeのRealtime Messages枠は月200万件、同時接続は200です。Presenceや編成データ全体のBroadcastは使わず、revision通知だけに限定します。公開後はSupabase Dashboardで通常Egress、Realtime Messages、Peak Connections、Database Size、DB負荷を監視してください。
+Realtimeの通知量は「編集保存回数 × (送信1件＋その時点で受信する編集者数)」で増えます。Supabase FreeのRealtime Messages枠は月200万件、同時接続は200です。Presenceや編成データ全体のBroadcastは使わず、revision通知だけに限定します。private channelのRLS認可を強制するため、Supabase DashboardのRealtime Settingsで `Allow public access to channels` をOFFにしてください。公開後はSupabase Dashboardで通常Egress、Realtime Messages、Peak Connections、Database Size、DB負荷を監視してください。
 
 閲覧をCDNへ移すには、DB更新と同時に安全なrevision別スナップショットをStorageへ公開する仕組みが別途必要です。現在の実装では整合性を優先し、その仕組みを導入したとは扱いません。
 
