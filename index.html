@@ -93,7 +93,7 @@
     <div id="resource-cards" class="resource-grid" aria-live="polite"></div>
   </section>
 
-  <section class="panel" aria-labelledby="matrix-title">
+  <section class="panel matrix-panel" aria-labelledby="matrix-title">
     <div class="section-head">
       <div>
         <p class="kicker">AT A GLANCE</p>
@@ -111,15 +111,15 @@
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="party-title">
+  <section class="panel party-panel" aria-labelledby="party-title">
     <div class="section-head">
       <div>
         <p class="kicker">COMPOSITION</p>
-        <h2 id="party-title">人格詳細</h2>
+        <h2 id="party-title">選択人格の詳細</h2>
       </div>
       <p class="section-meta" id="party-count-2">0名</p>
     </div>
-    <p class="hint persona-color-legend" id="persona-color-legend"><strong>色帯の見方：</strong>色帯の上にある数字0〜4は、左からS0→S4のスキル番号です。各区画の色は、下段の同じ番号のスキルに設定された罪悪属性を示します。色帯自体の高さは4pxのままです。</p>
+    <p class="hint persona-color-legend" id="persona-color-legend"><strong>色帯の見方：</strong>色帯の上にある数字0〜4は、左からS0→S4のスキル番号です。各区画の色は、下段の同じ番号のスキルに設定された罪悪属性を示します。デスクトップではマトリクスの人格名を選ぶと詳細が切り替わります。</p>
     <div id="party-cards" class="party-grid"></div>
     <div id="empty-state" class="empty" hidden>
       <p>編成が空です。「＋ 人格を追加」から人格を選んでください。</p>
@@ -169,11 +169,6 @@
       <div class="control-actions shared-actions">
         <button type="button" class="btn" id="shared-create">＋ 共有スペースを作成</button>
         <button type="button" class="btn btn-ghost" id="shared-refresh">参加中のスペースを更新</button>
-      </div>
-      <div class="shared-invite-tools shared-tool-url-tools">
-        <label for="shared-tool-url">ツールURL</label>
-        <div class="shared-copy-row"><input class="input" id="shared-tool-url" type="text" readonly value="公開URLを読み込んでいます"><button type="button" class="btn btn-ghost" id="shared-copy-tool-url">ツールURLをコピー</button></div>
-        <p class="hint">個別の編成を共有する場合は、開いたスペース内の「閲覧・編集リンクをコピー」を使用してください。</p>
       </div>
       <div id="shared-session-list" class="shared-list" aria-label="この端末が編集参加している共有スペース一覧"></div>
 
