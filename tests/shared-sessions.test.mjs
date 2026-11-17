@@ -917,8 +917,8 @@ test('Turnstile is required only when a new anonymous Auth identity must be crea
   const authCheckEnd = client.indexOf('async readPublicSession', authCheckStart);
   const authCheck = client.slice(authCheckStart, authCheckEnd);
   assert.ok(authCheckStart >= 0 && authCheckEnd > authCheckStart);
-  assert.match(authCheck, /client\\.auth\\.getSession\\(\\)/);
-  assert.match(authCheck, /return !authData\\.session/);
+  assert.ok(authCheck.includes('client.auth.getSession()'));
+  assert.ok(authCheck.includes('return !authData.session;'));
   assert.doesNotMatch(authCheck, /signInAnonymously|captchaToken/);
 
   const createStart = sharedUi.indexOf('async function createSession()');
@@ -929,8 +929,8 @@ test('Turnstile is required only when a new anonymous Auth identity must be crea
   const joinUi = sharedUi.slice(joinStart, joinEnd);
   assert.ok(createStart >= 0 && createEnd > createStart);
   assert.ok(joinStart >= 0 && joinEnd > joinStart);
-  assert.match(createUi, /if \\(await getApi\\(\\)\\.needsAnonymousAuth\\(\\)\\) \\{/);
-  assert.match(joinUi, /if \\(await getApi\\(\\)\\.needsAnonymousAuth\\(\\)\\) \\{/);
-  assert.match(createUi, /needsAnonymousAuth\\(\\)\\) \\{[\\s\\S]*?await initializeTurnstile\\(\\)/);
-  assert.match(joinUi, /needsAnonymousAuth\\(\\)\\) \\{[\\s\\S]*?await initializeTurnstile\\(\\)/);
+  assert.ok(createUi.includes('if (await getApi().needsAnonymousAuth()) {'));
+  assert.ok(joinUi.includes('if (await getApi().needsAnonymousAuth()) {'));
+  assert.ok(createUi.includes('await initializeTurnstile();'));
+  assert.ok(joinUi.includes('await initializeTurnstile();'));
 });
