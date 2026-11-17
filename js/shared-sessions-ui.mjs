@@ -459,6 +459,12 @@ async function startRealtime(session) {
   try {
     const channel = await getApi().subscribeSession(session.sessionId, (payload) => {
       if (active !== session) return;
+      if (payload?._event === 'membership_changed') {
+        if (session.role === 'owner') void refreshAdmin();
+        if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+        realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 150);
+        return;
+      }
       const nextRevision = Number(payload?.revision) || 0;
       if (nextRevision <= session.revision) return;
       if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
