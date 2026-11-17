@@ -271,6 +271,7 @@ function render() {
   $('#shared-join-edit').disabled = Boolean(active.controlBusy);
   $('#shared-copy-session-link').hidden = false;
   $('#shared-refresh-snapshot').hidden = false;
+  $('#shared-refresh-snapshot').disabled = Boolean(active.controlBusy);
   $('#shared-archive').hidden = !owner;
   $('#shared-leave').disabled = active.saveBusy || Boolean(active.controlBusy);
   $('#shared-retry-save').hidden = !active.retry || active.status !== 'unsaved';
