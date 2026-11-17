@@ -438,7 +438,7 @@ $$;
 
 drop trigger if exists party_session_member_broadcast on public.session_members;
 create trigger party_session_member_broadcast
-after insert or delete or update of role on public.session_members
+after insert or delete or update on public.session_members
 for each row execute function public.broadcast_party_membership_change();
 
 drop policy if exists party_editors_receive_revision_broadcast on realtime.messages;
