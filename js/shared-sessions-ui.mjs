@@ -8,11 +8,9 @@ let personalPartySnapshot = null;
 let sessions = [];
 let admin = null;
 let inviteUrl = '';
-let pendingRequestSessionId = null;
 let statusMessage = '';
 let sharedPanelOpen = false;
 let pollTimer = null;
-let accessTimer = null;
 let realtimeChannel = null;
 let realtimeConnected = false;
 let realtimeRefreshTimer = null;
@@ -393,7 +391,6 @@ async function activateSession(sessionId, prefetched = null) {
     pollBusy: false,
     adminUpdatedAt: 0,
   };
-  pendingRequestSessionId = null;
   admin = null;
   inviteUrl = '';
   setSharedPanelOpen(true);
@@ -828,8 +825,6 @@ function leaveSession() {
   }
   stopPolling();
   stopRealtime();
-  if (accessTimer) clearTimeout(accessTimer);
-  accessTimer = null;
   const old = active;
   active = null;
   admin = null;
@@ -850,58 +845,14 @@ function handleVisibility() {
   if (document.hidden) {
     stopPolling();
     stopRealtime();
-    if (accessTimer) clearTimeout(accessTimer);
-    accessTimer = null;
     return;
   }
   if (active && !active.accessRevoked && ['owner', 'editor'].includes(active.role)) {
     void pollSession();
     void startRealtime(active);
   }
-  if (pendingRequestSessionId) scheduleAccessCheck(500);
 }
 
-function scheduleAccessCheck(delay = 15000) {
-  if (accessTimer) clearTimeout(accessTimer);
-  if (!pendingRequestSessionId || document.hidden) return;
-  accessTimer = setTimeout(async () => {
-    await checkAccess(true);
-    if (pendingRequestSessionId && !document.hidden) scheduleAccessCheck(15000);
-  }, delay);
-}
-
-async function checkAccess(quiet = false) {
-  const sessionId = pendingRequestSessionId;
-  if (!sessionId) return;
-  try {
-    const result = await getApi().checkAccess(sessionId, displayName());
-    if (result.status === 'approved') {
-      try {
-        // Keep the approved request pending until activation succeeds. If the
-        // current session has unsaved edits, activateSession rejects switching;
-        // retain the request so polling can retry after the user resolves them.
-        await activateSession(sessionId);
-      } catch (error) {
-        setStatus('参加が承認されましたが、現在の編成を切り替えられません: ' + error.message);
-        scheduleAccessCheck(15000);
-        return;
-      }
-      if (accessTimer) clearTimeout(accessTimer);
-      accessTimer = null;
-      pendingRequestSessionId = null;
-    } else if (['denied', 'revoked', 'not_requested', 'closed'].includes(result.status)) {
-      if (accessTimer) clearTimeout(accessTimer);
-      accessTimer = null;
-      pendingRequestSessionId = null;
-      setRoute('');
-      setStatus(result.status === 'closed' ? 'このセッションは終了しています。' : '参加申請の状態は「' + result.status + '」です。発行者へ確認してください。');
-    } else if (!quiet) {
-      setStatus('まだ承認されていません。承認後は自動で共有編成を開きます。');
-    }
-  } catch (error) {
-    if (!quiet) setStatus('承認状態を確認できませんでした: ' + error.message);
-  }
-}
 
 function captureInitialRoute() {
   const params = new URLSearchParams(location.hash.slice(1));
