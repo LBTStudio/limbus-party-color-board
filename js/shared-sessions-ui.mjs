@@ -278,6 +278,7 @@ function render() {
   $('#shared-public-settings').hidden = !owner;
   $('#shared-public-view-enabled').checked = active.publicViewEnabled !== false;
   $('#shared-public-edit-enabled').checked = active.publicEditEnabled !== false;
+  $('#shared-public-edit-enabled').disabled = active.publicViewEnabled === false;
   $('#shared-admin').hidden = !owner || !admin;
   if (owner && admin) renderAdmin(admin);
 }
@@ -625,7 +626,8 @@ async function copySessionLink() {
 async function updatePublicAccess() {
   if (!active || active.role !== 'owner') return;
   const viewEnabled = $('#shared-public-view-enabled').checked;
-  const editEnabled = $('#shared-public-edit-enabled').checked;
+  const editEnabled = viewEnabled && $('#shared-public-edit-enabled').checked;
+  if (!viewEnabled) $('#shared-public-edit-enabled').checked = false;
   try {
     const result = await getApi().setPublicAccess(active.sessionId, viewEnabled, editEnabled);
     active.publicViewEnabled = result.public_view_enabled !== false;
