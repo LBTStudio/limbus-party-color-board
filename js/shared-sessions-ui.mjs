@@ -7,7 +7,6 @@ let active = null;
 let personalPartySnapshot = null;
 let sessions = [];
 let admin = null;
-let inviteUrl = '';
 let statusMessage = '';
 let sharedPanelOpen = false;
 let pollTimer = null;
@@ -204,7 +203,7 @@ function activeStatusLabel() {
   return labels[active.status] || '同期中';
 }
 
-function setSharedPanelOpen(open, { focusRequests = false } = {}) {
+function setSharedPanelOpen(open) {
   sharedPanelOpen = Boolean(open);
   const panel = $('#shared-panel');
   const toggle = $('#shared-panel-toggle');
@@ -213,16 +212,8 @@ function setSharedPanelOpen(open, { focusRequests = false } = {}) {
   toggle.setAttribute('aria-expanded', String(sharedPanelOpen));
   const label = $('#shared-panel-toggle-label');
   const mark = $('.shared-toggle-mark');
-  if (label) label.textContent = sharedPanelOpen ? '管理を閉じる' : '管理を開く';
+  if (label) label.textContent = sharedPanelOpen ? '閉じる' : '共有スペース';
   if (mark) mark.textContent = sharedPanelOpen ? '−' : '＋';
-  if (sharedPanelOpen && focusRequests) {
-    const requestHeading = $('#shared-requests h3');
-    if (requestHeading) {
-      requestHeading.tabIndex = -1;
-      requestHeading.scrollIntoView({ behavior: 'auto', block: 'start' });
-      requestHeading.focus({ preventScroll: true });
-    }
-  }
 }
 
 function render() {
@@ -824,7 +815,6 @@ function leaveSession() {
   const old = active;
   active = null;
   admin = null;
-  inviteUrl = '';
   setRoute('');
   if (personalPartySnapshot) bridge.setPartyKeys(personalPartySnapshot);
   personalPartySnapshot = null;
