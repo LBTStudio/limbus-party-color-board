@@ -258,8 +258,8 @@ test('typography audit keeps supporting text and compact desktop labels above th
   const audit = styles.slice(auditStart);
   assert.match(audit, /\.hint \{\s*font-size: \.8rem;/);
   assert.match(audit, /\.matrix \{\s*font-size: \.76rem;/);
-  assert.match(audit, /\.matrix thead th \{\s*font-size: \.68rem;/);
-  assert.match(audit, /\.member-label,\s*\.slot-chip[\s\S]*?font-size: \.66rem;/);
+  assert.match(audit, /\.matrix thead th \{\s*font-size: \.7rem;/);
+  assert.match(audit, /\.member-label,\s*\.slot-chip[\s\S]*?font-size: \.7rem;/);
   assert.match(audit, /\.shared-panel:not\(\.is-open\) \.shared-panel-toggle \{\s*font-size: \.76rem;/);
   assert.doesNotMatch(audit, /font-size:\s*\.5[0-9]rem/);
 });
