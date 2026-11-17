@@ -117,6 +117,19 @@ begin
       updated_at = now()
   where id = p_session_id;
 
+  -- Notify connected editors without incrementing the party-content revision.
+  begin
+    perform realtime.send(
+      payload => jsonb_build_object('member_limit', p_member_limit),
+      event => 'party_changed',
+      topic => 'party:' || p_session_id::text,
+      private => true
+    );
+  exception when others then
+    -- A disconnected Realtime service must not undo the durable cap update.
+    null;
+  end;
+
   return jsonb_build_object(
     'status', 'updated',
     'member_limit', p_member_limit,
@@ -315,6 +328,50 @@ begin
 end;
 $function$
 
+
+-- Return the current cap even when the party revision is unchanged.
+
+
+CREATE OR REPLACE FUNCTION public.poll_party_session(p_session_id uuid, p_after_revision bigint DEFAULT '-1'::integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog'
+AS $function$
+declare
+  v_user_id uuid := auth.uid();
+  v_revision bigint;
+  v_role text;
+  v_archived timestamptz;
+  v_public_view_enabled boolean;
+  v_public_edit_enabled boolean;
+  v_member_limit integer;
+  v_snapshot jsonb;
+begin
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
+  select s.revision,s.archived_at,m.role,s.public_view_enabled,s.public_edit_enabled,s.member_limit
+    into v_revision,v_archived,v_role,v_public_view_enabled,v_public_edit_enabled,v_member_limit
+  from public.party_sessions s
+  join public.session_members m on m.session_id=s.id and m.user_id=v_user_id
+  where s.id=p_session_id;
+  if not found then raise exception 'SESSION_ACCESS_DENIED' using errcode = '42501'; end if;
+  if v_archived is not null then
+    return jsonb_build_object('status','closed','session_id',p_session_id,'revision',v_revision,'role',v_role,'member_limit',v_member_limit);
+  end if;
+  if v_revision=p_after_revision then
+    return jsonb_build_object(
+      'status','unchanged','session_id',p_session_id,'revision',v_revision,'role',v_role,
+      'public_view_enabled',v_public_view_enabled,'public_edit_enabled',v_public_edit_enabled,'member_limit',v_member_limit
+    );
+  end if;
+  v_snapshot := public._party_session_snapshot(p_session_id);
+  return v_snapshot || jsonb_build_object(
+    'public_view_enabled',v_public_view_enabled,
+    'public_edit_enabled',v_public_edit_enabled,
+    'member_limit',v_member_limit
+  );
+end;
+$function$
 
 revoke all on function public.set_party_session_member_limit(uuid,integer) from public, anon;
 grant execute on function public.set_party_session_member_limit(uuid,integer) to authenticated;
