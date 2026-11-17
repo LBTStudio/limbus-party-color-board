@@ -661,9 +661,10 @@ test('main board groups roster maintenance actions and gives sharing a clear per
   assert.ok(html.includes('id="shared-panel-toggle-label">共有・共同編集を開く'));
   assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-content'));
   assert.ok(styles.includes('position: fixed;'));
-  assert.ok(styles.includes('.shared-panel,\\n  .card-actions'));
-  assert.match(styles, /\\.shared-panel:not\\(\\.is-open\\) \\.shared-panel-toggle \\{[\\s\\S]*?background: linear-gradient/);
-  assert.doesNotMatch(sharedUi, /a\\[href="#shared-panel"\\]/);
+  assert.ok(styles.includes('.shared-panel,\n  .card-actions'));
+  assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-toggle {'));
+  assert.ok(styles.includes('background: linear-gradient(135deg, #e6cc77, #c49e46);'));
+  assert.ok(!sharedUi.includes('a[href="#shared-panel"]'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
   assert.ok(sharedUi.includes("$('#shared-join-edit').addEventListener('click', () => enterEditMode())"));
   assert.ok(sharedUi.includes("$('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot())"));
