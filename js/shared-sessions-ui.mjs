@@ -184,9 +184,6 @@ function renderAdmin(data) {
       item.display_name,
       roleLabel(item.role) + ' · ID ' + String(item.user_id).slice(0, 8),
       item.role === 'owner' ? [] : [
-        ...(item.role === 'viewer' ? [makeActionButton('編集者に変更', 'shared-set-member-role', {
-          userId: item.user_id, role: 'editor',
-        }, true)] : []),
         makeActionButton('編集参加を解除', 'shared-remove-member', { userId: item.user_id }),
       ],
     ),
@@ -392,7 +389,6 @@ async function activateSession(sessionId, prefetched = null) {
     adminUpdatedAt: 0,
   };
   admin = null;
-  inviteUrl = '';
   setSharedPanelOpen(true);
   setRoute('session=' + active.sessionId);
   bridge.setPartyKeys(snapshot.party_keys, remotePersonas(snapshot));
@@ -829,7 +825,6 @@ function leaveSession() {
   active = null;
   admin = null;
   inviteUrl = '';
-  pendingRequestSessionId = null;
   setRoute('');
   if (personalPartySnapshot) bridge.setPartyKeys(personalPartySnapshot);
   personalPartySnapshot = null;
@@ -862,14 +857,14 @@ function captureInitialRoute() {
     requestedSessionId: params.get('request'),
   };
 
-  // Route links open the collaboration area directly rather than leaving
-  // invited users at the top of the unrelated personal-board interface.
+  // Shared-session links open the collaboration area directly rather than
+  // leaving visitors at the top of the unrelated personal-board interface.
   if (route.token || route.sessionId || route.requestedSessionId) {
     setSharedPanelOpen(true);
   }
 
-  // Invite tokens are bearer-like secrets. Remove them before any third-party
-  // script is loaded, while keeping the captured token only in this closure.
+  // Legacy invite tokens are bearer-like secrets. Remove them before any
+  // third-party script is loaded, then show the invite-retired notice.
   if (route.token) setRoute('');
   return route;
 }
@@ -908,11 +903,6 @@ async function handleSharedClick(event) {
         break;
       case 'shared-remove-member':
         await removeMember(button.dataset.userId);
-        break;
-      case 'shared-set-member-role':
-        await getApi().setMemberRole(active.sessionId, button.dataset.userId, button.dataset.role);
-        await refreshAdmin();
-        setStatus('参加者の権限を' + roleLabel(button.dataset.role) + 'に変更しました。');
         break;
       default:
         break;
