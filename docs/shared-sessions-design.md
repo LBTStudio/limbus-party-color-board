@@ -47,7 +47,7 @@
 
 ## 編集者の同期
 
-編集者のみが `party:<session_id>` のprivate Broadcastチャンネルへ接続する。Realtime AuthorizationのRLSポリシーは `session_members` にowner/editorとして存在する認証ユーザーだけに受信を許可する。
+編集者のみが `party:<session_id>` のprivate Broadcastチャンネルへ接続する。Realtime AuthorizationのRLSポリシーは `session_members` にowner/editorとして存在する認証ユーザーだけに受信を許可する。Supabase DashboardのRealtime Settingsでは `Allow public access to channels` をOFFにして、このprivate channel RLS認可を強制する。
 
 Postgresのrevision更新トリガーは `realtime.send()` で `party_changed` イベントを送る。payloadにはrevision番号だけを含め、`party_keys` や `party_personas` は含めない。通知を受けたクライアントは既存の認可付きpoll RPCで最新版を取得する。送信者自身は保存RPCの応答を利用する。
 
