@@ -19,19 +19,19 @@ GitHub Integration が適用するのは未適用の migration など所定の�
 
 - セッション、参加者、招待、アクセス申請、編集履歴、許可済み人格キーのテーブル
 - ブラウザからの直接テーブルアクセスを禁止する権限と RLS
-- セッション作成・招待・承認／却下・閲覧者／編集者の変更・権限剥奪・同期・競合検知用 RPC
+- セッション作成・公開読み取り・直接編集参加・編集参加者解除・同期・競合検知用 RPC（旧セッション用の招待・承認RPCは互換性のため残存）
 
 この SQL は初期導入用です。すでに一部テーブルを手作業で作成した場合や、SQL の途中で失敗した場合は、エラーの状態を確認してから再実行してください。すべての既存テーブルを削除するような操作は含めていませんが、実行結果を確認してください。
 
 ## 3. 匿名ログインを有効化
 
-Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous Sign-Ins** を有効にする。必要な設定場所は Supabase の [Anonymous Sign-Ins 公式説明](https://supabase.com/docs/guides/auth/auth-anonymous) を参照。共有リンクを開く側も、編成へのアクセス申請を送るための匿名ユーザーとして認証される。メールアドレスやパスワードは現行の初期実装では要求しない。
+Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous Sign-Ins** を有効にする。必要な設定場所は Supabase の [Anonymous Sign-Ins 公式説明](https://supabase.com/docs/guides/auth/auth-anonymous) を参照。閲覧だけなら匿名認証は不要です。編集参加・共有スペース作成の操作時に匿名Authを裏側で使います。メールアドレスやパスワードは要求しません。
 
 ### 重要な制約
 
 匿名ユーザーの ID はブラウザの保存領域に紐づきます。ブラウザのデータ削除、別ブラウザ／別端末への移行、ログアウトなどで元の ID を失うと、その ID が所有していたセッションや編集者権限を復旧できません。表示名は本人確認ではありません。
 
-匿名サインインは第三者に悪用される可能性があるため、Supabase の Auth rate limit を確認し、公開範囲を広げる前に上記の CAPTCHA / Turnstile を必ず設定してください。
+匿名サインインは編集参加・スペース作成のタイミングだけで使います。第三者に悪用される可能性があるため、Supabase の Auth rate limit を確認し、編集参加を広く許可する前に上記の CAPTCHA / Turnstile を設定してください。
 
 ## 4. 公開前に必須：Cloudflare Turnstile / CAPTCHA
 
