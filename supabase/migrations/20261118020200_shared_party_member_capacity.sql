@@ -183,7 +183,7 @@ begin
     'members',v_members,'member_limit',v_session.member_limit
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.list_my_party_sessions()
@@ -220,7 +220,7 @@ begin
 
   return v_result;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.list_party_session_admin(p_session_id uuid)
@@ -263,7 +263,7 @@ begin
   return jsonb_build_object('requests',v_requests,'members',v_members,'invites',v_invites,
     'member_limit',v_member_limit,'member_count',v_member_count);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.read_public_party_session(p_session_id uuid)
@@ -326,7 +326,7 @@ begin
     'member_limit', v_session.member_limit
   );
 end;
-$function$
+$function$;
 
 
 -- Return the current cap even when the party revision is unchanged.
@@ -371,7 +371,7 @@ begin
     'member_limit',v_member_limit
   );
 end;
-$function$
+$function$;
 
 revoke all on function public.set_party_session_member_limit(uuid,integer) from public, anon;
 grant execute on function public.set_party_session_member_limit(uuid,integer) to authenticated;
