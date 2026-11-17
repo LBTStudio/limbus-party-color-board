@@ -1239,7 +1239,6 @@ export async function initializeSharedSessionsUi(callbacks) {
     else if (nextOpen && !active) void refreshSessions();
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
-  const displayNameInput = $('#shared-display-name');
   displayNameInput.addEventListener('compositionstart', () => {
     displayNameComposing = true;
     if (displayNameSyncTimer) clearTimeout(displayNameSyncTimer);
