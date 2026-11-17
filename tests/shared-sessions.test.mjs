@@ -372,6 +372,7 @@ test('shared-session admin actions are bound to their captured session and block
   assert.match(sharedUi, /function leaveSession\(\)[\s\S]*?active\.controlBusy[\s\S]*?共有設定・参加者管理の処理中です。完了してから共有セッションを閉じてください。/);
   assert.match(sharedUi, /async function updatePublicAccess\(\)[\s\S]*?const session = active;[\s\S]*?setPublicAccess\(session\.sessionId/);
   assert.match(sharedUi, /async function updatePublicAccess\(\)[\s\S]*?session\.controlBusy = true;\s*render\(\);/);
+  assert.match(sharedUi, /session\.controlBusy = true;\s*render\(\);\s*\/\/ Keep the requested values visible while the controls are locked\.[\s\S]*?\.checked = viewEnabled;[\s\S]*?\.checked = editEnabled;/);
   assert.match(sharedUi, /async function removeMember\(userId\)[\s\S]*?const session = active;[\s\S]*?removeMember\(session\.sessionId, userId\)/);
   assert.match(sharedUi, /async function removeMember\(userId\)[\s\S]*?session\.controlBusy = true;\s*render\(\);/);
   assert.match(sharedUi, /async function archiveActive\(\)[\s\S]*?const session = active;[\s\S]*?if \(active === session\)[\s\S]*?leaveSession\(\)/);
