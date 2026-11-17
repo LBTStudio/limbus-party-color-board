@@ -51,6 +51,7 @@ const state = {
   resourceSort: 'count-desc',
   skillSortSlot: 'all',
   selectedSin: null,
+  selectedDetailKey: '',
   previousPartySort: 'default',
   pickerIndex: null,
   pendingAdd: false,
@@ -592,6 +593,13 @@ function handleClick(event) {
       case 'select-sin':
         toggleSin(action.dataset.sin);
         break;
+      case 'select-persona':
+        if (state.map.has(action.dataset.key)) {
+          state.selectedDetailKey = action.dataset.key;
+          renderMatrix();
+          renderParty();
+        }
+        break;
       case 'edit-member':
         openPicker(Number(action.dataset.index));
         break;
@@ -716,6 +724,9 @@ function renderPassiveCondition(condition) {
 function renderMatrix() {
   const result = state.lastAggregate;
   const sorted = sortParty(state.party, state.partySort, state.selectedSin, state.map, state.skillSortSlot);
+  if (!sorted.some((entry) => entry.key === state.selectedDetailKey)) {
+    state.selectedDetailKey = sorted[0]?.key || '';
+  }
 
   let head = '<tr><th class="member-head" scope="col">人格</th>';
   for (let index = 0; index < 5; index++) {
@@ -732,8 +743,9 @@ function renderMatrix() {
     const persona = state.map.get(entry.key);
     if (!persona) continue;
     const slot = state.party.findIndex((item) => item.key === entry.key) + 1;
-    body += '<tr>';
-    body += `<th scope="row" class="member"><span class="member-label">${escapeHtml(entry.playerName || 'PL未設定')}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></th>`;
+    const isSelectedDetail = state.selectedDetailKey === entry.key;
+    body += `<tr class="${isSelectedDetail ? 'is-selected-detail' : ''}">`;
+    body += `<th scope="row" class="member"><button type="button" class="matrix-persona-select" data-action="select-persona" data-key="${escapeHtml(entry.key)}" aria-pressed="${isSelectedDetail}"><span class="member-label">${escapeHtml(entry.playerName || 'PL未設定')}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></button></th>`;
     for (const skillSlot of persona.slots) {
       const chips = skillSlot.colors.map((sin) => (
         `<span class="slot-chip" style="--sin:${SIN_META[sin].color}">${escapeHtml(sin)}</span>`
@@ -792,6 +804,7 @@ function renderParty() {
       'persona-card',
       state.selectedSin && colorCount === 0 ? 'is-dim' : '',
       state.selectedSin && colorCount > 0 ? 'is-hot' : '',
+      state.selectedDetailKey === entry.key ? 'is-selected-detail' : '',
     ].filter(Boolean).join(' ');
     const counts = Object.fromEntries(SIN_ORDER.map((sin) => [sin, countColor(persona, sin)]));
     const resources = [...SIN_ORDER]
@@ -859,7 +872,7 @@ function renderParty() {
         <div class="card-title">
           <div>
             <h3 class="persona-name">${escapeHtml(persona.name)}</h3>
-            <div class="keyword-row">${keywordTags}</div>
+            <div class="keyword-row" title="${escapeHtml(persona.keywords.join('・') || 'キーワードなし')}">${keywordTags}</div>
           </div>
         </div>
         <dl class="stats">
@@ -868,7 +881,7 @@ function renderParty() {
           <div><dt>貫通耐性</dt><dd>${escapeHtml(persona.resPierce || '—')}</dd></div>
           <div><dt>打撃耐性</dt><dd>${escapeHtml(persona.resBlunt || '—')}</dd></div>
         </dl>
-        <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
+        <p class="passive" title="${escapeHtml([persona.passiveCond, persona.passiveName].filter(Boolean).join(' / ') || '—')}"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
         <div class="card-resources" aria-label="大罪資源内訳">${resourceChips}</div>
       </article>
