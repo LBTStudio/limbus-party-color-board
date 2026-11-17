@@ -37,7 +37,7 @@ begin
     raise exception 'PUBLIC_SESSION_NOT_FOUND' using errcode = 'P0002';
   end if;
 
-  select m.display_name, m.role into v_owner_name, v_member_role
+  select m.display_name into v_owner_name
   from public.session_members m
   where m.session_id = p_session_id and m.role = 'owner'
   limit 1;
