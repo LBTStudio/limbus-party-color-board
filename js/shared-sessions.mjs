@@ -169,7 +169,10 @@ export function createSharedSessions() {
       const channel = client
         .channel('party:' + sessionId, { config: { private: true } })
         .on('broadcast', { event: 'party_changed' }, (message) => {
-          onChange?.(message?.payload || message || {});
+          onChange?.({ ...(message?.payload || message || {}), _event: 'party_changed' });
+        })
+        .on('broadcast', { event: 'membership_changed' }, (message) => {
+          onChange?.({ ...(message?.payload || message || {}), _event: 'membership_changed' });
         })
         .subscribe((status, errorInfo) => onStatus?.(status, errorInfo));
       return channel;
