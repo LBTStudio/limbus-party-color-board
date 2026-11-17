@@ -788,8 +788,8 @@ test('database creation stays private until the new client explicitly enables pu
   assert.ok(createUi.indexOf('getApi().createSession') < createUi.indexOf('getApi().setPublicAccess(result.session_id, true, true)'));
   assert.ok(createUi.indexOf('getApi().setPublicAccess(result.session_id, true, true)') < createUi.indexOf('activateSession(result.session_id, result)'));
   assert.match(createUi, /非公開のままです/);
-  assert.match(design, /DBの初期値はfalse/);
-  assert.match(design, /新UIから作成した場合だけ両方true/);
+  assert.match(design, /RPCは新規作成時も両方falseを明示する/);
+  assert.match(design, /新UIは作成直後に `set_public_party_access\(true, true\)`/);
   const opens = (publicViewMigration.match(/as \$\$/g) || []).length;
   const closes = (publicViewMigration.match(/^\$\$;$/gm) || []).length;
   assert.equal(opens, closes, 'all PL/pgSQL dollar-quoted bodies must be closed');
