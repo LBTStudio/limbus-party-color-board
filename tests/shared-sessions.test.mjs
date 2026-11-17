@@ -844,3 +844,14 @@ test('design documentation matches verified database membership lifecycle and ca
   assert.match(smoke, /1ユーザーの編集membershipが19件ある状態では20件目が成功し、21件目は `53300` で拒否される/);
   assert.doesNotMatch(smoke, /編集停止後に非owner membershipが消え/);
 });
+
+test('opening the shared workspace list does not create anonymous Auth identities', () => {
+  const start = client.indexOf('async listSessions()');
+  const end = client.indexOf('async createSession(', start);
+  const listMethod = client.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(listMethod, /client\.auth\.getSession\(\)/);
+  assert.match(listMethod, /if \(!authData\.session\) return \[\]/);
+  assert.match(listMethod, /return rpc\('list_my_party_sessions'\)/);
+  assert.doesNotMatch(listMethod, /signInAnonymously|captchaToken/);
+});
