@@ -696,7 +696,10 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(joinFn, /role = 'editor'/);
   assert.match(joinFn, /r\.status = 'revoked'/);
   assert.match(accessFn, /if not found or v_owner <> v_user_id then raise exception 'OWNER_REQUIRED'/);
-  assert.match(accessFn, /delete from public\.session_members[\s\S]*?role <> 'owner'/);
+  assert.doesNotMatch(accessFn, /delete from public\.session_members/i);
+  assert.match(accessFn, /PUBLIC_EDIT_REQUIRES_VIEW/);
+  assert.match(sharedUi, /const editEnabled = viewEnabled && \$\('#shared-public-edit-enabled'\)\.checked/);
+  assert.match(sharedUi, /$('#shared-public-edit-enabled').disabled = active.publicViewEnabled === false/);
   assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /set public_view_enabled = false,[\s\S]*?public_edit_enabled = false/);
@@ -754,5 +757,24 @@ test('removing an editor blocks rejoining with the same anonymous account', () =
   assert.match(client, /\.on\('broadcast', \{ event: 'membership_changed' \}/);
   assert.match(sharedUi, /payload\?\._event === 'membership_changed'/);
   assert.match(sharedUi, /編集参加権限が解除されたため保存できません/);
+  assert.match(sharedUi, /既存の編集者はそのまま利用できます/);
+});
+
+
+test('migration preserves existing private workspaces and initializes new workspaces as public', () => {
+  const createStart = publicViewMigration.indexOf('create or replace function public.create_party_session');
+  const readStart = publicViewMigration.indexOf('create or replace function public.read_public_party_session');
+  assert.ok(createStart >= 0 && readStart > createStart);
+  const createFn = publicViewMigration.slice(createStart, readStart);
+  assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default false/i);
+  assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default false/i);
+  assert.match(publicViewMigration, /set public_view_enabled = false,[\s\S]*?public_edit_enabled = false/);
+  assert.match(createFn, /values \(v_title, v_user_id, true, true\)/);
+  assert.match(design, /既存スペースの両方をfalse/);
+  assert.match(design, /新規作成時に両方true/);
+  const opens = (publicViewMigration.match(/as \$\$/g) || []).length;
+  const closes = (publicViewMigration.match(/^\$\$;$/gm) || []).length;
+  assert.equal(opens, closes, 'all PL/pgSQL dollar-quoted bodies must be closed');
+  assert.doesNotMatch(publicViewMigration, /as \$\n|^\$;$/m);
 });
 
