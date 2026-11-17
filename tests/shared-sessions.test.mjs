@@ -704,7 +704,7 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
     publicViewMigration.indexOf('create or replace function public.create_party_session'),
     readStart,
   );
-  assert.match(createSession, /insert into public\.party_sessions[\s\S]*?values \(v_title, v_user_id, true, true\)/);
+  assert.match(createSession, /insert into public\.party_sessions[\s\S]*?values \(v_title, v_user_id, false, false\)/);
   assert.match(accessFn, /PUBLIC_EDIT_REQUIRES_VIEW/);
   assert.equal((publicViewMigration.match(/as \$\$/g) || []).length, (publicViewMigration.match(/^\$\$;$/gm) || []).length);
   assert.doesNotMatch(publicViewMigration, /as \$\n|^\$;$/m);
@@ -778,7 +778,7 @@ test('database creation stays private until the new client explicitly enables pu
   assert.match(publicViewMigration, /public_view_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /public_edit_enabled boolean not null default false/i);
   assert.doesNotMatch(publicViewMigration, /update public\.party_sessions\s+set public_view_enabled = false/i);
-  assert.match(createFn, /values \\(v_title, v_user_id, false, false\\)/);
+  assert.ok(createFn.includes('values (v_title, v_user_id, false, false)'));
   assert.match(design, /追加カラムの `DEFAULT false` により既存スペースは従来どおり非公開/);
   assert.match(design, /公開編集を停止すると新規参加だけを拒否する/);
   assert.doesNotMatch(design, /公開編集を全体停止すると発行者以外の `session_members` を削除する/);
