@@ -331,8 +331,27 @@ async function createSession() {
     setStatus('共有編成をクラウドに作成しています…');
     const result = await getApi().createSession(title, ownerDisplayName);
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
+
+    // Keep database defaults private so an older deployed frontend cannot
+    // accidentally publish a workspace during the migration/deployment gap.
+    // The new UI explicitly enables the intended public defaults after creation.
+    let publicAccessError = null;
+    try {
+      const access = await getApi().setPublicAccess(result.session_id, true, true);
+      if (access?.public_view_enabled !== true || access?.public_edit_enabled !== true) {
+        throw new Error('公開設定の更新結果を確認できませんでした。');
+      }
+      Object.assign(result, access);
+    } catch (error) {
+      publicAccessError = error;
+    }
+
     $('#shared-session-title').value = '';
     await activateSession(result.session_id, result);
+    if (publicAccessError) {
+      setStatus('共有スペースは作成されましたが、公開設定をONにできませんでした。非公開のままです。公開・参加設定を確認してください: '
+        + (publicAccessError.message || '設定エラー'));
+    }
   } catch (error) {
     setStatus('共同編集スペースを作成できませんでした: ' + error.message);
   }
