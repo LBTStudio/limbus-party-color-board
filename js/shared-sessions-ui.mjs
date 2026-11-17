@@ -1,5 +1,6 @@
 import { createSharedSessions, isCaptchaReady, isSharedSessionsConfigured, isTurnstileConfigured, setCaptchaToken } from './shared-sessions.mjs';
 import { TURNSTILE_SITE_KEY } from './supabase-config.mjs';
+import { forgetKnownSharedSession, readKnownSharedSessions, rememberKnownSharedSession } from './known-shared-sessions.mjs';
 
 const $ = (selector) => document.querySelector(selector);
 let api = null;
@@ -17,6 +18,14 @@ let realtimeRefreshTimer = null;
 let turnstileWidgetId = null;
 let bridge = null;
 let createBusy = false;
+let pendingJoinChoice = null;
+let joinChoiceBusy = false;
+let displayNameSyncTimer = null;
+let displayNameSyncQueue = Promise.resolve();
+let displayNameInputVersion = 0;
+let displayNameComposing = false;
+
+const DISPLAY_NAME_SYNC_DELAY_MS = 450;
 
 function getApi() {
   if (!isSharedSessionsConfigured()) {
@@ -45,6 +54,41 @@ function rememberDisplayName(value = displayName()) {
   try {
     localStorage.setItem('lbt_party_shared_display_name', normalized);
   } catch { /* Optional preference. */ }
+}
+
+function storeDisplayNamePreference(value) {
+  const normalized = String(value || '').trim().slice(0, 40) || '参加者';
+  try {
+    localStorage.setItem('lbt_party_shared_display_name', normalized);
+  } catch { /* Optional preference. */ }
+  return normalized;
+}
+
+function scheduleDisplayNameSync(delay = DISPLAY_NAME_SYNC_DELAY_MS) {
+  if (displayNameSyncTimer) clearTimeout(displayNameSyncTimer);
+  const version = ++displayNameInputVersion;
+  const session = active;
+  displayNameSyncTimer = setTimeout(() => {
+    displayNameSyncTimer = null;
+    const value = storeDisplayNamePreference($('#shared-display-name')?.value || '');
+    if (!session || active !== session || !['owner', 'editor'].includes(session.role)) return;
+
+    // Serialize writes and collapse stale keystroke batches to the latest value.
+    displayNameSyncQueue = displayNameSyncQueue.catch(() => {}).then(async () => {
+      if (active !== session || version !== displayNameInputVersion
+        || !['owner', 'editor'].includes(session.role)) return;
+      try {
+        await getApi().updateMemberDisplayName(session.sessionId, value);
+        if (active === session && version === displayNameInputVersion) {
+          setStatus('編集参加時の表示名を共有先へ反映しました。');
+        }
+      } catch (error) {
+        if (active === session && version === displayNameInputVersion) {
+          setStatus('表示名を共有先へ同期できませんでした: ' + (error.message || '通信エラー'));
+        }
+      }
+    });
+  }, Math.max(0, delay));
 }
 
 function snapshotOwnerDisplayName(snapshot, fallback = '編成主') {
@@ -223,10 +267,12 @@ function setSharedPanelOpen(open) {
   if (!panel || !toggle) return;
   panel.classList.toggle('is-open', sharedPanelOpen);
   toggle.setAttribute('aria-expanded', String(sharedPanelOpen));
-  const label = $('#shared-panel-toggle-label');
+  const fullLabel = $('.shared-toggle-label-full');
+  const compactLabel = $('.shared-toggle-label-compact');
   const mark = $('.shared-toggle-mark');
-  if (label) label.textContent = sharedPanelOpen ? '閉じる' : '共有スペース';
-  if (mark) mark.textContent = sharedPanelOpen ? '−' : '＋';
+  if (fullLabel) fullLabel.textContent = sharedPanelOpen ? '共有パネルを閉じる' : '共有・共同編集を開く';
+  if (compactLabel) compactLabel.textContent = sharedPanelOpen ? '閉じる' : '共有スペース';
+  if (mark) mark.textContent = sharedPanelOpen ? '×' : '＋';
 }
 
 function render() {
@@ -236,6 +282,21 @@ function render() {
   statusEl.textContent = statusMessage || (configured
     ? '共有編成を開くか、新規作成してください。'
     : '共有機能は接続設定待ちです。js/supabase-config.mjs に公開用 publishable key を設定し、Supabase でマイグレーションを実行してください。');
+  const choosingAccess = Boolean(pendingJoinChoice);
+  $('#shared-join-choice').hidden = !choosingAccess;
+  $('#shared-create-tools').hidden = choosingAccess;
+  if (choosingAccess) {
+    const editEnabled = pendingJoinChoice.public_edit_enabled !== false;
+    $('#shared-join-choice-title').textContent = pendingJoinChoice.title || '共有スペース';
+    $('#shared-choice-display-name').value = displayName();
+    $('#shared-choice-name-field').hidden = !editEnabled;
+    $('#shared-join-as-editor').disabled = joinChoiceBusy || !editEnabled;
+    $('#shared-join-as-viewer').disabled = joinChoiceBusy;
+    $('#shared-join-as-editor').textContent = editEnabled ? '参加者として参加（編集）' : '参加者として参加（停止中）';
+    $('#shared-join-choice-note').textContent = editEnabled
+      ? '参加者は編成を編集して全員に共有できます。閲覧のみでは編成を変更できません。'
+      : 'この共有スペースでは新しい編集参加が停止されています。閲覧のみ利用できます。';
+  }
   $('#shared-create').disabled = !configured || createBusy;
   $('#shared-refresh').disabled = !configured || active?.role === 'public-viewer';
   $('#shared-role-label').textContent = active
@@ -249,26 +310,30 @@ function render() {
     const row = node('div', 'shared-session-item');
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
-    const memberCount = Number(item.member_count);
-    const memberLimit = Number(item.member_limit) || 20;
-    const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
-      ? memberCount + '/' + memberLimit + '名'
-      : '人数取得中';
-    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
-      + ' · ' + memberCountLabel));
-    text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
-    const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
-    text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
-      ? '最終利用 ' + activity.toLocaleDateString() + ' ' + activity.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : '利用状況を取得できません'));
+    if (item.rememberedOnly) {
+      text.append(node('small', '', '前回利用した共有スペース · 接続時に権限を再確認します'));
+    } else {
+      const memberCount = Number(item.member_count);
+      const memberLimit = Number(item.member_limit) || 20;
+      const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
+        ? memberCount + '/' + memberLimit + '名'
+        : '人数取得中';
+      text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
+        + ' · ' + memberCountLabel));
+      text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
+      const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
+      text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
+        ? '最終利用 ' + activity.toLocaleDateString() + ' ' + activity.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '利用状況を取得できません'));
+    }
     row.append(text);
-    const openButton = makeActionButton(selected ? '選択中' : '開く', 'shared-open-session', { sessionId: item.session_id });
+    const openButton = makeActionButton(selected ? '選択中' : (item.rememberedOnly ? '再接続' : '開く'), 'shared-open-session', { sessionId: item.session_id });
     openButton.disabled = Boolean(selected) || Boolean(active?.controlBusy);
     row.append(openButton);
     list.append(row);
   });
   if (!sessions.length && configured) {
-    list.append(node('p', 'empty', 'この端末が編集参加している共有編成はありません。共有リンクから閲覧し、「編集に参加」を押すと一覧に追加されます。'));
+    list.append(node('p', 'empty', 'この端末に記録された共有スペースはありません。共有リンクを開くと、次回からここに表示されます。'));
   }
 
   $('#shared-active').hidden = !active;
@@ -305,12 +370,36 @@ async function refreshSessions() {
   try {
     setStatus('参加中の共有編成をクラウドから読み込んでいます…');
     const result = await getApi().listSessions(displayName());
-    sessions = Array.isArray(result) ? result : [];
+    const listed = Array.isArray(result) ? result : [];
+    const listedIds = new Set(listed.map((item) => String(item.session_id || '').toLowerCase()));
+    const remembered = readKnownSharedSessions()
+      .filter((item) => !listedIds.has(item.session_id))
+      .map((item) => ({
+        session_id: item.session_id,
+        title: item.title,
+        role: 'remembered',
+        rememberedOnly: true,
+      }));
+    sessions = [...listed, ...remembered];
+    const activeListing = active && sessions.find((item) => item.session_id === active.sessionId);
+    if (activeListing?.owner_display_name) {
+      active.ownerDisplayName = String(activeListing.owner_display_name).trim().slice(0, 40) || '編成主';
+    }
     statusMessage = '共有編成を読み込みました（' + sessions.length + '件）。';
     render();
     if (active && active.role === 'owner') await refreshAdmin();
   } catch (error) {
-    setStatus(error.message || 'セッション一覧を取得できませんでした。');
+    // Preserve the locally remembered entries if the cloud membership listing
+    // is temporarily unavailable. Opening one still revalidates access at the server.
+    const remembered = readKnownSharedSessions().map((item) => ({
+      session_id: item.session_id,
+      title: item.title,
+      role: 'remembered',
+      rememberedOnly: true,
+    }));
+    sessions = remembered;
+    setStatus((error.message || 'セッション一覧を取得できませんでした。')
+      + (remembered.length ? ' 前回利用した共有スペースは再接続できます。' : ''));
   }
 }
 
@@ -403,6 +492,7 @@ async function activateSession(sessionId, prefetched = null) {
     : await getApi().readPublicSession(sessionId);
   if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
   if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
+  rememberKnownSharedSession(snapshot.session_id || sessionId, snapshot.title || '共有スペース');
 
   if (!active && !personalPartySnapshot) personalPartySnapshot = currentPartyEntries();
   stopPolling();
@@ -457,6 +547,12 @@ async function refreshAdmin() {
     const result = await getApi().getAdmin(session.sessionId);
     if (active !== session || session.role !== 'owner') return;
     admin = result;
+    const owner = Array.isArray(result.members)
+      ? result.members.find((member) => member?.role === 'owner')
+      : null;
+    if (owner?.display_name) {
+      session.ownerDisplayName = String(owner.display_name).trim().slice(0, 40) || '編成主';
+    }
     session.adminUpdatedAt = Date.now();
     render();
   } catch (error) {
@@ -491,7 +587,8 @@ async function startRealtime(session) {
     const subscribePromise = getApi().subscribeSession(session.sessionId, (payload) => {
       if (active !== session || realtimeAttemptId !== attemptId) return;
       if (payload?._event === 'membership_changed') {
-        if (session.role === 'owner') void refreshAdmin();
+        // Refresh the workspace list (and owner roster) after a member renames themselves.
+        void refreshSessions();
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
         realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 150);
         return;
@@ -1000,6 +1097,7 @@ async function archiveActive() {
   render();
   try {
     await getApi().archiveSession(session.sessionId);
+    forgetKnownSharedSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
     if (active === session) {
       session.controlBusy = false;
@@ -1089,7 +1187,19 @@ async function initializeRoute(route) {
   }
   if (sessionId) {
     try {
-      await activateSession(sessionId);
+      const snapshot = await getApi().readPublicSession(sessionId, { force: true });
+      if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
+      if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
+      if (['owner', 'editor'].includes(snapshot.role)) {
+        // Existing authenticated members retain their current role and skip the chooser.
+        await activateSession(sessionId, snapshot);
+      } else {
+        // Unrecognized visitors must explicitly choose editing or read-only access.
+        pendingJoinChoice = snapshot;
+        $('#shared-choice-display-name').value = displayName();
+        statusMessage = '「' + (snapshot.title || '共有スペース') + '」の利用方法を選択してください。';
+        render();
+      }
     } catch (error) {
       setStatus('共有セッションを開けませんでした: ' + error.message);
     }
@@ -1098,6 +1208,36 @@ async function initializeRoute(route) {
   if (token || requestedSessionId) {
     setRoute('');
     setStatus('招待制は廃止されました。発行者に新しい閲覧・編集リンクを共有してもらってください。');
+  }
+}
+
+async function chooseSharedAccess(mode) {
+  const snapshot = pendingJoinChoice;
+  if (!snapshot || joinChoiceBusy) return;
+  const joinAsEditor = mode === 'editor';
+  if (joinAsEditor && snapshot.public_edit_enabled === false) {
+    setStatus('この共有スペースでは新しい編集参加が停止されています。閲覧のみ利用できます。');
+    return;
+  }
+  const chosenName = String($('#shared-choice-display-name').value || '').trim().slice(0, 40);
+  if (joinAsEditor && !chosenName) {
+    setStatus('参加時の表示名を入力してください。');
+    $('#shared-choice-display-name').focus();
+    return;
+  }
+
+  joinChoiceBusy = true;
+  pendingJoinChoice = null;
+  if (joinAsEditor) rememberDisplayName(chosenName);
+  render();
+  try {
+    await activateSession(snapshot.session_id, snapshot);
+    if (joinAsEditor) await enterEditMode();
+  } catch (error) {
+    setStatus('共有スペースを開けませんでした: ' + (error.message || '通信エラー'));
+  } finally {
+    joinChoiceBusy = false;
+    render();
   }
 }
 
@@ -1192,20 +1332,27 @@ export async function initializeSharedSessionsUi(callbacks) {
     const nextOpen = !sharedPanelOpen;
     setSharedPanelOpen(nextOpen);
     if (nextOpen && active?.role === 'owner') void refreshAdmin();
-  });
-  document.querySelectorAll('a[href="#shared-panel"]').forEach((link) => {
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-      setSharedPanelOpen(true);
-      $('#shared-panel-toggle').focus();
-      if (active?.role === 'owner') void refreshAdmin();
-      else if (!active) void refreshSessions();
-    });
+    else if (nextOpen && !active) void refreshSessions();
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
-  $('#shared-display-name').addEventListener('change', () => {
-    const value = String($('#shared-display-name').value || '').trim().slice(0, 40);
-    if (value) rememberDisplayName(value);
+  $('#shared-join-as-editor').addEventListener('click', () => chooseSharedAccess('editor'));
+  $('#shared-join-as-viewer').addEventListener('click', () => chooseSharedAccess('viewer'));
+  displayNameInput.addEventListener('compositionstart', () => {
+    displayNameComposing = true;
+    if (displayNameSyncTimer) clearTimeout(displayNameSyncTimer);
+    displayNameSyncTimer = null;
+    displayNameInputVersion += 1;
+  });
+  displayNameInput.addEventListener('compositionend', () => {
+    displayNameComposing = false;
+    scheduleDisplayNameSync();
+  });
+  displayNameInput.addEventListener('input', (event) => {
+    if (displayNameComposing || event.isComposing) return;
+    scheduleDisplayNameSync();
+  });
+  displayNameInput.addEventListener('change', () => {
+    if (!displayNameComposing) scheduleDisplayNameSync(0);
   });
   $('#shared-create').addEventListener('click', () => createSession());
   $('#shared-leave').addEventListener('click', () => leaveSession());

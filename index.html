@@ -71,11 +71,10 @@
       </div>
     </div>
     <details class="toolbar-more">
-      <summary>その他の操作</summary>
+      <summary>編成管理</summary>
       <div class="toolbar-more-menu">
         <button type="button" id="import-tsv" class="btn btn-ghost">TSV / CSVを取り込む</button>
         <button type="button" id="reset-party" class="btn btn-ghost">編成をクリア</button>
-        <a class="btn btn-ghost" href="#shared-panel">共同編集・同期へ</a>
       </div>
     </details>
   </section>
@@ -136,7 +135,7 @@
       <div class="shared-dock-tools">
         <p class="section-meta" id="shared-role-label">この端末の個人編成</p>
         <button type="button" id="shared-panel-toggle" class="btn btn-ghost shared-panel-toggle" aria-expanded="false" aria-controls="shared-panel-content">
-          <span id="shared-panel-toggle-label">共有スペース</span><span class="shared-toggle-mark" aria-hidden="true">＋</span>
+          <span id="shared-panel-toggle-label"><span class="shared-toggle-label-full">共有・共同編集を開く</span><span class="shared-toggle-label-compact">共有スペース</span></span><span class="shared-toggle-mark" aria-hidden="true">＋</span>
         </button>
       </div>
     </div>
@@ -161,6 +160,23 @@
       <p class="shared-status" id="shared-status" role="status" aria-live="polite">共有機能を準備しています。</p>
       <div id="shared-captcha-widget" class="shared-captcha" aria-label="不正利用防止の確認" hidden></div>
       <p id="shared-captcha-hint" class="hint" hidden>編集参加・スペース作成の初回認証で不正利用防止の確認が必要になる場合があります。閲覧だけなら認証は不要です。</p>
+      <section id="shared-join-choice" class="shared-join-choice shared-subpanel" aria-labelledby="shared-join-choice-heading" hidden>
+        <div>
+          <p class="kicker">SHARED WORKSPACE</p>
+          <h3 id="shared-join-choice-heading">この共有スペースの利用方法</h3>
+          <p id="shared-join-choice-title" class="shared-join-choice-title"></p>
+        </div>
+        <label id="shared-choice-name-field" class="shared-choice-name-field" for="shared-choice-display-name">
+          参加時の表示名
+          <input class="input" id="shared-choice-display-name" maxlength="40" autocomplete="nickname" value="参加者" placeholder="例：攻略担当">
+        </label>
+        <div class="shared-join-choice-actions" role="group" aria-label="共有スペースの利用方法">
+          <button type="button" class="btn" id="shared-join-as-editor">参加者として参加</button>
+          <button type="button" class="btn btn-ghost" id="shared-join-as-viewer">閲覧のみ</button>
+        </div>
+        <p id="shared-join-choice-note" class="hint">参加者は編成を編集して共有できます。閲覧のみでは編成を変更できません。</p>
+      </section>
+      <div id="shared-create-tools">
       <div class="shared-fields">
         <label for="shared-session-title">共有スペース名<input class="input" id="shared-session-title" maxlength="80" placeholder="例：第1グループの攻略編成"></label>
         <label for="shared-display-name">編集参加時の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname" value="参加者" placeholder="例：攻略担当"></label>
@@ -171,6 +187,7 @@
         <button type="button" class="btn btn-ghost" id="shared-refresh">参加中のスペースを更新</button>
       </div>
       <div id="shared-session-list" class="shared-list" aria-label="この端末が編集参加している共有スペース一覧"></div>
+      </div>
 
       <div id="shared-active" class="shared-subpanel" hidden>
         <div class="section-head">

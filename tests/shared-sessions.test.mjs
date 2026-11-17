@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { MAX_IMPORT_CHARS, MAX_IMPORT_ROWS, MAX_PARTY, parsePartySheet } from '../js/core.mjs';
 import { escapeHtml } from '../js/security.mjs';
+import { forgetKnownSharedSession, readKnownSharedSessions, rememberKnownSharedSession } from '../js/known-shared-sessions.mjs';
 
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
@@ -14,6 +15,7 @@ const partyCapacityMigration = read('../supabase/migrations/20261023213614_allow
 const playerAssignmentMigration = read('../supabase/migrations/20261023232430_add_party_player_assignments_and_resistances.sql');
 const publicViewMigration = read('../supabase/migrations/20261117155808_public_view_open_edit_realtime.sql');
 const memberCapacityMigration = read('../supabase/migrations/20261117173728_shared_party_member_capacity.sql');
+const displayNameMigration = read('../supabase/migrations/20261118090000_update_my_party_session_display_name.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -224,12 +226,15 @@ test('edit role is rechecked after the session row lock', () => {
   assert.match(applyEdit, /EDITOR_REQUIRED/);
 });
 
-test('public share route opens read-only immediately and retires old invite routes', () => {
+test('public share route offers edit participation or viewing and retires old invite routes', () => {
   const start = sharedUi.indexOf('async function initializeRoute(route)');
-  const end = sharedUi.indexOf('async function handleSharedClick', start);
+  const end = sharedUi.indexOf('async function chooseSharedAccess(mode)', start);
   const route = sharedUi.slice(start, end);
   assert.ok(start >= 0 && end > start);
-  assert.match(route, /if \(sessionId\)[\s\S]*?await activateSession\(sessionId\)/);
+  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId(?:, \{ force: true \})?\)/);
+  assert.match(route, /\['owner', 'editor'\]\.includes\(snapshot\.role\)[\s\S]*?await activateSession\(sessionId, snapshot\)/);
+  assert.match(route, /pendingJoinChoice = snapshot/);
+  assert.doesNotMatch(route, /await activateSession\(sessionId\);/);
   assert.match(route, /if \(token \|\| requestedSessionId\)[\s\S]*?招待制は廃止されました/);
   assert.doesNotMatch(route, /requestAccess|checkAccess|scheduleAccessCheck/);
   assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?joinPublicSession/);
@@ -402,7 +407,7 @@ test('creating a workspace validates the title and the owner display name separa
   const rpc = create.indexOf("getApi().createSession(title, ownerDisplayName)");
   assert.ok(titleValidation >= 0 && displayValidation > titleValidation);
   assert.ok(rpc > displayValidation, 'the server call must happen only after both independent fields are validated');
-  assert.match(sharedUi, /if \(value\) rememberDisplayName\(value\);/);
+  assert.match(create, /rememberDisplayName\(ownerDisplayName\)/);
 });
 
 test('shared-session admin actions are bound to their captured session and block navigation while pending', () => {
@@ -555,7 +560,8 @@ test('workspace name and edit-join display name are independent fields', () => {
   assert.match(sharedUi, /const ownerDisplayName = String\(\$\('#shared-display-name'\)\.value \|\| ''\)/);
   assert.match(sharedUi, /localStorage\.getItem\('lbt_party_shared_display_name'\)/);
   assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?joinPublicSession/);
-  assert.match(sharedUi, /\$\('#shared-display-name'\)\.addEventListener\('change'/);
+  assert.match(sharedUi, /const displayNameInput = \$\('#shared-display-name'\);[\s\S]*?displayNameInput\.addEventListener\('input'/);
+  assert.match(sharedUi, /displayNameInput\.addEventListener\('change'/);
   assert.match(styles, /\.shared-fields \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
 
@@ -641,7 +647,7 @@ test('GitHub Actions dependencies are pinned and upstream data updates require r
 });
 
 
-test('main board is prioritized and infrequent operations are grouped', () => {
+test('main board groups roster maintenance actions and gives sharing a clear persistent entry', () => {
   const toolbarStart = html.indexOf('<section class="panel controls"');
   const resourcesStart = html.indexOf('<section class="panel resource-section"');
   const matrixStart = html.indexOf('<section class="panel matrix-panel"');
@@ -651,15 +657,24 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(matrixStart > resourcesStart && personaStart > matrixStart);
   assert.ok(sharingStart > personaStart, 'sharing controls should not displace the primary lineup workflow');
   assert.ok(html.includes('<details class="toolbar-more">'));
-  assert.ok(html.includes('href="#shared-panel">共同編集・同期へ</a>'));
+  assert.ok(html.includes('<summary>編成管理</summary>'));
+  assert.ok(html.includes('id="import-tsv"'));
+  assert.ok(html.includes('id="reset-party"'));
+  assert.doesNotMatch(html, /その他の操作|共同編集・同期へ|href="#shared-panel"/);
   assert.ok(html.includes('<details class="shared-info">'));
   assert.ok(html.includes('id="shared-panel-toggle"'));
   assert.ok(html.includes('id="shared-panel-content"'));
+  assert.ok(html.includes('class="shared-toggle-label-full">共有・共同編集を開く'));
+  assert.ok(html.includes('class="shared-toggle-label-compact">共有スペース'));
+  assert.ok(sharedUi.includes("if (compactLabel) compactLabel.textContent = sharedPanelOpen ? '閉じる' : '共有スペース'"));
   assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-content'));
   assert.ok(styles.includes('position: fixed;'));
   assert.ok(styles.includes('.shared-panel,\n  .card-actions'));
-  assert.ok(sharedUi.includes('a[href="#shared-panel"]'));
+  assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-toggle {'));
+  assert.ok(styles.includes('background: linear-gradient(135deg, #e6cc77, #c49e46);'));
+  assert.ok(!sharedUi.includes('a[href="#shared-panel"]'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
+  assert.ok(sharedUi.includes('else if (nextOpen && !active) void refreshSessions()'));
   assert.ok(sharedUi.includes("$('#shared-join-edit').addEventListener('click', () => enterEditMode())"));
   assert.ok(sharedUi.includes("$('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot())"));
   assert.ok(sharedUi.includes("$('#shared-public-edit-enabled').addEventListener('change', () => updatePublicAccess())"));
@@ -894,6 +909,34 @@ test('checked-in production migration filename matches the applied Supabase migr
   assert.doesNotMatch(design + setup, /202611170001_public_view_open_edit_realtime/);
 });
 
+test('public shared links ask new visitors to choose edit participation or read-only viewing', () => {
+  const routeStart = sharedUi.indexOf('async function initializeRoute(route)');
+  const routeEnd = sharedUi.indexOf('async function chooseSharedAccess(mode)', routeStart);
+  const route = sharedUi.slice(routeStart, routeEnd);
+  const choiceStart = sharedUi.indexOf('async function chooseSharedAccess(mode)');
+  const choiceEnd = sharedUi.indexOf('async function handleSharedClick(event)', choiceStart);
+  const choice = sharedUi.slice(choiceStart, choiceEnd);
+
+  assert.ok(routeStart >= 0 && routeEnd > routeStart);
+  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId(?:, \{ force: true \})?\)/);
+  assert.match(route, /\['owner', 'editor'\]\.includes\(snapshot\.role\)/);
+  assert.match(route, /pendingJoinChoice = snapshot/);
+  assert.doesNotMatch(route, /await activateSession\(sessionId\);/);
+  assert.match(choice, /snapshot\.public_edit_enabled === false/);
+  assert.match(choice, /rememberDisplayName\(chosenName\)/);
+  assert.match(choice, /await activateSession\(snapshot\.session_id, snapshot\)/);
+  assert.match(choice, /if \(joinAsEditor\) await enterEditMode\(\)/);
+  assert.match(sharedUi, /chooseSharedAccess\('editor'\)/);
+  assert.match(sharedUi, /chooseSharedAccess\('viewer'\)/);
+
+  assert.match(html, /id="shared-join-as-editor">参加者として参加/);
+  assert.match(html, /id="shared-join-as-viewer">閲覧のみ/);
+  assert.match(html, /id="shared-choice-display-name"/);
+  assert.match(html, /id="shared-create-tools"/);
+  assert.match(styles, /\.shared-join-choice-actions/);
+  assert.match(styles, /#shared-create-tools\[hidden\]/);
+});
+
 test('opening the shared workspace list does not create anonymous Auth identities', () => {
   const start = client.indexOf('async listSessions()');
   const end = client.indexOf('async createSession(', start);
@@ -903,6 +946,41 @@ test('opening the shared workspace list does not create anonymous Auth identitie
   assert.match(listMethod, /if \(!authData\.session\) return \[\]/);
   assert.match(listMethod, /return rpc\('list_my_party_sessions'\)/);
   assert.doesNotMatch(listMethod, /signInAnonymously|captchaToken/);
+});
+
+test('recently opened shared spaces remain discoverable without restoring stale edit privileges', () => {
+  const values = new Map();
+  const storage = {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, String(value)); },
+  };
+  const firstId = '123e4567-e89b-42d3-a456-426614174000';
+  const secondId = '123e4567-e89b-42d3-a456-426614174001';
+
+  assert.equal(rememberKnownSharedSession(firstId, '攻略共有スペース', storage), true);
+  assert.equal(rememberKnownSharedSession(secondId, '検証用スペース', storage), true);
+  assert.deepEqual(readKnownSharedSessions(storage), [
+    { session_id: secondId, title: '検証用スペース' },
+    { session_id: firstId, title: '攻略共有スペース' },
+  ]);
+  assert.equal(rememberKnownSharedSession(firstId, '攻略共有スペース・更新', storage), true);
+  assert.equal(readKnownSharedSessions(storage)[0].title, '攻略共有スペース・更新');
+
+  for (let index = 2; index < 11; index += 1) {
+    const suffix = String(index).padStart(12, '0');
+    rememberKnownSharedSession('123e4567-e89b-42d3-a456-' + suffix, '履歴 ' + index, storage);
+  }
+  assert.equal(readKnownSharedSessions(storage).length, 8, 'the local history is bounded');
+  assert.equal(rememberKnownSharedSession('not-a-session-id', 'invalid', storage), false);
+  assert.equal(forgetKnownSharedSession(firstId, storage), true);
+  assert.equal(readKnownSharedSessions(storage).some((item) => item.session_id === firstId), false);
+
+  assert.match(sharedUi, /rememberKnownSharedSession\(snapshot\.session_id \|\| sessionId/);
+  assert.match(sharedUi, /readKnownSharedSessions\(\)/);
+  assert.match(sharedUi, /rememberedOnly: true/);
+  assert.match(sharedUi, /item\.rememberedOnly \? '再接続' : '開く'/);
+  assert.match(sharedUi, /forgetKnownSharedSession\(session\.sessionId\)/);
+  assert.match(sharedUi, /前回利用した共有スペース · 接続時に権限を再確認します/);
 });
 
 test('anonymous Auth retention avoids unsafe cascading cleanup of shared workspaces', () => {
@@ -945,6 +1023,28 @@ test('anonymous editor removal blocks the same Auth ID, not a verified person', 
   assert.match(read('../docs/shared-sessions-failure-modes.md'), /新しい匿名IDまでは遮断できない/);
   assert.match(read('../docs/shared-sessions-setup.md'), /本人そのものを恒久的に遮断する機能ではありません/);
 });
+
+test('active editors can update only their own display name and notify the workspace in realtime', () => {
+  assert.equal((displayNameMigration.match(/\bas \$\$/g) || []).length, 1);
+  assert.equal((displayNameMigration.match(/^\$\$;$/gm) || []).length, 1);
+  assert.match(displayNameMigration, /auth\.uid\(\)/);
+  assert.match(displayNameMigration, /m\.user_id = v_user_id/);
+  assert.match(displayNameMigration, /v_role not in \('owner', 'editor'\)/);
+  assert.match(displayNameMigration, /set display_name = v_display_name/);
+  assert.match(displayNameMigration, /revoke all on function public\.update_my_party_session_display_name\(uuid, text\)\s+from public, anon, authenticated/i);
+  assert.match(displayNameMigration, /grant execute on function public\.update_my_party_session_display_name\(uuid, text\)\s+to authenticated/i);
+  assert.match(publicViewMigration, /after insert or delete or update on public\.session_members/);
+  assert.match(publicViewMigration, /event => 'membership_changed'/);
+  assert.match(client, /async updateMemberDisplayName\(sessionId, displayName\)/);
+  assert.match(client, /rpc\('update_my_party_session_display_name'/);
+  assert.match(sharedUi, /function scheduleDisplayNameSync\(/);
+  assert.match(sharedUi, /addEventListener\('input'/);
+  assert.match(sharedUi, /addEventListener\('compositionend'/);
+  assert.match(sharedUi, /DISPLAY_NAME_SYNC_DELAY_MS = 450/);
+  assert.match(sharedUi, /void refreshSessions\(\)/);
+  assert.match(sharedUi, /表示名を共有先へ同期できませんでした/);
+});
+
 
 test('new rooms default to six total members and room masters control the cap', () => {
   assert.match(memberCapacityMigration, /add column if not exists member_limit integer not null default 6/i);

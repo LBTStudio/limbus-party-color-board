@@ -1484,6 +1484,60 @@ textarea.input {
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
+
+.shared-join-choice {
+  display: grid;
+  gap: 11px;
+  margin: 0 0 12px;
+  padding: 15px;
+  border-color: var(--line-strong);
+  background: linear-gradient(145deg, rgba(48, 39, 29, .96), rgba(25, 23, 21, .98));
+}
+.shared-join-choice[hidden] {
+  display: none !important;
+}
+.shared-join-choice .kicker {
+  margin: 0 0 4px;
+  color: var(--tx-mute);
+  font-size: .62rem;
+  letter-spacing: .12em;
+}
+.shared-join-choice h3 {
+  margin: 0 0 4px;
+  font-size: .98rem;
+}
+.shared-join-choice-title {
+  margin: 0;
+  color: var(--tx-dim);
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+.shared-choice-name-field {
+  display: grid;
+  gap: 5px;
+  max-width: 420px;
+  color: var(--tx-dim);
+  font-size: .72rem;
+}
+.shared-choice-name-field .input {
+  width: 100%;
+}
+.shared-join-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.shared-join-choice-actions .btn {
+  min-height: 38px;
+}
+.shared-join-choice .hint {
+  margin: 0;
+  font-size: .7rem;
+  line-height: 1.5;
+}
+#shared-create-tools[hidden] {
+  display: none !important;
+}
 .shared-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3454,5 +3508,377 @@ h2 {
 @media (max-width: 640px) {
   .persona-card:not(.is-selected-detail) {
     display: flex;
+  }
+}
+
+
+/* Make the shared workspace an unmistakable desktop action, not a tiny dock. */
+@media (min-width: 1120px) and (min-height: 720px) {
+  .shared-panel:not(.is-open) {
+    top: 9px;
+    right: max(16px, calc((100vw - 1600px) / 2));
+    bottom: auto;
+    width: fit-content;
+    max-width: min(270px, calc(100vw - 32px));
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .shared-panel:not(.is-open) > .section-head {
+    margin: 0;
+  }
+
+  .shared-panel:not(.is-open) .shared-dock-tools {
+    gap: 0;
+  }
+
+  .shared-panel:not(.is-open) #shared-role-label {
+    display: none;
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid #ead28a;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #e6cc77, #c49e46);
+    color: #17130d;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .42), 0 2px 10px rgba(200, 168, 75, .2);
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle:hover {
+    border-color: #fff0b5;
+    background: linear-gradient(135deg, #f0da91, #d2b15c);
+    color: #17130d;
+    transform: translateY(-1px);
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle:focus-visible {
+    outline: 3px solid #fff0b5;
+    outline-offset: 3px;
+  }
+
+  .shared-panel:not(.is-open) .shared-toggle-mark {
+    margin-left: 8px;
+    color: currentColor;
+    font-size: 1.05rem;
+    font-weight: 850;
+  }
+}
+
+/* The non-desktop shared dock keeps its original compact label. */
+.shared-toggle-label-full {
+  display: none;
+}
+.shared-toggle-label-compact {
+  display: inline;
+}
+
+@media (min-width: 1120px) and (min-height: 720px) {
+  .shared-panel:not(.is-open) .section-head > div:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .shared-toggle-label-full {
+    display: inline;
+  }
+
+  .shared-toggle-label-compact {
+    display: none;
+  }
+}
+
+
+/* Typography audit: keep secondary UI text readable without enlarging the mobile layout model. */
+.kicker,
+.brand-kicker {
+  font-size: .7rem;
+}
+
+.topbar-meta {
+  font-size: .74rem;
+}
+
+.control label {
+  font-size: .72rem;
+}
+
+.section-meta {
+  font-size: .74rem;
+}
+
+.hint {
+  font-size: .8rem;
+}
+
+.resource-name {
+  font-size: .78rem;
+}
+
+.resource-personas {
+  font-size: .72rem;
+}
+
+.matrix {
+  font-size: .76rem;
+}
+
+.matrix thead th {
+  font-size: .68rem;
+}
+
+.member-label {
+  font-size: .68rem;
+}
+
+.member-name {
+  font-size: .74rem;
+}
+
+.slot-chip,
+.matrix tfoot th,
+.matrix tfoot td,
+.color-strip-indexes {
+  font-size: .68rem;
+}
+
+.card-player-field {
+  font-size: .74rem;
+}
+
+.kind-badge,
+.card-no,
+.mini-btn,
+.keyword,
+.stats dt,
+.slot-rank,
+.slot-derived-names,
+.sin-chip,
+.res-chip,
+.picker-no,
+.picker-keywords,
+.picker-state,
+.shared-storage-label,
+.shared-admin-item .hint,
+.shared-admin-buttons .btn,
+.lbt-import-option-skills,
+.persona-source-badge {
+  font-size: .68rem;
+}
+
+.stats dd {
+  font-size: .84rem;
+}
+
+.footer,
+.toolbar-note,
+.shared-request-badge,
+.shared-session-item small,
+.shared-member-limit-control .hint,
+.shared-lifecycle .hint,
+.lbt-import-option-meta,
+.manual-persona-fields label,
+.manual-skill-field,
+.manual-skill-set > .hint,
+.import-status,
+.picker-account-select,
+.picker-account-status,
+.shared-invite-tools label,
+.shared-fields label {
+  font-size: .72rem;
+}
+
+/* Desktop keeps the single-viewport board, with a 10px+ floor for dense table labels. */
+@media (min-width: 1120px) and (min-height: 720px) {
+  .brand-kicker {
+    font-size: .7rem;
+  }
+
+  .topbar-meta,
+  .control label,
+  .resource-section .section-meta,
+  .resource-personas,
+  .member-label,
+  .slot-chip,
+  .matrix tfoot th,
+  .matrix tfoot td,
+  .persona-color-legend,
+  .card-player-field,
+  .keyword,
+  .stats dt,
+  .sin-chip,
+  .res-chip {
+    font-size: .7rem;
+  }
+
+  .toolbar-more > summary,
+  .resource-name,
+  .matrix,
+  .member-name,
+  .count-pill,
+  .total-cell,
+  .card-player-input,
+  .passive,
+  .slot-name {
+    font-size: .76rem;
+  }
+
+  .matrix thead th {
+    font-size: .7rem;
+  }
+
+  .matrix tbody th,
+  .matrix tbody td {
+    height: 20px;
+    padding: 0 2px;
+  }
+
+  .matrix-persona-select {
+    gap: 0;
+    line-height: 1;
+  }
+
+  .member-label {
+    line-height: .94;
+  }
+
+  .member-name {
+    line-height: 1;
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle {
+    font-size: .76rem;
+  }
+}
+
+/* Desktop readability correction: all dense board labels remain comfortably legible. */
+@media (min-width: 1120px) {
+  .brand-kicker,
+  .kicker {
+    font-size: .78rem;
+  }
+
+  .topbar-meta,
+  .section-meta,
+  .toolbar-note,
+  .footer,
+  .hint,
+  .shared-intro,
+  .shared-name-note {
+    font-size: .82rem;
+  }
+
+  .control label,
+  .toolbar-more > summary,
+  .shared-fields label,
+  .shared-choice-name-field,
+  .shared-invite-tools label,
+  .manual-persona-fields label,
+  .manual-skill-field,
+  .picker-account-select {
+    font-size: .8rem;
+  }
+
+  .toolbar-primary .btn,
+  .toolbar-add,
+  .shared-panel-toggle,
+  .btn {
+    font-size: .82rem;
+  }
+
+  select,
+  .card-player-input,
+  .manual-skill-field select {
+    font-size: .84rem;
+  }
+
+  .resource-section .section-meta,
+  .resource-personas,
+  .persona-color-legend {
+    font-size: .78rem;
+  }
+
+  .resource-name {
+    font-size: .9rem;
+  }
+
+  .matrix {
+    font-size: .82rem;
+  }
+
+  .matrix thead th,
+  .matrix tfoot th,
+  .matrix tfoot td {
+    font-size: .78rem;
+  }
+
+  .member-label {
+    font-size: .76rem;
+  }
+
+  .member-name,
+  .slot-name,
+  .card-player-field,
+  .passive {
+    font-size: .82rem;
+  }
+
+  .slot-chip,
+  .count-pill,
+  .total-cell,
+  .sin-chip,
+  .res-chip,
+  .kind-badge,
+  .card-no,
+  .mini-btn,
+  .keyword,
+  .stats dt,
+  .slot-rank,
+  .slot-derived-names,
+  .picker-no,
+  .picker-keywords,
+  .picker-state,
+  .shared-request-badge,
+  .shared-session-item small,
+  .shared-storage-label,
+  .shared-admin-item .hint,
+  .shared-admin-buttons .btn,
+  .shared-lifecycle .hint,
+  .lbt-import-option-meta,
+  .lbt-import-option-skills,
+  .persona-source-badge,
+  .picker-account-status {
+    font-size: .76rem;
+  }
+
+  .stats dd {
+    font-size: .92rem;
+  }
+
+  .shared-join-choice .kicker {
+    font-size: .74rem;
+  }
+
+  .shared-join-choice .hint {
+    font-size: .8rem;
+  }
+
+  .matrix tbody th,
+  .matrix tbody td {
+    line-height: 1.05;
   }
 }

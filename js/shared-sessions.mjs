@@ -185,6 +185,12 @@ export function createSharedSessions() {
         p_member_limit: Number(memberLimit),
       });
     },
+    async updateMemberDisplayName(sessionId, displayName) {
+      return rpc('update_my_party_session_display_name', {
+        p_session_id: sessionId,
+        p_display_name: String(displayName || '参加者').trim().slice(0, 40) || '参加者',
+      });
+    },
     async subscribeSession(sessionId, onChange, onStatus) {
       const client = await getClient();
       const { data, error } = await client.auth.getSession();
