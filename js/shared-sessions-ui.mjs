@@ -15,6 +15,7 @@ let realtimeConnected = false;
 let realtimeRefreshTimer = null;
 let turnstileWidgetId = null;
 let bridge = null;
+let createBusy = false;
 
 function getApi() {
   if (!isSharedSessionsConfigured()) {
@@ -166,7 +167,10 @@ function adminItem(label, description, controls = []) {
   row.append(left);
   if (controls.length) {
     const actions = node('div', 'shared-admin-buttons');
-    controls.forEach((control) => actions.append(control));
+    controls.forEach((control) => {
+      if ('disabled' in control) control.disabled = Boolean(active?.controlBusy);
+      actions.append(control);
+    });
     row.append(actions);
   }
   return row;
@@ -223,7 +227,7 @@ function render() {
   statusEl.textContent = statusMessage || (configured
     ? '共有編成を開くか、新規作成してください。'
     : '共有機能は接続設定待ちです。js/supabase-config.mjs に公開用 publishable key を設定し、Supabase でマイグレーションを実行してください。');
-  $('#shared-create').disabled = !configured;
+  $('#shared-create').disabled = !configured || createBusy;
   $('#shared-refresh').disabled = !configured || active?.role === 'public-viewer';
   $('#shared-role-label').textContent = active
     ? roleLabel(active.role) + ' / revision ' + active.revision
@@ -249,7 +253,7 @@ function render() {
       : '利用状況を取得できません'));
     row.append(text);
     const openButton = makeActionButton(selected ? '選択中' : '開く', 'shared-open-session', { sessionId: item.session_id });
-    openButton.disabled = Boolean(selected);
+    openButton.disabled = Boolean(selected) || Boolean(active?.controlBusy);
     row.append(openButton);
     list.append(row);
   });
@@ -264,12 +268,13 @@ function render() {
     + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
   const owner = active.role === 'owner' && !active.accessRevoked && active.status !== 'closed';
   $('#shared-join-edit').hidden = active.role !== 'public-viewer' || !active.publicEditEnabled;
+  $('#shared-join-edit').disabled = Boolean(active.controlBusy);
   $('#shared-copy-session-link').hidden = false;
   $('#shared-refresh-snapshot').hidden = false;
   $('#shared-archive').hidden = !owner;
-  $('#shared-leave').disabled = active.saveBusy;
+  $('#shared-leave').disabled = active.saveBusy || Boolean(active.controlBusy);
   $('#shared-retry-save').hidden = !active.retry || active.status !== 'unsaved';
-  $('#shared-archive').disabled = active.saveBusy || Boolean(active.retry) || Boolean(active.incomingState);
+  $('#shared-archive').disabled = active.saveBusy || Boolean(active.retry) || Boolean(active.incomingState) || Boolean(active.controlBusy);
   $('#shared-conflict').hidden = !active.incomingState;
   if (active.incomingState) {
     $('#shared-conflict-message').textContent =
@@ -278,7 +283,8 @@ function render() {
   $('#shared-public-settings').hidden = !owner;
   $('#shared-public-view-enabled').checked = active.publicViewEnabled !== false;
   $('#shared-public-edit-enabled').checked = active.publicEditEnabled !== false;
-  $('#shared-public-edit-enabled').disabled = active.publicViewEnabled === false;
+  $('#shared-public-view-enabled').disabled = Boolean(active.controlBusy);
+  $('#shared-public-edit-enabled').disabled = Boolean(active.controlBusy) || active.publicViewEnabled === false;
   $('#shared-admin').hidden = !owner || !admin;
   if (owner && admin) renderAdmin(admin);
 }
@@ -297,6 +303,7 @@ async function refreshSessions() {
 }
 
 async function createSession() {
+  if (createBusy) return;
   const switchError = sessionSwitchError();
   if (switchError) {
     setStatus(switchError);
@@ -322,12 +329,14 @@ async function createSession() {
     return;
   }
   rememberDisplayName(ownerDisplayName);
-  await initializeTurnstile();
-  if (isTurnstileConfigured() && !isCaptchaReady()) {
-    setStatus('共有スペースの作成には不正利用防止の確認が必要です。確認を完了してから、もう一度作成してください。');
-    return;
-  }
+  createBusy = true;
+  render();
   try {
+    await initializeTurnstile();
+    if (isTurnstileConfigured() && !isCaptchaReady()) {
+      setStatus('共有スペースの作成には不正利用防止の確認が必要です。確認を完了してから、もう一度作成してください。');
+      return;
+    }
     setStatus('共有編成をクラウドに作成しています…');
     const result = await getApi().createSession(title, ownerDisplayName);
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
@@ -354,11 +363,17 @@ async function createSession() {
     }
   } catch (error) {
     setStatus('共同編集スペースを作成できませんでした: ' + error.message);
+  } finally {
+    createBusy = false;
+    render();
   }
 }
 
 function sessionSwitchError() {
   if (!active) return '';
+  if (active.controlBusy) {
+    return '共有設定・参加者管理の処理中です。完了してから切り替えてください。';
+  }
   if (active.saveBusy || active.retry || active.incomingState
     || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas)) {
     return '未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。';
@@ -398,6 +413,7 @@ async function activateSession(sessionId, prefetched = null) {
     failures: 0,
     pollBusy: false,
     adminUpdatedAt: 0,
+    controlBusy: false,
   };
   admin = null;
   setSharedPanelOpen(true);
@@ -595,20 +611,28 @@ function applySnapshot(snapshot) {
 }
 
 async function enterEditMode() {
-  if (!active || active.role !== 'public-viewer' || !active.publicEditEnabled) return;
+  const session = active;
+  if (!session || session.role !== 'public-viewer' || !session.publicEditEnabled || session.controlBusy) return;
+  session.controlBusy = true;
   try {
     await initializeTurnstile();
+    if (active !== session) return;
     if (isTurnstileConfigured() && !isCaptchaReady()) {
       setStatus('編集参加には不正利用防止の確認が必要です。表示された確認を完了し、もう一度「編集に参加」を押してください。');
       return;
     }
     rememberDisplayName(displayName());
     setStatus('編集参加を開始しています…');
-    const snapshot = await getApi().joinPublicSession(active.sessionId, displayName());
-    await activateSession(active.sessionId, snapshot);
+    const snapshot = await getApi().joinPublicSession(session.sessionId, displayName());
+    if (active !== session) return;
+    session.controlBusy = false;
+    await activateSession(session.sessionId, snapshot);
     setStatus('編集参加しました。保存時はRealtime通知で他の編集者へ変更を知らせます。');
   } catch (error) {
-    setStatus('編集に参加できませんでした: ' + (error.message || '通信エラー'));
+    if (active === session) setStatus('編集に参加できませんでした: ' + (error.message || '通信エラー'));
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
   }
 }
 
@@ -643,20 +667,33 @@ async function copySessionLink() {
 }
 
 async function updatePublicAccess() {
-  if (!active || active.role !== 'owner') return;
+  const session = active;
+  if (!session || session.role !== 'owner' || session.controlBusy) return;
   const viewEnabled = $('#shared-public-view-enabled').checked;
   const editEnabled = viewEnabled && $('#shared-public-edit-enabled').checked;
   if (!viewEnabled) $('#shared-public-edit-enabled').checked = false;
+  session.controlBusy = true;
+  $('#shared-public-view-enabled').disabled = true;
+  $('#shared-public-edit-enabled').disabled = true;
+  $('#shared-leave').disabled = true;
+  $('#shared-archive').disabled = true;
   try {
-    const result = await getApi().setPublicAccess(active.sessionId, viewEnabled, editEnabled);
-    active.publicViewEnabled = result.public_view_enabled !== false;
-    active.publicEditEnabled = result.public_edit_enabled !== false;
+    const result = await getApi().setPublicAccess(session.sessionId, viewEnabled, editEnabled);
+    if (active !== session) return;
+    session.publicViewEnabled = result.public_view_enabled !== false;
+    session.publicEditEnabled = result.public_edit_enabled !== false;
     await refreshAdmin();
-    setStatus('公開設定を更新しました。' + (!active.publicEditEnabled ? ' 新しい編集参加は停止しました。既存の編集参加者は個別に解除できます。' : ''));
+    if (active !== session) return;
+    setStatus('公開設定を更新しました。' + (!session.publicEditEnabled ? ' 新しい編集参加は停止しました。既存の編集参加者は個別に解除できます。' : ''));
   } catch (error) {
-    $('#shared-public-view-enabled').checked = active.publicViewEnabled !== false;
-    $('#shared-public-edit-enabled').checked = active.publicEditEnabled !== false;
-    setStatus('公開設定を更新できませんでした: ' + (error.message || '通信エラー'));
+    if (active === session) {
+      $('#shared-public-view-enabled').checked = session.publicViewEnabled !== false;
+      $('#shared-public-edit-enabled').checked = session.publicEditEnabled !== false;
+      setStatus('公開設定を更新できませんでした: ' + (error.message || '通信エラー'));
+    }
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
   }
 }
 
@@ -795,33 +832,55 @@ async function copyToolUrl() {
 }
 
 async function removeMember(userId) {
-  if (!active || !window.confirm('この編集参加者を解除しますか？このアカウントは、この共有スペースへ再参加できなくなります。')) return;
-  await getApi().removeMember(active.sessionId, userId);
-  await refreshAdmin();
-  setStatus('編集参加を解除し、このアカウントの再参加を禁止しました。');
+  const session = active;
+  if (!session || session.role !== 'owner' || session.controlBusy
+    || !window.confirm('この編集参加者を解除しますか？このアカウントは、この共有スペースへ再参加できなくなります。')) return;
+  session.controlBusy = true;
+  try {
+    await getApi().removeMember(session.sessionId, userId);
+    if (active !== session) return;
+    await refreshAdmin();
+    if (active === session) setStatus('編集参加を解除し、このアカウントの再参加を禁止しました。');
+  } catch (error) {
+    if (active === session) setStatus('編集参加者を解除できませんでした: ' + (error.message || '通信エラー'));
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
+  }
 }
 
 async function archiveActive() {
   const session = active;
-  if (!session || session.role !== 'owner') return;
+  if (!session || session.role !== 'owner' || session.controlBusy) return;
   const switchError = sessionSwitchError();
   if (switchError) {
     setStatus(switchError + ' 未解決の編集がある間は共同編集スペースを終了できません。');
     return;
   }
   if (!window.confirm('「' + session.title + '」を終了しますか？共有編成・参加者・招待・申請・編集履歴を即時削除します。この操作は取り消せません。続行しますか？')) return;
+  session.controlBusy = true;
   try {
     await getApi().archiveSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
-    leaveSession();
+    if (active === session) {
+      session.controlBusy = false;
+      leaveSession();
+    }
     await refreshSessions();
     setStatus('共有編成を終了し、共有データと関連記録を即時削除しました。個人編成は残っています。');
   } catch (error) {
-    setStatus('セッションを終了できませんでした: ' + error.message);
+    if (active === session) setStatus('セッションを終了できませんでした: ' + error.message);
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
   }
 }
 
 function leaveSession() {
+  if (active && active.controlBusy) {
+    setStatus('共有設定・参加者管理の処理中です。完了してから共有セッションを閉じてください。');
+    return;
+  }
   if (active && active.saveBusy) {
     setStatus('保存処理中です。完了してから共有セッションを閉じてください。');
     return;
