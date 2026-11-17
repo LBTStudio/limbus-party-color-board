@@ -910,3 +910,27 @@ test('anonymous Auth retention avoids unsafe cascading cleanup of shared workspa
   assert.match(design, /自動削除ジョブは設けず/);
   assert.match(read('../docs/shared-sessions-setup.md'), /その一括削除を実行しないでください/);
 });
+
+
+test('Turnstile is required only when a new anonymous Auth identity must be created', () => {
+  const authCheckStart = client.indexOf('async needsAnonymousAuth()');
+  const authCheckEnd = client.indexOf('async readPublicSession', authCheckStart);
+  const authCheck = client.slice(authCheckStart, authCheckEnd);
+  assert.ok(authCheckStart >= 0 && authCheckEnd > authCheckStart);
+  assert.match(authCheck, /client\\.auth\\.getSession\\(\\)/);
+  assert.match(authCheck, /return !authData\\.session/);
+  assert.doesNotMatch(authCheck, /signInAnonymously|captchaToken/);
+
+  const createStart = sharedUi.indexOf('async function createSession()');
+  const createEnd = sharedUi.indexOf('function sessionSwitchError()', createStart);
+  const createUi = sharedUi.slice(createStart, createEnd);
+  const joinStart = sharedUi.indexOf('async function enterEditMode()');
+  const joinEnd = sharedUi.indexOf('async function refreshActiveSnapshot()', joinStart);
+  const joinUi = sharedUi.slice(joinStart, joinEnd);
+  assert.ok(createStart >= 0 && createEnd > createStart);
+  assert.ok(joinStart >= 0 && joinEnd > joinStart);
+  assert.match(createUi, /if \\(await getApi\\(\\)\\.needsAnonymousAuth\\(\\)\\) \\{/);
+  assert.match(joinUi, /if \\(await getApi\\(\\)\\.needsAnonymousAuth\\(\\)\\) \\{/);
+  assert.match(createUi, /needsAnonymousAuth\\(\\)\\) \\{[\\s\\S]*?await initializeTurnstile\\(\\)/);
+  assert.match(joinUi, /needsAnonymousAuth\\(\\)\\) \\{[\\s\\S]*?await initializeTurnstile\\(\\)/);
+});

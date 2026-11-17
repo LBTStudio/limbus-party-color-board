@@ -119,6 +119,12 @@ async function rpc(name, args = {}, displayName = '') {
 
 export function createSharedSessions() {
   return {
+    async needsAnonymousAuth() {
+      const client = await getClient();
+      const { data: authData, error } = await client.auth.getSession();
+      if (error) throw error;
+      return !authData.session;
+    },
     async readPublicSession(sessionId, { force = false } = {}) {
       const cacheKey = 'lpc-public-session:' + String(sessionId);
       const client = await getClient();

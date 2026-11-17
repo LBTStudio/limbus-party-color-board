@@ -334,10 +334,12 @@ async function createSession() {
   createBusy = true;
   render();
   try {
-    await initializeTurnstile();
-    if (isTurnstileConfigured() && !isCaptchaReady()) {
-      setStatus('共有スペースの作成には不正利用防止の確認が必要です。確認を完了してから、もう一度作成してください。');
-      return;
+    if (await getApi().needsAnonymousAuth()) {
+      await initializeTurnstile();
+      if (isTurnstileConfigured() && !isCaptchaReady()) {
+        setStatus('共有スペースの作成には不正利用防止の確認が必要です。確認を完了してから、もう一度作成してください。');
+        return;
+      }
     }
     setStatus('共有編成をクラウドに作成しています…');
     const result = await getApi().createSession(title, ownerDisplayName);
@@ -679,11 +681,13 @@ async function enterEditMode() {
   session.controlBusy = true;
   render();
   try {
-    await initializeTurnstile();
-    if (active !== session) return;
-    if (isTurnstileConfigured() && !isCaptchaReady()) {
-      setStatus('編集参加には不正利用防止の確認が必要です。表示された確認を完了し、もう一度「編集に参加」を押してください。');
-      return;
+    if (await getApi().needsAnonymousAuth()) {
+      await initializeTurnstile();
+      if (active !== session) return;
+      if (isTurnstileConfigured() && !isCaptchaReady()) {
+        setStatus('編集参加には不正利用防止の確認が必要です。表示された確認を完了し、もう一度「編集に参加」を押してください。');
+        return;
+      }
     }
     rememberDisplayName(displayName());
     setStatus('編集参加を開始しています…');
