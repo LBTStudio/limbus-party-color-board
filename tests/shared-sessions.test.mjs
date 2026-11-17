@@ -859,7 +859,7 @@ test('opening the shared workspace list does not create anonymous Auth identitie
 test('anonymous Auth retention avoids unsafe cascading cleanup of shared workspaces', () => {
   assert.match(migration, /owner_user_id uuid not null references auth\.users\(id\) on delete cascade/i);
   assert.match(migration, /user_id uuid not null references auth\.users\(id\) on delete cascade/i);
-  assert.match(design, /匿名Authユーザーは自動削除されない/);
+  assert.match(design, /Anonymous Authユーザーは自動削除されない/);
   assert.match(design, /自動削除ジョブは設けず/);
   assert.match(read('../docs/shared-sessions-setup.md'), /その一括削除を実行しないでください/);
 });
