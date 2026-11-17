@@ -211,7 +211,7 @@ test('docs describe the implemented shared-session feature', () => {
   assert.doesNotMatch(design, /共有セッションは未実装/);
   assert.doesNotMatch(failureModes, /共有セッション機能がまだない/);
   assert.match(readme, /閲覧モードは初回取得後に定期通信しません/);
-  assert.match(readme, /編集参加は招待・承認なし/);
+  assert.match(readme, /招待・承認なしで編集参加/);
 });
 
 test('per-session resource caps are protected by parent-row locks', () => {
@@ -330,8 +330,8 @@ test('workspace list shows owner attribution and current members out of the exis
 
 test('shared session lifecycle clearly separates browser-local and cloud data', () => {
   const html = read('../index.html');
-  assert.match(html, /編成の共同編集・同期/);
-  assert.match(html, /shared-title-short">共同編集/);
+  assert.match(html, /編成の共有・共同編集/);
+  assert.match(html, /shared-title-short">共有編成/);
   assert.match(html, /認証や参加申請なしで編成を閲覧できます/);
   assert.match(html, /編集に参加すると、同じ編成を複数人で直接編集/);
   assert.match(html, /Realtime通知/);
@@ -339,10 +339,10 @@ test('shared session lifecycle clearly separates browser-local and cloud data', 
   assert.match(html, /PERSONAL · THIS BROWSER/);
   assert.match(html, /SHARED · CLOUD DATABASE/);
   assert.match(html, /30日間/);
-  assert.match(html, /自動終了した共有編成は、終了から7日後/);
-  assert.match(html, /発行者が手動で終了した共有編成は、その場で共有データと関連データを削除/);
+  assert.match(html, /さらに7日後に関連データを削除/);
+  assert.match(html, /発行者が手動終了した場合は即時削除/);
   assert.match(html, /この端末で閉じる/);
-  assert.match(html, /共同編集スペースを終了/);
+  assert.match(html, /共有スペースを終了/);
   assert.match(sharedUi, /last_activity_at/);
   assert.match(sharedUi, /共有編成・参加者・招待・申請・編集履歴を即時削除/);
   assert.match(sharedUi, /共有データと関連記録を即時削除/);
@@ -446,23 +446,21 @@ test('member capacity supports 16 within the 20-person cap and workspace lists s
   assert.match(listFunction, /owner_member\.user_id = s\.owner_user_id/);
   assert.match(sharedUi, /'発行者: ' \+ \(item\.owner_display_name \|\| '編成主'\)/);
   assert.match(sharedUi, /'発行者: ' \+ active\.ownerDisplayName/);
-  assert.match(design, /20名が毎日24時間5秒間隔でポーリングし続ける場合/);
+  assert.match(design, /閲覧者に自動pollを持たせない/);
+  assert.match(design, /60,000 bytes/);
+  assert.match(design, /2,000,000\/月/);
 });
 
-test('tool URL copying is separate from invitation issuance and cannot auto-copy an invite secret', () => {
+test('shared links use a single view-and-edit URL without invite issuance', () => {
   assert.match(html, /id="shared-tool-url"/);
   assert.match(html, /id="shared-copy-tool-url">ツールURLをコピー/);
   assert.match(html, /id="shared-copy-session-link">閲覧・編集リンクをコピー/);
   assert.match(html, /id="shared-join-edit">編集に参加/);
-  assert.match(html, /共同編集への参加権限はありません/);
+  assert.doesNotMatch(html, /id="shared-create-invite"|id="shared-copy-invite"|id="shared-access-waiting"/);
   assert.match(sharedUi, /function publicToolUrl\(\) \{\s*return location\.origin \+ location\.pathname;/);
-  const start = sharedUi.indexOf('async function issueInvite()');
-  const end = sharedUi.indexOf('async function copyInvite()', start);
-  const issue = sharedUi.slice(start, end);
-  assert.ok(start >= 0 && end > start);
-  assert.match(issue, /render\(\)/);
-  assert.doesNotMatch(issue, /copyInvite\(\)/, 'issuing an invite must not copy it automatically');
+  assert.match(sharedUi, /publicToolUrl\(\) \+ '#session='/);
   assert.match(sharedUi, /navigator\.clipboard\.writeText\(value\)/);
+  assert.doesNotMatch(sharedUi, /addEventListener\('click', \(\) => issueInvite\(\)\)/);
 });
 
 test('workspace archival is rejected before the RPC when local changes have not settled', () => {
@@ -696,7 +694,7 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(joinFn, /SESSION_MEMBER_LIMIT/);
   assert.match(joinFn, /USER_SESSION_LIMIT/);
   assert.match(joinFn, /role = 'editor'/);
-  assert.match(accessFn, /owner_user_id=v_user_id/);
+  assert.match(accessFn, /if not found or v_owner <> v_user_id then raise exception 'OWNER_REQUIRED'/);
   assert.match(accessFn, /delete from public\.session_members[\s\S]*?role <> 'owner'/);
   assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default true/i);
   assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default true/i);
