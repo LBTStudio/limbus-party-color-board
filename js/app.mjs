@@ -284,9 +284,13 @@ function applySharedPartySnapshot(keys, sharedPersonas = []) {
   const sharedSnapshots = (Array.isArray(sharedPersonas) ? sharedPersonas : [])
     .filter((persona) => selectedKeys.has(persona?.key));
   const playerNamesByKey = new Map();
+  const contributorNamesByKey = new Map();
   for (const snapshot of sharedSnapshots) {
     if (typeof snapshot?.playerName === 'string' || snapshot?.assignmentOnly === true) {
       playerNamesByKey.set(snapshot.key, sanitizePlayerName(snapshot.playerName));
+    }
+    if (typeof snapshot?.addedByDisplayName === 'string') {
+      contributorNamesByKey.set(snapshot.key, snapshot.addedByDisplayName.trim().slice(0, 40));
     }
   }
   const byKey = new Map(state.localPersonas.map((persona) => [persona.key, persona]));
@@ -315,6 +319,7 @@ function applySharedPartySnapshot(keys, sharedPersonas = []) {
     playerName: playerNamesByKey.has(entry.key)
       ? playerNamesByKey.get(entry.key)
       : sanitizePlayerName(entry.playerName),
+    addedByDisplayName: contributorNamesByKey.get(entry.key) || entry.addedByDisplayName || '',
   }));
   const missing = (Array.isArray(keys) ? keys : []).filter((entry) => !state.map.has(typeof entry === 'string' ? entry : entry?.key));
   if (missing.length) {
@@ -374,6 +379,7 @@ function sanitizeParty(entries) {
     party.push({
       key,
       playerName: sanitizePlayerName(typeof entry === 'string' ? '' : entry?.playerName),
+      addedByDisplayName: String(typeof entry === 'string' ? '' : entry?.addedByDisplayName || '').trim().slice(0, 40),
     });
     if (party.length >= MAX_PARTY) break;
   }
@@ -647,6 +653,10 @@ function canEditParty() {
   return window.sharedPartySession?.canEdit?.() ?? true;
 }
 
+function currentSharedContributorName() {
+  return String(window.sharedPartySession?.getDisplayName?.() || '').trim().slice(0, 40);
+}
+
 function renderMeta() {
   const meta = state.data.meta;
   const result = state.lastAggregate;
@@ -745,7 +755,7 @@ function renderMatrix() {
     const slot = state.party.findIndex((item) => item.key === entry.key) + 1;
     const isSelectedDetail = state.selectedDetailKey === entry.key;
     body += `<tr class="${isSelectedDetail ? 'is-selected-detail' : ''}">`;
-    body += `<th scope="row" class="member"><button type="button" class="matrix-persona-select" data-action="select-persona" data-key="${escapeHtml(entry.key)}" aria-pressed="${isSelectedDetail}"><span class="member-label">${escapeHtml(entry.playerName || 'PL未設定')}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></button></th>`;
+    body += `<th scope="row" class="member"><button type="button" class="matrix-persona-select" data-action="select-persona" data-key="${escapeHtml(entry.key)}" aria-pressed="${isSelectedDetail}"><span class="member-label">${escapeHtml(entry.playerName || entry.addedByDisplayName || 'PL未設定')}</span><span class="member-name" title="${escapeHtml(persona.name)}">${escapeHtml(persona.name)}<span class="member-kind">${personaKindLabel(persona)}</span></span></button></th>`;
     for (const skillSlot of persona.slots) {
       const chips = skillSlot.colors.map((sin) => (
         `<span class="slot-chip" style="--sin:${SIN_META[sin].color}">${escapeHtml(sin)}</span>`
@@ -1289,12 +1299,17 @@ function choosePersona(key) {
       showToast(`編成は最大 ${MAX_PARTY} 名です。`);
       return;
     }
-    state.party.push({ key, playerName: defaultPlayerName() });
+    state.party.push({
+      key,
+      playerName: defaultPlayerName(),
+      addedByDisplayName: currentSharedContributorName(),
+    });
   } else if (state.pickerIndex !== null) {
     const previous = state.party[state.pickerIndex];
     state.party[state.pickerIndex] = {
       key,
       playerName: sanitizePlayerName(previous?.playerName) || defaultPlayerName(),
+      addedByDisplayName: currentSharedContributorName(),
     };
   }
 
@@ -1343,6 +1358,7 @@ function applyImport() {
   state.party = result.party.map((entry) => ({
     key: entry.key,
     playerName: sanitizePlayerName(entry.playerName),
+    addedByDisplayName: currentSharedContributorName(),
   }));
   state.selectedSin = null;
   state.partySort = 'default';
@@ -1457,6 +1473,7 @@ async function boot() {
         getPartyEntries: () => state.party.map((entry) => ({
           key: entry.key,
           playerName: sanitizePlayerName(entry.playerName),
+          addedByDisplayName: String(entry.addedByDisplayName || '').trim().slice(0, 40),
         })),
         setPartyKeys: (keys, sharedPersonas = []) => applySharedPartySnapshot(keys, sharedPersonas),
         getPartyPersonas: getShareablePartyPersonas,
