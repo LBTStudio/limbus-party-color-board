@@ -694,6 +694,7 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(joinFn, /SESSION_MEMBER_LIMIT/);
   assert.match(joinFn, /USER_SESSION_LIMIT/);
   assert.match(joinFn, /role = 'editor'/);
+  assert.match(joinFn, /r\.status = 'revoked'/);
   assert.match(accessFn, /if not found or v_owner <> v_user_id then raise exception 'OWNER_REQUIRED'/);
   assert.match(accessFn, /delete from public\.session_members[\s\S]*?role <> 'owner'/);
   assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default true/i);
@@ -727,3 +728,22 @@ test('public snapshot cache is short-lived and can never restore edit privileges
   assert.match(sharedUi, /閲覧中は自動同期・定期通信を行いません/);
   assert.match(sharedUi, /必要に応じて「編成を更新」を押してください/);
 });
+
+test('removing an editor blocks rejoining with the same anonymous account', () => {
+  const removeStart = publicViewMigration.indexOf('create or replace function public.remove_party_session_member');
+  const accessStart = publicViewMigration.indexOf('create or replace function public.set_public_party_access');
+  const joinStart = publicViewMigration.indexOf('create or replace function public.join_public_party_session');
+  assert.ok(removeStart >= 0 && accessStart > removeStart);
+  const removeFn = publicViewMigration.slice(removeStart, accessStart);
+  const joinFn = publicViewMigration.slice(joinStart, removeStart);
+  assert.match(removeFn, /insert into public\.session_access_requests/);
+  assert.match(removeFn, /status = 'revoked'/);
+  assert.match(removeFn, /rejoin_blocked',true/);
+  assert.match(joinFn, /r\.status = 'revoked'/);
+  assert.match(publicViewMigration, /create trigger party_session_member_broadcast[\s\S]*?after insert or delete or update of role on public\.session_members/i);
+  assert.match(publicViewMigration, /event => 'membership_changed'/);
+  assert.match(client, /\.on\('broadcast', \{ event: 'membership_changed' \}/);
+  assert.match(sharedUi, /payload\?\._event === 'membership_changed'/);
+  assert.match(sharedUi, /編集参加権限が解除されたため保存できません/);
+});
+
