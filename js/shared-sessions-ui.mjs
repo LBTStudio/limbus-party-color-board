@@ -1,5 +1,6 @@
 import { createSharedSessions, isCaptchaReady, isSharedSessionsConfigured, isTurnstileConfigured, setCaptchaToken } from './shared-sessions.mjs';
 import { TURNSTILE_SITE_KEY } from './supabase-config.mjs';
+import { forgetKnownSharedSession, readKnownSharedSessions, rememberKnownSharedSession } from './known-shared-sessions.mjs';
 
 const $ = (selector) => document.querySelector(selector);
 let api = null;
@@ -292,26 +293,30 @@ function render() {
     const row = node('div', 'shared-session-item');
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
-    const memberCount = Number(item.member_count);
-    const memberLimit = Number(item.member_limit) || 20;
-    const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
-      ? memberCount + '/' + memberLimit + '名'
-      : '人数取得中';
-    text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
-      + ' · ' + memberCountLabel));
-    text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
-    const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
-    text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
-      ? '最終利用 ' + activity.toLocaleDateString() + ' ' + activity.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : '利用状況を取得できません'));
+    if (item.rememberedOnly) {
+      text.append(node('small', '', '前回利用した共有スペース · 接続時に権限を再確認します'));
+    } else {
+      const memberCount = Number(item.member_count);
+      const memberLimit = Number(item.member_limit) || 20;
+      const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
+        ? memberCount + '/' + memberLimit + '名'
+        : '人数取得中';
+      text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
+        + ' · ' + memberCountLabel));
+      text.append(node('small', 'shared-session-owner', '発行者: ' + (item.owner_display_name || '編成主')));
+      const activity = item.last_activity_at ? new Date(item.last_activity_at) : (item.updated_at ? new Date(item.updated_at) : null);
+      text.append(node('small', 'shared-session-activity', activity && !Number.isNaN(activity.getTime())
+        ? '最終利用 ' + activity.toLocaleDateString() + ' ' + activity.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '利用状況を取得できません'));
+    }
     row.append(text);
-    const openButton = makeActionButton(selected ? '選択中' : '開く', 'shared-open-session', { sessionId: item.session_id });
+    const openButton = makeActionButton(selected ? '選択中' : (item.rememberedOnly ? '再接続' : '開く'), 'shared-open-session', { sessionId: item.session_id });
     openButton.disabled = Boolean(selected) || Boolean(active?.controlBusy);
     row.append(openButton);
     list.append(row);
   });
   if (!sessions.length && configured) {
-    list.append(node('p', 'empty', 'この端末が編集参加している共有編成はありません。共有リンクから閲覧し、「編集に参加」を押すと一覧に追加されます。'));
+    list.append(node('p', 'empty', 'この端末に記録された共有スペースはありません。共有リンクを開くと、次回からここに表示されます。'));
   }
 
   $('#shared-active').hidden = !active;
@@ -348,7 +353,17 @@ async function refreshSessions() {
   try {
     setStatus('参加中の共有編成をクラウドから読み込んでいます…');
     const result = await getApi().listSessions(displayName());
-    sessions = Array.isArray(result) ? result : [];
+    const listed = Array.isArray(result) ? result : [];
+    const listedIds = new Set(listed.map((item) => String(item.session_id || '').toLowerCase()));
+    const remembered = readKnownSharedSessions()
+      .filter((item) => !listedIds.has(item.session_id))
+      .map((item) => ({
+        session_id: item.session_id,
+        title: item.title,
+        role: 'remembered',
+        rememberedOnly: true,
+      }));
+    sessions = [...listed, ...remembered];
     const activeListing = active && sessions.find((item) => item.session_id === active.sessionId);
     if (activeListing?.owner_display_name) {
       active.ownerDisplayName = String(activeListing.owner_display_name).trim().slice(0, 40) || '編成主';
@@ -357,7 +372,17 @@ async function refreshSessions() {
     render();
     if (active && active.role === 'owner') await refreshAdmin();
   } catch (error) {
-    setStatus(error.message || 'セッション一覧を取得できませんでした。');
+    // Preserve the locally remembered entries if the cloud membership listing
+    // is temporarily unavailable. Opening one still revalidates access at the server.
+    const remembered = readKnownSharedSessions().map((item) => ({
+      session_id: item.session_id,
+      title: item.title,
+      role: 'remembered',
+      rememberedOnly: true,
+    }));
+    sessions = remembered;
+    setStatus((error.message || 'セッション一覧を取得できませんでした。')
+      + (remembered.length ? ' 前回利用した共有スペースは再接続できます。' : ''));
   }
 }
 
@@ -450,6 +475,7 @@ async function activateSession(sessionId, prefetched = null) {
     : await getApi().readPublicSession(sessionId);
   if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
   if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
+  rememberKnownSharedSession(snapshot.session_id || sessionId, snapshot.title || '共有スペース');
 
   if (!active && !personalPartySnapshot) personalPartySnapshot = currentPartyEntries();
   stopPolling();
@@ -1054,6 +1080,7 @@ async function archiveActive() {
   render();
   try {
     await getApi().archiveSession(session.sessionId);
+    forgetKnownSharedSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
     if (active === session) {
       session.controlBusy = false;
