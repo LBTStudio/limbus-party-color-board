@@ -716,7 +716,7 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.doesNotMatch(accessFn, /delete from public\.session_members/i);
   assert.match(accessFn, /PUBLIC_EDIT_REQUIRES_VIEW/);
   assert.match(sharedUi, /const editEnabled = viewEnabled && \$\('#shared-public-edit-enabled'\)\.checked/);
-  assert.match(sharedUi, /\$\('#shared-public-edit-enabled'\)\.disabled = active\.publicViewEnabled === false/);
+  assert.match(sharedUi, /\$\('#shared-public-edit-enabled'\)\.disabled = Boolean\(active\.controlBusy\) \|\| active\.publicViewEnabled === false/);
   assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /public_view_enabled boolean not null default false/i);
