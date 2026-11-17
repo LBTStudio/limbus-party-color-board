@@ -269,6 +269,9 @@ begin
   if p_public_view_enabled is null or p_public_edit_enabled is null then
     raise exception 'ACCESS_FLAGS_REQUIRED' using errcode = '22023';
   end if;
+  if p_public_edit_enabled and not p_public_view_enabled then
+    raise exception 'PUBLIC_EDIT_REQUIRES_VIEW' using errcode = '22023';
+  end if;
 
   select s.owner_user_id into v_owner
   from public.party_sessions s
