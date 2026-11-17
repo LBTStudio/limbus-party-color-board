@@ -287,13 +287,8 @@ begin
       updated_at = now()
   where id = p_session_id;
 
-  -- Disabling open editing immediately revokes all non-owner write memberships.
-  -- Existing sockets may remain connected until they reconnect, but every write RPC
-  -- rechecks membership and therefore rejects them after this transaction commits.
-  if not p_public_edit_enabled then
-    delete from public.session_members
-    where session_id = p_session_id and role <> 'owner';
-  end if;
+  -- This flag controls new direct joins only. Existing approved members keep their
+  -- current role until the owner removes them individually.
 
   return jsonb_build_object(
     'status', 'updated',
