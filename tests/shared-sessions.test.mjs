@@ -641,7 +641,7 @@ test('GitHub Actions dependencies are pinned and upstream data updates require r
 });
 
 
-test('main board is prioritized and infrequent operations are grouped', () => {
+test('main board groups roster maintenance actions and gives sharing a clear persistent entry', () => {
   const toolbarStart = html.indexOf('<section class="panel controls"');
   const resourcesStart = html.indexOf('<section class="panel resource-section"');
   const matrixStart = html.indexOf('<section class="panel matrix-panel"');
@@ -651,14 +651,19 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(matrixStart > resourcesStart && personaStart > matrixStart);
   assert.ok(sharingStart > personaStart, 'sharing controls should not displace the primary lineup workflow');
   assert.ok(html.includes('<details class="toolbar-more">'));
-  assert.ok(html.includes('href="#shared-panel">共同編集・同期へ</a>'));
+  assert.ok(html.includes('<summary>編成管理</summary>'));
+  assert.ok(html.includes('id="import-tsv"'));
+  assert.ok(html.includes('id="reset-party"'));
+  assert.doesNotMatch(html, /その他の操作|共同編集・同期へ|href="#shared-panel"/);
   assert.ok(html.includes('<details class="shared-info">'));
   assert.ok(html.includes('id="shared-panel-toggle"'));
   assert.ok(html.includes('id="shared-panel-content"'));
+  assert.ok(html.includes('id="shared-panel-toggle-label">共有・共同編集を開く'));
   assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-content'));
   assert.ok(styles.includes('position: fixed;'));
-  assert.ok(styles.includes('.shared-panel,\n  .card-actions'));
-  assert.ok(sharedUi.includes('a[href="#shared-panel"]'));
+  assert.ok(styles.includes('.shared-panel,\\n  .card-actions'));
+  assert.match(styles, /\\.shared-panel:not\\(\\.is-open\\) \\.shared-panel-toggle \\{[\\s\\S]*?background: linear-gradient/);
+  assert.doesNotMatch(sharedUi, /a\\[href="#shared-panel"\\]/);
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
   assert.ok(sharedUi.includes("$('#shared-join-edit').addEventListener('click', () => enterEditMode())"));
   assert.ok(sharedUi.includes("$('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot())"));
