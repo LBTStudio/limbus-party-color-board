@@ -75,6 +75,13 @@ begin
     raise exception 'PUBLIC_SESSION_NOT_FOUND' using errcode = 'P0002';
   end if;
 
+  -- Public views count as activity, but update the shared row at most once per
+  -- five minutes across all viewers to avoid write amplification.
+  update public.party_sessions
+  set last_activity_at = now()
+  where id = p_session_id
+    and last_activity_at < now() - interval '5 minutes';
+
   select m.display_name into v_owner_name
   from public.session_members m
   where m.session_id = p_session_id and m.role = 'owner'
