@@ -205,7 +205,7 @@ test('docs describe the implemented shared-session feature', () => {
   assert.doesNotMatch(readme, /複数人の編集は同期されません/);
   assert.doesNotMatch(design, /共有セッションは未実装/);
   assert.doesNotMatch(failureModes, /共有セッション機能がまだない/);
-  assert.match(readme, /閲覧モードは初回取得後に定期通信しません/);
+  assert.match(readme, /初回取得後は自動ポーリングやRealtime接続を行わず/);
   assert.match(readme, /招待・承認なしで編集参加/);
 });
 
@@ -441,7 +441,7 @@ test('member capacity supports 16 within the 20-person cap and workspace lists s
   assert.match(listFunction, /owner_member\.user_id = s\.owner_user_id/);
   assert.match(sharedUi, /'発行者: ' \+ \(item\.owner_display_name \|\| '編成主'\)/);
   assert.match(sharedUi, /'発行者: ' \+ active\.ownerDisplayName/);
-  assert.match(design, /閲覧者に自動pollを持たせない/);
+  assert.match(design, /閲覧中の定期通信も行わない/);
   assert.match(design, /60,000 bytes/);
   assert.match(design, /2,000,000\/月/);
 });
@@ -450,7 +450,7 @@ test('shared links use a single view-and-edit URL without invite issuance', () =
   assert.match(html, /id="shared-tool-url"/);
   assert.match(html, /id="shared-copy-tool-url">ツールURLをコピー/);
   assert.match(html, /id="shared-copy-session-link">閲覧・編集リンクをコピー/);
-  assert.match(html, /id="shared-join-edit">編集に参加/);
+  assert.match(html, /id="shared-join-edit"[^>]*>編集に参加/);
   assert.doesNotMatch(html, /id="shared-create-invite"|id="shared-copy-invite"|id="shared-access-waiting"/);
   assert.match(sharedUi, /function publicToolUrl\(\) \{\s*return location\.origin \+ location\.pathname;/);
   assert.match(sharedUi, /publicToolUrl\(\) \+ '#session='/);
@@ -689,7 +689,7 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(joinFn, /USER_SESSION_LIMIT/);
   assert.match(joinFn, /role = 'editor'/);
   assert.match(joinFn, /r\.status = 'revoked'/);
-  assert.match(accessFn, /if not found or v_owner <> v_user_id then raise exception 'OWNER_REQUIRED'/);
+  assert.match(accessFn, /if not found or v_owner <> v_user_id then\s*raise exception 'OWNER_REQUIRED'/);
   assert.doesNotMatch(accessFn, /delete from public\.session_members/i);
   assert.match(accessFn, /PUBLIC_EDIT_REQUIRES_VIEW/);
   assert.match(sharedUi, /const editEnabled = viewEnabled && \$\('#shared-public-edit-enabled'\)\.checked/);
@@ -730,7 +730,7 @@ test('public snapshot cache is short-lived and can never restore edit privileges
   assert.match(client, /if \(!authenticated && data\?\.status === 'ok'/);
   assert.match(client, /Date\.now\(\) - cached\.savedAt < 60000/);
   assert.match(client, /role: 'public-viewer', _fromCache: true/);
-  assert.match(client, /role: 'public-viewer' \} \}\)\)/);
+  assert.match(client, /data: \{ \.\.\.data, role: 'public-viewer' \}/);
   assert.match(sharedUi, /閲覧中は自動同期・定期通信を行いません/);
   assert.match(sharedUi, /必要に応じて「編成を更新」を押してください/);
 });
@@ -751,7 +751,7 @@ test('removing an editor blocks rejoining with the same anonymous account', () =
   assert.match(client, /\.on\('broadcast', \{ event: 'membership_changed' \}/);
   assert.match(sharedUi, /payload\?\._event === 'membership_changed'/);
   assert.match(sharedUi, /編集参加権限が解除されたため保存できません/);
-  assert.match(sharedUi, /既存の編集者はそのまま利用できます/);
+  assert.match(sharedUi, /既存の編集参加者は個別に解除できます/);
 });
 
 
