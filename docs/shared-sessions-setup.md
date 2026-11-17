@@ -54,6 +54,14 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 
 公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
 
+## 5.1 Supabase Branching の健全性確認
+
+2026-11-17のSupabase Branch一覧では、既定の `main` ブランチが `MIGRATIONS_FAILED` と表示されていました（`updated_at` は 2026-10-23）。一方、このPRの `Supabase Preview` チェックは、feature branchがSupabase Branchに関連付いていないため `skipped` です。プレビューDBで今回のmigrationが実行されたとは扱わないでください。
+
+同じ時点で本番DBのmigration履歴には、このリポジトリに存在しない `lbt_account_vaults` 系の5件も記録されています。Supabaseプロジェクトが複数機能・複数リポジトリで共有されている可能性があるため、これらをこのリポジトリへ空のmigrationとして追加したり、履歴を推測でrepairしたりしないでください。
+
+本番反映前にDashboard → Branches → `main` → **View logs** で失敗したworkflow stepとSQLエラーを確認し、どのリポジトリが該当migrationを管理するかを照合してください。原因が分かるまではpreview branchのreset/rebase/deleteやmigration repairを行わないでください。Supabase公式の [MIGRATIONS_FAILED troubleshooting](https://supabase.com/kb/troubleshooting/branch-in-migrations-failed-status) も参照してください。
+
 **手動でSQL Editorから同じmigrationを実行するのは、GitHub連携で適用しない場合だけにしてください。** 両方を使うと migration 履歴がずれる可能性があります。
 ### 5.1 Realtimeのprivate channel設定
 
