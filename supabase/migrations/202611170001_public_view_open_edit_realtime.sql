@@ -1,3 +1,14 @@
+-- Existing workspaces retain the private-by-default behavior. New workspaces
+-- explicitly opt into public viewing and editing in create_party_session below.
+alter table public.party_sessions
+  add column if not exists public_view_enabled boolean not null default false,
+  add column if not exists public_edit_enabled boolean not null default false;
+
+update public.party_sessions
+set public_view_enabled = false,
+    public_edit_enabled = false
+where archived_at is null;
+
 create or replace function public.create_party_session(
   p_title text,
   p_display_name text default '編成主'
@@ -377,12 +388,19 @@ set search_path = pg_catalog
 as $$
 begin
   if new.revision is distinct from old.revision then
-    perform realtime.send(
-      payload => jsonb_build_object('revision', new.revision),
-      event => 'party_changed',
-      topic => 'party:' || new.id::text,
-      private => true
-    );
+    -- Realtime is an optimization, never a prerequisite for a committed edit.
+    -- A client connection creates the daily realtime.messages partition; if no
+    -- client is connected yet, the send can fail while the database edit is valid.
+    begin
+      perform realtime.send(
+        payload => jsonb_build_object('revision', new.revision),
+        event => 'party_changed',
+        topic => 'party:' || new.id::text,
+        private => true
+      );
+    exception when others then
+      null;
+    end;
   end if;
   return new;
 end;
@@ -407,12 +425,17 @@ begin
   else
     v_session_id := new.session_id;
   end if;
-  perform realtime.send(
-    payload => jsonb_build_object('kind', 'membership_changed'),
-    event => 'membership_changed',
-    topic => 'party:' || v_session_id::text,
-    private => true
-  );
+  begin
+    perform realtime.send(
+      payload => jsonb_build_object('kind', 'membership_changed'),
+      event => 'membership_changed',
+      topic => 'party:' || v_session_id::text,
+      private => true
+    );
+  exception when others then
+    -- Roster refresh can fall back to the next explicit reload or editor poll.
+    null;
+  end;
   if tg_op = 'DELETE' then return old; end if;
   return new;
 end;
