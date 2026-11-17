@@ -56,6 +56,17 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 
 公式仕様: [Supabase GitHub Integration](https://supabase.com/docs/guides/deployment/branching/github-integration)。
 
+### 5.1 Freeプランでの本番migration経路
+
+このSupabase組織はFreeプランです。現在の料金表ではFreeにSupabase Branchingは含まれず、GitHub連携によるproductionへの直接デプロイは全プランで利用できます。したがって、このPRにSupabase Preview用DBが作られず、Preview checkがskipされること自体はテスト失敗ではありません。リリースのためだけに新しいpreview branchや別projectを作らず、無料枠を維持してください。
+
+本番migrationの適用経路は次のどちらか一方に固定してください。
+
+1. **GitHub Integrationがこのリポジトリを参照している場合**：Working directory `.`、Production branch `main`、Deploy to productionの状態を確認し、migration適用履歴を照合します。`main`へ統合したときに対象migrationが一度だけ適用されることを確認します。
+2. **GitHub Integrationが別リポジトリを参照している、または自動適用を無効にしている場合**：このPRのSQLファイルをDashboardのSQL Editorから一度だけ適用し、Postgresのmigration履歴とRPC・trigger・policyを確認します。その後も自動適用と手動適用を併用しないでください。
+
+現在の接続先は複数リポジトリで共有されているため、GitHub Integrationがどのリポジトリを参照しているかをコネクタから確認できていません。実際のIntegration設定を見ずに、mergeだけでこのPRのmigrationが本番に届くと判断しないでください。
+
 ### 5.1 Supabase Branching の健全性確認
 
 2026-11-17のSupabase Branch一覧では、既定の `main` ブランチが `MIGRATIONS_FAILED` と表示されていました（`updated_at` は 2026-10-23）。一方、このPRの `Supabase Preview` チェックは、feature branchがSupabase Branchに関連付いていないため `skipped` です。プレビューDBで今回のmigrationが実行されたとは扱わないでください。
