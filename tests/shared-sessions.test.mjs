@@ -16,6 +16,7 @@ const playerAssignmentMigration = read('../supabase/migrations/20261023232430_ad
 const publicViewMigration = read('../supabase/migrations/20261117155808_public_view_open_edit_realtime.sql');
 const memberCapacityMigration = read('../supabase/migrations/20261117173728_shared_party_member_capacity.sql');
 const displayNameMigration = read('../supabase/migrations/20261117214101_update_my_party_session_display_name.sql');
+const contributorMigration = read('../supabase/migrations/20261117222402_track_shared_party_persona_contributors.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -1067,4 +1068,33 @@ test('new rooms default to six total members and room masters control the cap', 
   assert.match(design, /現在の参加人数を下回れない/);
   assert.match(read('../docs/shared-sessions-setup.md'), /ルームマスターは1〜20名/);
   assert.equal((memberCapacityMigration.match(/(?:as|do) \$\$/gi) || []).length, (memberCapacityMigration.match(/^\$\$;$/gm) || []).length);
+});
+
+
+test('shared party matrix attributes each persona to its adding member and follows display-name changes', () => {
+  assert.match(contributorMigration, /create table if not exists public\\.party_session_persona_authors/i);
+  assert.match(contributorMigration, /alter table public\\.party_session_persona_authors enable row level security/i);
+  assert.match(contributorMigration, /revoke all on table public\\.party_session_persona_authors from public, anon, authenticated/i);
+  assert.match(contributorMigration, /auth\\.uid\\(\\)/);
+  assert.match(contributorMigration, /not \\(v_key = any\\(coalesce\\(old\\.party_keys/);
+  assert.match(contributorMigration, /delete from public\\.party_session_persona_authors[\\s\\S]*?not \\(a\\.persona_key = any/);
+  assert.match(contributorMigration, /first_additions as[\\s\\S]*?order by session_id, persona_key, revision/i);
+  assert.match(contributorMigration, /e\\.revision = 1/);
+  assert.match(contributorMigration, /create trigger party_session_persona_author_tracking[\\s\\S]*?after update of party_keys on public\\.party_sessions/i);
+  assert.match(contributorMigration, /create or replace function public\\._party_personas_with_contributors/i);
+  assert.match(contributorMigration, /'addedByDisplayName', author\\.display_name/);
+  assert.match(contributorMigration, /party_personas',public\\._party_personas_with_contributors/);
+  assert.match(contributorMigration, /party_personas', public\\._party_personas_with_contributors/);
+  assert.match(contributorMigration, /update public\\.party_session_persona_authors[\\s\\S]*?set display_name = v_display_name[\\s\\S]*?and user_id = v_user_id/);
+  assert.match(contributorMigration, /revoke all on function public\\.update_my_party_session_display_name\\(uuid, text\\)[\\s\\S]*?from public, anon, authenticated/i);
+  assert.doesNotMatch(contributorMigration, /grant execute on function public\\.party_session_persona_authors/i);
+
+  assert.match(app, /entry\\.playerName \\|\\| entry\\.addedByDisplayName \\|\\| 'PL未設定'/);
+  assert.match(app, /contributorNamesByKey/);
+  assert.match(app, /addedByDisplayName: currentSharedContributorName\\(\\)/);
+  assert.match(sharedUi, /getDisplayName: \\(\\) => active \\? displayName\\(\\) : ''/);
+  assert.match(sharedUi, /function refreshContributorNames\\(session\\)/);
+  assert.match(sharedUi, /void refreshContributorNames\\(session\\)/);
+  assert.match(sharedUi, /bridge\\.setPartyKeys\\(session\\.lastSavedKeys, session\\.lastSavedPersonas\\)/);
+  assert.match(sharedUi, /key !== 'addedByDisplayName'/);
 });
