@@ -145,6 +145,8 @@ test('Turnstile token is wired into anonymous signup', () => {
   assert.match(client, /isTurnstileConfigured/);
   assert.match(client, /captchaToken/);
   assert.match(client, /supabase-captcha-reset/);
+  assert.match(client, /if \(!isTurnstileConfigured\(\)\)\s*\{[\s\S]*?Turnstile Site key が未設定/);
+  assert.match(client, /const captchaRequired = true/);
   assert.match(sharedUi, /turnstile\.render/);
   assert.match(sharedUi, /challenges\.cloudflare\.com\/turnstile/);
 });
