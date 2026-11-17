@@ -57,18 +57,18 @@ LBTのセーブデータを直接読めるのは、**同じブラウザプロフ
 
 公開閲覧は現在Supabaseの読み取りRPCから取得するため、CDN配信ではありません。閲覧者に定期通信をさせないことでDB要求を抑えていますが、初回・手動更新はDBアクセスと通常Egressを使用します。
 
-追加人格スナップショットの上限60KBに応答メタデータを加え、1回64KBとして概算すると、キャッシュミスの通信量は次のとおりです（実際の応答サイズは編成・人格データで変わります）。
+追加人格スナップショットの保存上限60,000 bytesに編成キー・応答メタデータ・転送余裕を加え、圧縮なしの保守値として **1回68KiB** で概算します。
 
-| 月間取得回数 | 60KB換算 |
+| 月間取得回数 | 68KiB換算 |
 |---:|---:|
-| 1,000回 | 約64MB |
-| 10,000回 | 約640MB |
-| 30,000回 | 約1.92GB |
-| 50,000回 | 約3.2GB |
+| 1,000回 | 約69.6MB |
+| 10,000回 | 約696MB |
+| 30,000回 | 約2.09GB |
+| 50,000回 | 約3.48GB |
 
-Supabase Freeの通常Egress枠は月5GBですが、Egress枠は同じSupabase組織内のプロジェクト間で合算されます。したがって50,000回の取得相当は、他プロジェクトやサイト資産の通信を含める前に枠の64%ほどを使う計算です。実際の閲覧スナップショットは60KB未満のことが多いものの、利用量を見ずに大量アクセスへの耐性を保証するものではありません。
+Supabase Freeは未キャッシュEgress 5GB/月とCached Egress 5GB/月を別枠で持ちます。公開読み取りRPCはDatabase Egress（未キャッシュ）として扱い、Storage CDN向けのCached Egressを使えるとは見なしません。未キャッシュ枠は同じSupabase組織内の全プロジェクト・サービスで合算されます。したがって本機能の運用目標は **450回/日・13,500回/30日・約0.94GB/月** とし、残りを他のLBTサービスに確保します。これはアプリ内で強制される上限ではありません。詳細な前提と編集側のpoll負荷は [共有セッションの容量・無料枠モデル](docs/shared-sessions-capacity-model.md) を参照してください。
 
-Realtimeの通知量は「編集保存回数 × (送信1件＋その時点で受信する編集者数)」で増えます。Supabase FreeのRealtime Messages枠は月200万件、同時接続は200です。Presenceや編成データ全体のBroadcastは使わず、revision通知だけに限定します。private channelのRLS認可を強制するため、Supabase DashboardのRealtime Settingsで `Allow public access to channels` をOFFにしてください。公開後はSupabase Dashboardで通常Egress、Realtime Messages、Peak Connections、Database Size、DB負荷を監視してください。
+Realtimeの通知量は「編集保存回数 × (送信1件＋その時点で受信する編集者数)」で増えます。Supabase FreeのRealtime枠は月200万メッセージ・ピーク接続200、Freeのメッセージスループット上限は100件/秒です。Presenceや編成データ全体のBroadcastは使わず、revision通知だけに限定します。private channelのRLS認可を強制するため、Supabase DashboardのRealtime Settingsで `Allow public access to channels` をOFFにしてください。公開後はDashboardで未キャッシュEgress、Realtime Messages、Peak Connections、Database Size、DB負荷を監視してください。
 
 閲覧をCDNへ移すには、DB更新と同時に安全なrevision別スナップショットをStorageへ公開する仕組みが別途必要です。現在の実装では整合性を優先し、その仕組みを導入したとは扱いません。
 
