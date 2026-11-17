@@ -140,7 +140,8 @@ test('browser config rejects privileged keys and allows supported public-key for
   assert.match(supabaseConfig, /\[remotes\.main\.db\.seed\]/);
   assert.match(supabaseConfig, /sql_paths = \["\.\/seed-persona-keys\.sql"\]/);
 });
-test('Turnstile token is wired into anonymous signup', () => {
+test('Turnstile token is wired into anonymous signup and documented as a fail-closed prerequisite', () => {
+  const setup = read('../docs/shared-sessions-setup.md');
   assert.match(config, /TURNSTILE_SITE_KEY/);
   assert.match(client, /isTurnstileConfigured/);
   assert.match(client, /captchaToken/);
@@ -149,6 +150,8 @@ test('Turnstile token is wired into anonymous signup', () => {
   assert.match(client, /const captchaRequired = true/);
   assert.match(sharedUi, /turnstile\.render/);
   assert.match(sharedUi, /challenges\.cloudflare\.com\/turnstile/);
+  assert.match(setup, /Site key未設定またはtoken未取得なら匿名Authを開始しないfail-closed動作/);
+  assert.match(setup, /Supabase側でCAPTCHA protectionを有効にするまではサーバー側の検証は成立しません/);
 });
 
 test('public viewers do not poll; editors use Realtime with slow polling fallback', () => {
