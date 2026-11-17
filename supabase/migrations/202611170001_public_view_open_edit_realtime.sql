@@ -44,12 +44,12 @@ begin
   insert into public.party_sessions (
     title, owner_user_id, public_view_enabled, public_edit_enabled
   )
-  values (v_title, v_user_id, true, true)
+  values (v_title, v_user_id, false, false)
   returning id into v_session_id;
   insert into public.session_members (session_id,user_id,role,display_name)
   values (v_session_id,v_user_id,'owner',v_name);
   return public._party_session_snapshot(v_session_id)
-    || jsonb_build_object('public_view_enabled',true,'public_edit_enabled',true);
+    || jsonb_build_object('public_view_enabled',false,'public_edit_enabled',false);
 end;
 $$;
 
