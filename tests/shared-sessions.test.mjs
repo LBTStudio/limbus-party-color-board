@@ -666,6 +666,7 @@ test('main board groups roster maintenance actions and gives sharing a clear per
   assert.ok(styles.includes('background: linear-gradient(135deg, #e6cc77, #c49e46);'));
   assert.ok(!sharedUi.includes('a[href="#shared-panel"]'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
+  assert.ok(sharedUi.includes('else if (nextOpen && !active) void refreshSessions()'));
   assert.ok(sharedUi.includes("$('#shared-join-edit').addEventListener('click', () => enterEditMode())"));
   assert.ok(sharedUi.includes("$('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot())"));
   assert.ok(sharedUi.includes("$('#shared-public-edit-enabled').addEventListener('change', () => updatePublicAccess())"));
