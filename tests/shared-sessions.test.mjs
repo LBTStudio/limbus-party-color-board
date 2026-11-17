@@ -965,5 +965,5 @@ test('new rooms default to six total members and room masters control the cap', 
   assert.match(design, /新規ルームの初期上限は6名/);
   assert.match(design, /現在の参加人数を下回れない/);
   assert.match(read('../docs/shared-sessions-setup.md'), /ルームマスターは1〜20名/);
-  assert.equal((memberCapacityMigration.match(/as \$\$/g) || []).length, (memberCapacityMigration.match(/^\$\$;$/gm) || []).length);
+  assert.equal((memberCapacityMigration.match(/(?:as|do) \$\$/gi) || []).length, (memberCapacityMigration.match(/^\$\$;$/gm) || []).length);
 });

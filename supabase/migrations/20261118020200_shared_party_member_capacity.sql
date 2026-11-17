@@ -239,7 +239,7 @@ declare
   v_invites jsonb;
 begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
-  select s.owner_user_id, s.member_limit into v_owner, v_member_limit from public.party_sessions s where s.id=p_session_id and s.archived_at is null for update;
+  select s.owner_user_id, s.member_limit into v_owner, v_member_limit from public.party_sessions s where s.id=p_session_id and s.archived_at is null;
   if not found or v_owner <> v_user_id then raise exception 'OWNER_REQUIRED' using errcode = '42501'; end if;
 
   select coalesce(jsonb_agg(jsonb_build_object(
