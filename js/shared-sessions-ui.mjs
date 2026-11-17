@@ -414,6 +414,7 @@ async function activateSession(sessionId, prefetched = null) {
     lastActivity: Date.now(),
     failures: 0,
     pollBusy: false,
+    pollQueued: false,
     adminUpdatedAt: 0,
     controlBusy: false,
   };
@@ -482,6 +483,9 @@ async function startRealtime(session) {
         realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 150);
         return;
       }
+      // The save RPC response owns the outcome of our in-flight write.
+      // Its own Broadcast echo must not be treated as a competing edit.
+      if (session.saveBusy) return;
       const nextRevision = Number(payload?.revision) || 0;
       if (nextRevision <= session.revision) return;
       if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
@@ -494,7 +498,8 @@ async function startRealtime(session) {
         session.failures = 0;
         // Reconcile after subscribe to close the read-to-subscribe race where
         // a revision can be committed before this channel starts receiving.
-        void pollSession();
+        if (session.saveBusy) session.pollQueued = true;
+        else void pollSession();
       } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
         realtimeConnected = false;
         session.realtimeStarting = false;
@@ -543,22 +548,48 @@ function schedulePoll(delay = null) {
 
 async function pollSession() {
   const session = active;
-  if (!session || document.hidden || session.accessRevoked || session.status === 'closed' || session.pollBusy) return;
+  if (!session || document.hidden || session.accessRevoked || session.status === 'closed') return;
+  if (session.saveBusy || session.pollBusy) {
+    session.pollQueued = true;
+    return;
+  }
+
+  stopPolling();
   session.pollBusy = true;
+  session.pollQueued = false;
+  const finishPoll = () => {
+    session.pollBusy = false;
+    if (active === session && session.pollQueued && !session.saveBusy
+      && !session.accessRevoked && session.status !== 'closed') {
+      session.pollQueued = false;
+      setTimeout(() => { void pollSession(); }, 0);
+      return true;
+    }
+    return false;
+  };
+
   try {
     const result = await getApi().pollSession(session.sessionId, session.revision);
     if (active !== session) {
-      session.pollBusy = false;
+      finishPoll();
+      return;
+    }
+    // A save may have started while this snapshot request was in flight.
+    // Let the write response decide success/conflict before comparing snapshots.
+    if (session.saveBusy) {
+      session.pollQueued = true;
+      finishPoll();
       return;
     }
     session.failures = 0;
     if (result.status === 'closed') {
       session.status = 'closed';
+      session.pollQueued = false;
       stopRealtime();
       statusMessage = '発行者がこのセッションを終了しました。編集は保存できません。';
       bridge.renderAll();
       render();
-      session.pollBusy = false;
+      finishPoll();
       return;
     }
     const previousRole = session.role;
@@ -602,12 +633,13 @@ async function pollSession() {
     if (/SESSION_ACCESS_DENIED|42501|permission denied|OWNER_REQUIRED/i.test(String(error.code || '') + ' ' + String(error.message || ''))) {
       session.accessRevoked = true;
       session.status = 'closed';
+      session.pollQueued = false;
       statusMessage = '編集参加権限が失効したか、セッションが終了されています。閲覧リンクが有効なら閲覧モードで開き直せます。';
       stopPolling();
       stopRealtime();
       bridge.renderAll();
       render();
-      session.pollBusy = false;
+      finishPoll();
       return;
     }
     session.failures += 1;
@@ -615,8 +647,8 @@ async function pollSession() {
     statusMessage = '同期エラー: ' + (error.message || '通信に失敗しました') + '。再接続を試みます。';
     render();
   }
-  session.pollBusy = false;
-  if (active === session && !session.accessRevoked && session.status !== 'closed' && !realtimeConnected) {
+  const queued = finishPoll();
+  if (!queued && active === session && !session.accessRevoked && session.status !== 'closed' && !realtimeConnected) {
     const delay = session.failures
       ? Math.min(120000, 10000 * (2 ** Math.min(session.failures, 4)))
       : null;
@@ -812,6 +844,10 @@ async function sendSave(session, operation) {
   } finally {
     if (active === session) {
       session.saveBusy = false;
+      if (session.pollQueued && !session.accessRevoked && session.status !== 'closed') {
+        session.pollQueued = false;
+        void pollSession();
+      }
       render();
       if (!session.retry && !session.incomingState
         && !samePartyState(currentKeys(), currentPersonas(), session.lastSavedKeys, session.lastSavedPersonas)) {
