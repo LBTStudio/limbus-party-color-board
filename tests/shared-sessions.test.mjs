@@ -834,3 +834,13 @@ test('database creation stays private until the new client explicitly enables pu
   assert.doesNotMatch(publicViewMigration, /as \$\n|^\$;$/m);
 });
 
+
+
+test('design documentation matches verified database membership lifecycle and capacity tests', () => {
+  const smoke = read('../docs/shared-sessions-design.md');
+  assert.match(smoke, /公開編集OFFは新しいjoinを拒否する一方、既存editorのreadとBroadcast認可を維持する/);
+  assert.match(smoke, /ownerによる個別解除後は、同じ匿名Auth IDの再joinが `42501` で拒否され/);
+  assert.match(smoke, /owner込み20名に達している場合の21人目のjoinは `53300` で拒否される/);
+  assert.match(smoke, /1ユーザーの編集membershipが19件ある状態では20件目が成功し、21件目は `53300` で拒否される/);
+  assert.doesNotMatch(smoke, /編集停止後に非owner membershipが消え/);
+});
