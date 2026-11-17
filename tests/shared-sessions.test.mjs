@@ -14,6 +14,7 @@ const partyCapacityMigration = read('../supabase/migrations/20261023213614_allow
 const playerAssignmentMigration = read('../supabase/migrations/20261023232430_add_party_player_assignments_and_resistances.sql');
 const publicViewMigration = read('../supabase/migrations/20261117155808_public_view_open_edit_realtime.sql');
 const memberCapacityMigration = read('../supabase/migrations/20261117173728_shared_party_member_capacity.sql');
+const displayNameMigration = read('../supabase/migrations/20261118090000_update_my_party_session_display_name.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -954,6 +955,28 @@ test('anonymous editor removal blocks the same Auth ID, not a verified person', 
   assert.match(read('../docs/shared-sessions-failure-modes.md'), /新しい匿名IDまでは遮断できない/);
   assert.match(read('../docs/shared-sessions-setup.md'), /本人そのものを恒久的に遮断する機能ではありません/);
 });
+
+test('active editors can update only their own display name and notify the workspace in realtime', () => {
+  assert.equal((displayNameMigration.match(/\\bas \\$\\$/g) || []).length, 1);
+  assert.equal((displayNameMigration.match(/^\\$\\$;$/gm) || []).length, 1);
+  assert.match(displayNameMigration, /auth\\.uid\\(\\)/);
+  assert.match(displayNameMigration, /m\\.user_id = v_user_id/);
+  assert.match(displayNameMigration, /v_role not in \\('owner', 'editor'\\)/);
+  assert.match(displayNameMigration, /set display_name = v_display_name/);
+  assert.match(displayNameMigration, /revoke all on function public\\.update_my_party_session_display_name\\(uuid, text\\)\\s+from public, anon, authenticated/i);
+  assert.match(displayNameMigration, /grant execute on function public\\.update_my_party_session_display_name\\(uuid, text\\)\\s+to authenticated/i);
+  assert.match(publicViewMigration, /after insert or delete or update on public\\.session_members/);
+  assert.match(publicViewMigration, /event => 'membership_changed'/);
+  assert.match(client, /async updateMemberDisplayName\\(sessionId, displayName\\)/);
+  assert.match(client, /rpc\\('update_my_party_session_display_name'/);
+  assert.match(sharedUi, /function scheduleDisplayNameSync\\(/);
+  assert.match(sharedUi, /addEventListener\\('input'/);
+  assert.match(sharedUi, /addEventListener\\('compositionend'/);
+  assert.match(sharedUi, /DISPLAY_NAME_SYNC_DELAY_MS = 450/);
+  assert.match(sharedUi, /void refreshSessions\\(\\)/);
+  assert.match(sharedUi, /表示名を共有先へ同期できませんでした/);
+});
+
 
 test('new rooms default to six total members and room masters control the cap', () => {
   assert.match(memberCapacityMigration, /add column if not exists member_limit integer not null default 6/i);
