@@ -615,6 +615,7 @@ async function enterEditMode() {
   const session = active;
   if (!session || session.role !== 'public-viewer' || !session.publicEditEnabled || session.controlBusy) return;
   session.controlBusy = true;
+  render();
   try {
     await initializeTurnstile();
     if (active !== session) return;
@@ -674,6 +675,7 @@ async function updatePublicAccess() {
   const editEnabled = viewEnabled && $('#shared-public-edit-enabled').checked;
   if (!viewEnabled) $('#shared-public-edit-enabled').checked = false;
   session.controlBusy = true;
+  render();
   $('#shared-public-view-enabled').disabled = true;
   $('#shared-public-edit-enabled').disabled = true;
   $('#shared-leave').disabled = true;
@@ -837,6 +839,7 @@ async function removeMember(userId) {
   if (!session || session.role !== 'owner' || session.controlBusy
     || !window.confirm('この編集参加者を解除しますか？このアカウントは、この共有スペースへ再参加できなくなります。')) return;
   session.controlBusy = true;
+  render();
   try {
     await getApi().removeMember(session.sessionId, userId);
     if (active !== session) return;
@@ -860,6 +863,7 @@ async function archiveActive() {
   }
   if (!window.confirm('「' + session.title + '」を終了しますか？共有編成・参加者・招待・申請・編集履歴を即時削除します。この操作は取り消せません。続行しますか？')) return;
   session.controlBusy = true;
+  render();
   try {
     await getApi().archiveSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
