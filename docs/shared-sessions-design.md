@@ -82,6 +82,7 @@ Realtime Broadcastは送信1件に加え、配信を受けた各クライアン�
 - 公開編集OFFは新しいjoinを拒否する一方、既存editorのreadとBroadcast認可を維持する。
 - ownerによる個別解除後は、同じ匿名Auth IDの再joinが `42501` で拒否され、Broadcast認可もfalseへ戻る。
 - 解除対象外のユーザーによる非公開スペース読取、匿名ロールからのjoin・owner設定RPC実行は拒否される。
+- セッションがowner込み20名に達している場合の21人目のjoinは `53300` で拒否される。1ユーザーの編集membershipが19件ある状態では20件目が成功し、21件目は `53300` で拒否される。
 
 各スモーク試験後の確認では、新しいカラム・関数・トリガー・Realtime policyは0件で、テスト用auth.users／party_sessionsレコードも0件だった。つまりテスト用のユーザー・スペース・membershipも含め、ロールバックによってDBに残っていない。これはRPCとPostgreSQL権限のスモーク試験であり、実ブラウザのTurnstile・WebSocket・負荷試験の代わりではない。
 
