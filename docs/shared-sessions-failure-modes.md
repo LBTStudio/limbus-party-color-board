@@ -14,7 +14,7 @@
 | ownerが既存スペースを移行する | 旧来の非公開セッションが自動的に公開される | migration時に既存スペースの `public_view_enabled` / `public_edit_enabled` をfalseにする。ownerが新UIで個別に有効化する。新規スペースのみ初期値true | 既存セッションはanon readで拒否され、ownerのみ読取・設定変更できる。新規作成は公開フラグtrueになる |
 | 編集参加が無認証で直接呼ばれる | membershipの偽造 | join RPCはauth.uid()を必須にし、SECURITY DEFINERのサーバー処理だけでmembershipを作る。anonには実行権限を与えない | anonロールでjoin RPCを呼ぶと拒否される |
 | 閲覧者がwrite RPCを直接呼ぶ | UI制御を迂回して編集する | apply_party_edit_v2が毎回membership/roleを検証する。read-only public RPCは書き込み処理を持たない | public-viewer / anonからwrite RPCを呼んでも拒否される |
-| 発行者が公開編集を停止する | 既に開かれた編集画面が保存を続ける | トランザクション内でnon-owner membershipを削除する。全write RPCは保存時にmembershipを再確認する。既存Realtimeソケットはすぐ切れない可能性があるが、内容のないrevision通知だけに留め、writeは拒否する | 編集OFF後の古いタブの保存が拒否され、ownerは引き続き設定を変更できる |
+| 発行者が公開編集を停止する | 既存メンバーまで意図せず退出させる | 公開編集フラグは新規join RPCだけを止め、既存membershipとwrite権限は維持する。特定メンバーの解除は別のowner専用RPCを使う | 編集OFF後の新規joinだけが拒否され、既存editorの保存・同期は継続する |
 | 発行者が公開閲覧を停止する | 新しい訪問者がデータを取得する／既存キャッシュが残る | read RPCは新規anon取得を拒否する。認可済みowner/editorは管理のため読取継続可能。既に取得されたデータや60秒のブラウザキャッシュは回収できないことを説明する | anonの新規取得が失敗し、既存memberの再読取は許可される |
 | Broadcastが別セッションへ流れる | 編成更新通知の混線 | topicを `party:<session UUID>` に分け、private channelのRLSで同じセッションのowner/editorだけを許可する | AのeditorがBのtopicへ接続できず、Bのrevisionを受け取らない |
 | Broadcast payloadに編成データが入る | Realtimeメッセージ量・内容漏えい | DB triggerはrevisionだけを送信し、編成本体は認可付きRPCから必要時に取得する | trigger payloadにparty_keys/party_personasが含まれない |
