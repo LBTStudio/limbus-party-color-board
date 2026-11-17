@@ -18,6 +18,8 @@ let realtimeRefreshTimer = null;
 let turnstileWidgetId = null;
 let bridge = null;
 let createBusy = false;
+let pendingJoinChoice = null;
+let joinChoiceBusy = false;
 let displayNameSyncTimer = null;
 let displayNameSyncQueue = Promise.resolve();
 let displayNameInputVersion = 0;
@@ -280,6 +282,21 @@ function render() {
   statusEl.textContent = statusMessage || (configured
     ? '共有編成を開くか、新規作成してください。'
     : '共有機能は接続設定待ちです。js/supabase-config.mjs に公開用 publishable key を設定し、Supabase でマイグレーションを実行してください。');
+  const choosingAccess = Boolean(pendingJoinChoice);
+  $('#shared-join-choice').hidden = !choosingAccess;
+  $('#shared-create-tools').hidden = choosingAccess;
+  if (choosingAccess) {
+    const editEnabled = pendingJoinChoice.public_edit_enabled !== false;
+    $('#shared-join-choice-title').textContent = pendingJoinChoice.title || '共有スペース';
+    $('#shared-choice-display-name').value = displayName();
+    $('#shared-choice-name-field').hidden = !editEnabled;
+    $('#shared-join-as-editor').disabled = joinChoiceBusy || !editEnabled;
+    $('#shared-join-as-viewer').disabled = joinChoiceBusy;
+    $('#shared-join-as-editor').textContent = editEnabled ? '参加者として参加（編集）' : '参加者として参加（停止中）';
+    $('#shared-join-choice-note').textContent = editEnabled
+      ? '参加者は編成を編集して全員に共有できます。閲覧のみでは編成を変更できません。'
+      : 'この共有スペースでは新しい編集参加が停止されています。閲覧のみ利用できます。';
+  }
   $('#shared-create').disabled = !configured || createBusy;
   $('#shared-refresh').disabled = !configured || active?.role === 'public-viewer';
   $('#shared-role-label').textContent = active
@@ -1170,7 +1187,19 @@ async function initializeRoute(route) {
   }
   if (sessionId) {
     try {
-      await activateSession(sessionId);
+      const snapshot = await getApi().readPublicSession(sessionId);
+      if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
+      if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
+      if (['owner', 'editor'].includes(snapshot.role)) {
+        // Existing authenticated members retain their current role and skip the chooser.
+        await activateSession(sessionId, snapshot);
+      } else {
+        // Unrecognized visitors must explicitly choose editing or read-only access.
+        pendingJoinChoice = snapshot;
+        $('#shared-choice-display-name').value = displayName();
+        statusMessage = '「' + (snapshot.title || '共有スペース') + '」の利用方法を選択してください。';
+        render();
+      }
     } catch (error) {
       setStatus('共有セッションを開けませんでした: ' + error.message);
     }
@@ -1179,6 +1208,36 @@ async function initializeRoute(route) {
   if (token || requestedSessionId) {
     setRoute('');
     setStatus('招待制は廃止されました。発行者に新しい閲覧・編集リンクを共有してもらってください。');
+  }
+}
+
+async function chooseSharedAccess(mode) {
+  const snapshot = pendingJoinChoice;
+  if (!snapshot || joinChoiceBusy) return;
+  const joinAsEditor = mode === 'editor';
+  if (joinAsEditor && snapshot.public_edit_enabled === false) {
+    setStatus('この共有スペースでは新しい編集参加が停止されています。閲覧のみ利用できます。');
+    return;
+  }
+  const chosenName = String($('#shared-choice-display-name').value || '').trim().slice(0, 40);
+  if (joinAsEditor && !chosenName) {
+    setStatus('参加時の表示名を入力してください。');
+    $('#shared-choice-display-name').focus();
+    return;
+  }
+
+  joinChoiceBusy = true;
+  pendingJoinChoice = null;
+  if (joinAsEditor) rememberDisplayName(chosenName);
+  render();
+  try {
+    await activateSession(snapshot.session_id, snapshot);
+    if (joinAsEditor) await enterEditMode();
+  } catch (error) {
+    setStatus('共有スペースを開けませんでした: ' + (error.message || '通信エラー'));
+  } finally {
+    joinChoiceBusy = false;
+    render();
   }
 }
 
@@ -1276,6 +1335,8 @@ export async function initializeSharedSessionsUi(callbacks) {
     else if (nextOpen && !active) void refreshSessions();
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
+  $('#shared-join-as-editor').addEventListener('click', () => chooseSharedAccess('editor'));
+  $('#shared-join-as-viewer').addEventListener('click', () => chooseSharedAccess('viewer'));
   displayNameInput.addEventListener('compositionstart', () => {
     displayNameComposing = true;
     if (displayNameSyncTimer) clearTimeout(displayNameSyncTimer);
