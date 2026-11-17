@@ -156,7 +156,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog
-as $
+as $$
 declare
   v_caller uuid := auth.uid();
   v_owner uuid;
@@ -202,7 +202,7 @@ begin
 
   return jsonb_build_object('status','removed','rejoin_blocked',true);
 end;
-$;
+$$;
 
 create or replace function public.set_public_party_access(
   p_session_id uuid,
@@ -355,7 +355,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = pg_catalog
-as $
+as $$
 declare
   v_session_id uuid;
 begin
@@ -373,7 +373,7 @@ begin
   if tg_op = 'DELETE' then return old; end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists party_session_member_broadcast on public.session_members;
 create trigger party_session_member_broadcast
