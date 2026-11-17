@@ -3032,6 +3032,16 @@ h2 {
     border-radius: 9px;
   }
 
+  /* The management dropdown must escape the compact controls panel. */
+  main > .controls {
+    overflow: visible;
+    z-index: 40;
+  }
+
+  .toolbar-more {
+    z-index: 41;
+  }
+
   .controls {
     grid-area: controls;
     display: grid;
