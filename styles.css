@@ -2887,3 +2887,557 @@ h2 {
     grid-column: auto;
   }
 }
+
+
+/* Desktop board: keep the complete working surface inside one viewport. */
+.matrix-persona-select {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.matrix-persona-select:hover .member-name,
+.matrix-persona-select[aria-pressed="true"] .member-name {
+  color: var(--gold-hi);
+}
+.matrix tbody tr.is-selected-detail {
+  background: color-mix(in oklab, var(--gold) 5%, transparent);
+}
+
+@media (min-width: 1120px) and (min-height: 720px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    flex: 0 0 auto;
+    width: min(1600px, calc(100% - 32px));
+    min-height: 58px;
+    padding: 8px 0 7px;
+  }
+
+  .brand-mark {
+    height: 34px;
+  }
+
+  .brand-kicker {
+    font-size: .56rem;
+  }
+
+  .brand h1 {
+    font-size: 1.08rem;
+  }
+
+  .topbar-meta {
+    padding-right: 230px;
+    font-size: .62rem;
+  }
+
+  main {
+    display: grid;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(660px, 1.2fr) minmax(390px, .9fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "controls controls"
+      "resources resources"
+      "matrix party";
+    gap: 8px 10px;
+    width: min(1600px, calc(100% - 32px));
+    height: 0;
+    min-height: 0;
+    margin: 0 auto;
+    padding: 8px 0 10px;
+    overflow: hidden;
+  }
+
+  main > .controls,
+  main > .resource-section,
+  main > .matrix-panel,
+  main > .party-panel {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 9px 10px;
+    overflow: hidden;
+    border-radius: 9px;
+  }
+
+  .controls {
+    grid-area: controls;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toolbar-primary {
+    grid-column: 1;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .toolbar-primary .btn,
+  .toolbar-add {
+    min-height: 34px;
+    padding-inline: 11px;
+    font-size: .72rem;
+    white-space: nowrap;
+  }
+
+  .toolbar-note {
+    display: none;
+  }
+
+  .toolbar-filters {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+    gap: 7px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .control {
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .control label {
+    overflow: hidden;
+    font-size: .61rem;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  select {
+    min-width: 0;
+    min-height: 34px;
+    padding: 0 22px 0 8px;
+    font-size: .68rem;
+  }
+
+  .toolbar-more {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .toolbar-more > summary {
+    min-height: 34px;
+    padding-inline: 9px;
+    font-size: .68rem;
+    white-space: nowrap;
+  }
+
+  .resource-section {
+    grid-area: resources;
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+  }
+
+  .resource-section .section-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+    margin: 0;
+  }
+
+  .resource-section .section-head .kicker {
+    display: none;
+  }
+
+  .resource-section h2 {
+    font-size: .92rem;
+  }
+
+  .resource-section .section-meta {
+    justify-content: flex-start;
+    font-size: .64rem;
+  }
+
+  .resource-section > .hint {
+    display: none;
+  }
+
+  .resource-grid {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-self: stretch;
+    gap: 6px;
+  }
+
+  .resource-card {
+    min-height: 60px;
+    padding: 6px 8px;
+    border-radius: 7px;
+  }
+
+  .resource-name {
+    font-size: .64rem;
+  }
+
+  .resource-count {
+    margin-top: 1px;
+    font-size: 1.28rem;
+  }
+
+  .resource-personas {
+    margin-top: 0;
+    font-size: .57rem;
+  }
+
+  .resource-bar {
+    height: 2px;
+  }
+
+  .matrix-panel,
+  .party-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .matrix-panel {
+    grid-area: matrix;
+  }
+
+  .party-panel {
+    grid-area: party;
+  }
+
+  .matrix-panel .section-head,
+  .party-panel .section-head {
+    flex: 0 0 auto;
+    margin-bottom: 6px;
+  }
+
+  .matrix-panel .section-head h2,
+  .party-panel .section-head h2 {
+    font-size: .92rem;
+  }
+
+  .matrix-panel .section-head .kicker,
+  .party-panel .section-head .kicker {
+    display: none;
+  }
+
+  .table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 6px;
+  }
+
+  .matrix {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    font-size: .64rem;
+  }
+
+  .matrix thead th {
+    padding: 4px 2px;
+    font-size: .55rem;
+    letter-spacing: 0;
+  }
+
+  .matrix thead th.member-head {
+    width: 150px;
+  }
+
+  .matrix tbody th,
+  .matrix tbody td {
+    height: 20px;
+    padding: 2px;
+  }
+
+  .matrix tbody th.member {
+    width: 150px;
+    min-width: 150px;
+    padding-left: 6px;
+  }
+
+  .matrix-persona-select {
+    gap: 1px;
+  }
+
+  .member-label {
+    max-width: 138px;
+    font-size: .58rem;
+  }
+
+  .member-name {
+    max-width: 138px;
+    font-size: .65rem;
+  }
+
+  .slot-cell {
+    width: 42px;
+    min-width: 0;
+  }
+
+  .slot-chips {
+    flex-wrap: nowrap;
+    gap: 1px;
+  }
+
+  .slot-chip {
+    padding: 1px 2px;
+    font-size: .53rem;
+    line-height: 1.2;
+  }
+
+  .count-cell {
+    width: 34px;
+    min-width: 0;
+  }
+
+  .count-pill {
+    min-width: 21px;
+    padding: 1px 2px;
+    font-size: .61rem;
+  }
+
+  .total-cell {
+    width: 38px;
+    min-width: 0;
+    font-size: .62rem;
+  }
+
+  .matrix tfoot th,
+  .matrix tfoot td {
+    padding: 4px 2px;
+    font-size: .58rem;
+  }
+
+  .party-panel .section-head {
+    margin-bottom: 5px;
+  }
+
+  .persona-color-legend {
+    flex: 0 0 auto;
+    margin: 0 0 6px;
+    padding: 6px 8px;
+    font-size: .61rem;
+    line-height: 1.35;
+  }
+
+  .party-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: block;
+  }
+
+  .persona-card:not(.is-selected-detail) {
+    display: none;
+  }
+
+  .persona-card.is-selected-detail {
+    height: 100%;
+    min-height: 0;
+    gap: 5px;
+    padding: 8px;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .color-strip-wrap {
+    margin: -2px 0 0;
+  }
+
+  .card-head {
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-id {
+    gap: 4px;
+  }
+
+  .card-player-field {
+    min-width: 0;
+    gap: 4px;
+    font-size: .59rem;
+  }
+
+  .card-player-input {
+    width: clamp(88px, 10vw, 142px);
+    height: 24px;
+    font-size: .68rem;
+  }
+
+  .card-actions .mini-btn {
+    min-height: 26px;
+  }
+
+  .card-actions .icon-btn {
+    width: 27px;
+    height: 27px;
+  }
+
+  .persona-name {
+    font-size: .91rem;
+    line-height: 1.25;
+  }
+
+  .keyword-row {
+    max-height: 20px;
+    margin-top: 2px;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  .keyword {
+    font-size: .54rem;
+  }
+
+  .stats {
+    gap: 3px;
+  }
+
+  .stats > div {
+    padding: 3px 5px;
+  }
+
+  .stats dt {
+    font-size: .52rem;
+  }
+
+  .stats dd {
+    font-size: .72rem;
+  }
+
+  .passive {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    max-height: 3em;
+    padding: 5px 7px;
+    font-size: .64rem;
+    line-height: 1.45;
+    overflow: hidden;
+  }
+
+  .slot-list {
+    gap: 2px;
+  }
+
+  .slot-row {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 3px 6px;
+  }
+
+  .slot-name {
+    font-size: .64rem;
+  }
+
+  .slot-derived-names {
+    max-height: 1.2em;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sin-chip {
+    padding: 0 4px;
+    font-size: .54rem;
+  }
+
+  .card-resources {
+    gap: 3px;
+    padding-top: 0;
+  }
+
+  .res-chip {
+    padding: 1px 5px;
+    font-size: .56rem;
+  }
+
+  .footer {
+    display: none;
+  }
+
+  .shared-panel:not(.is-open) {
+    top: 8px;
+    right: max(16px, calc((100vw - 1600px) / 2));
+    bottom: auto;
+    width: fit-content;
+    max-width: 230px;
+    padding: 5px 8px;
+    border-radius: 8px;
+  }
+
+  .shared-panel:not(.is-open) .kicker,
+  .shared-panel:not(.is-open) #shared-role-label {
+    display: none;
+  }
+
+  .shared-panel:not(.is-open) .shared-title-full {
+    display: none;
+  }
+
+  .shared-panel:not(.is-open) .shared-title-short {
+    display: inline;
+  }
+
+  .shared-panel:not(.is-open) h2 {
+    font-size: .78rem;
+    white-space: nowrap;
+  }
+
+  .shared-panel:not(.is-open) > .section-head {
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 0;
+  }
+
+  .shared-panel:not(.is-open) .shared-dock-tools {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+
+  .shared-panel-toggle {
+    min-height: 29px;
+    padding-inline: 7px;
+    font-size: .65rem;
+  }
+
+  .shared-panel.is-open {
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: min(720px, calc(100vw - 20px));
+    max-height: none;
+  }
+}
