@@ -3171,7 +3171,7 @@ h2 {
   }
 
   .matrix thead th.member-head {
-    width: 150px;
+    width: 136px;
   }
 
   .matrix tbody th,
@@ -3181,8 +3181,8 @@ h2 {
   }
 
   .matrix tbody th.member {
-    width: 150px;
-    min-width: 150px;
+    width: 136px;
+    min-width: 136px;
     padding-left: 6px;
   }
 
@@ -3190,18 +3190,25 @@ h2 {
     gap: 1px;
   }
 
+  .matrix-persona-select {
+    gap: 0;
+    line-height: 1.02;
+  }
+
   .member-label {
-    max-width: 138px;
-    font-size: .58rem;
+    max-width: 126px;
+    font-size: .55rem;
+    line-height: 1;
   }
 
   .member-name {
-    max-width: 138px;
-    font-size: .65rem;
+    max-width: 126px;
+    font-size: .62rem;
+    line-height: 1.02;
   }
 
   .slot-cell {
-    width: 42px;
+    width: 38px;
     min-width: 0;
   }
 
@@ -3217,7 +3224,7 @@ h2 {
   }
 
   .count-cell {
-    width: 34px;
+    width: 32px;
     min-width: 0;
   }
 
@@ -3228,7 +3235,7 @@ h2 {
   }
 
   .total-cell {
-    width: 38px;
+    width: 34px;
     min-width: 0;
     font-size: .62rem;
   }
@@ -3439,5 +3446,13 @@ h2 {
     bottom: 10px;
     width: min(720px, calc(100vw - 20px));
     max-height: none;
+  }
+}
+
+
+/* Mobile keeps the full persona list and the original vertical browsing flow. */
+@media (max-width: 640px) {
+  .persona-card:not(.is-selected-detail) {
+    display: flex;
   }
 }
