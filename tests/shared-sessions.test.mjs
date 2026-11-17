@@ -721,6 +721,7 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.match(joinFn, /SESSION_MEMBER_LIMIT/);
   assert.match(joinFn, /USER_SESSION_LIMIT/);
   assert.match(joinFn, /role = 'editor'/);
+  assert.match(joinFn, /set role = 'editor', display_name = v_display_name/);
   assert.match(joinFn, /r\.status = 'revoked'/);
   assert.match(accessFn, /if not found or v_owner <> v_user_id then\s*raise exception 'OWNER_REQUIRED'/);
   assert.doesNotMatch(accessFn, /delete from public\.session_members/i);
@@ -791,7 +792,7 @@ test('removing an editor blocks rejoining with the same anonymous account', () =
   assert.match(publicViewMigration, /revoke all on function public\.remove_party_session_member\(uuid,uuid\) from public, anon/i);
   assert.match(publicViewMigration, /grant execute on function public\.remove_party_session_member\(uuid,uuid\) to authenticated/i);
   assert.match(joinFn, /r\.status = 'revoked'/);
-  assert.match(publicViewMigration, /create trigger party_session_member_broadcast[\s\S]*?after insert or delete or update of role on public\.session_members/i);
+  assert.match(publicViewMigration, /create trigger party_session_member_broadcast[\s\S]*?after insert or delete or update on public\.session_members/i);
   assert.match(publicViewMigration, /event => 'membership_changed'/);
   assert.match(client, /\.on\('broadcast', \{ event: 'membership_changed' \}/);
   assert.match(sharedUi, /payload\?\._event === 'membership_changed'/);
