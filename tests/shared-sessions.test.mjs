@@ -231,7 +231,7 @@ test('public share route offers edit participation or viewing and retires old in
   const end = sharedUi.indexOf('async function chooseSharedAccess(mode)', start);
   const route = sharedUi.slice(start, end);
   assert.ok(start >= 0 && end > start);
-  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId\)/);
+  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId(?:, \{ force: true \})?\)/);
   assert.match(route, /\['owner', 'editor'\]\.includes\(snapshot\.role\)[\s\S]*?await activateSession\(sessionId, snapshot\)/);
   assert.match(route, /pendingJoinChoice = snapshot/);
   assert.doesNotMatch(route, /await activateSession\(sessionId\);/);
@@ -918,7 +918,7 @@ test('public shared links ask new visitors to choose edit participation or read-
   const choice = sharedUi.slice(choiceStart, choiceEnd);
 
   assert.ok(routeStart >= 0 && routeEnd > routeStart);
-  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId\)/);
+  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId(?:, \{ force: true \})?\)/);
   assert.match(route, /\['owner', 'editor'\]\.includes\(snapshot\.role\)/);
   assert.match(route, /pendingJoinChoice = snapshot/);
   assert.doesNotMatch(route, /await activateSession\(sessionId\);/);
