@@ -58,7 +58,7 @@ Supabase GitHub Integration を使う場合は、Project Settings → Integratio
 
 2026-11-17のSupabase Branch一覧では、既定の `main` ブランチが `MIGRATIONS_FAILED` と表示されていました（`updated_at` は 2026-10-23）。一方、このPRの `Supabase Preview` チェックは、feature branchがSupabase Branchに関連付いていないため `skipped` です。プレビューDBで今回のmigrationが実行されたとは扱わないでください。
 
-同じ時点で本番DBのmigration履歴には、このリポジトリに存在しない `lbt_account_vaults` 系の5件も記録されています。対応するSQLは `LBTStudio/LIMBUS_BUILD_TERMINAL` に4ファイル確認できましたが、バージョンに差があります。現行ファイル `202610260002_reject_anonymous_vault_access.sql` に対して本番履歴は `20261025215542_reject_anonymous_vault_access`、本番履歴の `20261026001049_drop_stale_lbt_vault_policies` は現行ファイル一覧にありません。Supabaseプロジェクトが複数機能・複数リポジトリで共有されているためと考えられますが、原因は確定していません。これらをこのリポジトリへ空のmigrationとして追加したり、履歴を推測でrepairしたりしないでください。
+同じ時点で本番DBのmigration履歴には `lbt_account_vaults` 系の5件が記録されています。対応する現行SQLは別リポジトリ `LBTStudio/LIMBUS_BUILD_TERMINAL` に4ファイル確認できました。Git履歴では、初期バックアップmigrationの重複版 `202610260001` を削除し、残すファイル名を本番適用済みの `20261025211015` に合わせたこと、payload hash migrationも `20261026012000` から本番履歴の `20261025232745` へ改名したことを確認できました。一方、現行ファイル `202610260002_reject_anonymous_vault_access.sql` に対して本番履歴は `20261025215542_reject_anonymous_vault_access` で番号が異なり、本番履歴の `20261026001049_drop_stale_lbt_vault_policies` は現行ファイル一覧にありません。Git履歴で確認できる名称変更だけでは後者の出所を説明できず、現在の `MIGRATIONS_FAILED` の直接原因も確定していません。Supabaseプロジェクトが複数リポジトリで共有されているため、該当機能側の移行管理元とDashboardの失敗ログを照合してください。これらをこのリポジトリへ空のmigrationとして追加したり、履歴を推測でrepairしたりしないでください。
 
 本番反映前にDashboard → Branches → `main` → **View logs** で失敗したworkflow stepとSQLエラーを確認し、どのリポジトリが該当migrationを管理するかを照合してください。原因が分かるまではpreview branchのreset/rebase/deleteやmigration repairを行わないでください。Supabase公式の [MIGRATIONS_FAILED troubleshooting](https://supabase.com/kb/troubleshooting/branch-in-migrations-failed-status) も参照してください。
 
