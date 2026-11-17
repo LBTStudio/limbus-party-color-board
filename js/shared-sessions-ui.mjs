@@ -1,4 +1,4 @@
-import { createSharedSessions, isSharedSessionsConfigured, isTurnstileConfigured, setCaptchaToken } from './shared-sessions.mjs';
+import { createSharedSessions, isCaptchaReady, isSharedSessionsConfigured, isTurnstileConfigured, setCaptchaToken } from './shared-sessions.mjs';
 import { TURNSTILE_SITE_KEY } from './supabase-config.mjs';
 
 const $ = (selector) => document.querySelector(selector);
@@ -7,13 +7,16 @@ let active = null;
 let personalPartySnapshot = null;
 let sessions = [];
 let admin = null;
-let inviteUrl = '';
-let pendingRequestSessionId = null;
 let statusMessage = '';
 let sharedPanelOpen = false;
 let pollTimer = null;
-let accessTimer = null;
+let realtimeChannel = null;
+let realtimeConnected = false;
+let realtimeAttemptId = 0;
+let realtimeRefreshTimer = null;
+let turnstileWidgetId = null;
 let bridge = null;
+let createBusy = false;
 
 function getApi() {
   if (!isSharedSessionsConfigured()) {
@@ -48,7 +51,7 @@ function snapshotOwnerDisplayName(snapshot, fallback = '編成主') {
   const owner = Array.isArray(snapshot?.members)
     ? snapshot.members.find((member) => member?.role === 'owner')
     : null;
-  const value = String(owner?.display_name || fallback).trim().slice(0, 40);
+  const value = String(snapshot?.owner_display_name || owner?.display_name || fallback).trim().slice(0, 40);
   return value || fallback;
 }
 
@@ -127,6 +130,7 @@ function setRoute(route = '') {
 function roleLabel(role) {
   if (role === 'owner') return '発行者';
   if (role === 'editor') return '編集者';
+  if (role === 'public-viewer') return '閲覧モード';
   return '閲覧者';
 }
 
@@ -164,44 +168,38 @@ function adminItem(label, description, controls = []) {
   row.append(left);
   if (controls.length) {
     const actions = node('div', 'shared-admin-buttons');
-    controls.forEach((control) => actions.append(control));
+    controls.forEach((control) => {
+      if ('disabled' in control) control.disabled = Boolean(active?.controlBusy);
+      actions.append(control);
+    });
     row.append(actions);
   }
   return row;
 }
 
 function renderAdmin(data) {
-  const requests = Array.isArray(data.requests) ? data.requests : [];
   const members = Array.isArray(data.members) ? data.members : [];
-  const invites = Array.isArray(data.invites) ? data.invites : [];
-  const requestsRoot = $('#shared-requests');
+  const memberLimit = Math.max(1, Math.min(20, Number(data.member_limit) || 6));
+  const memberLimitInput = $('#shared-member-limit');
+  memberLimitInput.value = String(memberLimit);
+  memberLimitInput.min = String(Math.max(1, members.length));
+  memberLimitInput.disabled = Boolean(active?.controlBusy);
+  $('#shared-update-member-limit').disabled = Boolean(active?.controlBusy);
+  $('#shared-member-limit-hint').textContent = '現在 ' + members.length + '名 / 上限 ' + memberLimit
+    + '名。ルームマスターを含みます。上限は1〜20名で設定でき、参加中の人数より小さくはできません。';
   const membersRoot = $('#shared-members');
-  const invitesRoot = $('#shared-invites');
-  requestsRoot.replaceChildren(adminSection('参加申請', requests, '保留中の申請はありません。', (item) => adminItem(
-    item.display_name,
-    new Date(item.requested_at).toLocaleString() + ' · ID ' + String(item.user_id).slice(0, 8),
-    [
-      makeActionButton('編集許可', 'shared-approve', { requestId: item.request_id, role: 'editor' }, true),
-      makeActionButton('閲覧許可', 'shared-approve', { requestId: item.request_id, role: 'viewer' }),
-      makeActionButton('却下', 'shared-deny', { requestId: item.request_id }),
-    ],
-  )));
-  membersRoot.replaceChildren(adminSection('参加者（' + members.length + '/20名）', members, '参加者はいません。', (item) => adminItem(
-    item.display_name,
-    roleLabel(item.role) + ' · ID ' + String(item.user_id).slice(0, 8),
-    item.role === 'owner' ? [] : [
-      makeActionButton(item.role === 'viewer' ? '編集者に変更' : '閲覧者に変更', 'shared-set-member-role', {
-        userId: item.user_id,
-        role: item.role === 'viewer' ? 'editor' : 'viewer',
-      }),
-      makeActionButton('参加権限を剥奪', 'shared-remove-member', { userId: item.user_id }),
-    ],
-  )));
-  invitesRoot.replaceChildren(adminSection('招待リンク', invites, 'まだリンクを発行していません。', (item) => adminItem(
-    item.active ? '有効' : '失効・期限切れ',
-    '期限: ' + new Date(item.expires_at).toLocaleString(),
-    item.active ? [makeActionButton('リンクを失効', 'shared-revoke-invite', { inviteId: item.invite_id })] : [],
-  )));
+  membersRoot.replaceChildren(adminSection(
+    '編集参加者（' + members.length + '/' + memberLimit + '名）',
+    members,
+    '編集参加者はいません。',
+    (item) => adminItem(
+      item.display_name,
+      roleLabel(item.role) + ' · ID ' + String(item.user_id).slice(0, 8),
+      item.role === 'owner' ? [] : [
+        makeActionButton('編集参加を解除', 'shared-remove-member', { userId: item.user_id }),
+      ],
+    ),
+  ));
 }
 
 function activeStatusLabel() {
@@ -218,7 +216,7 @@ function activeStatusLabel() {
   return labels[active.status] || '同期中';
 }
 
-function setSharedPanelOpen(open, { focusRequests = false } = {}) {
+function setSharedPanelOpen(open) {
   sharedPanelOpen = Boolean(open);
   const panel = $('#shared-panel');
   const toggle = $('#shared-panel-toggle');
@@ -227,16 +225,8 @@ function setSharedPanelOpen(open, { focusRequests = false } = {}) {
   toggle.setAttribute('aria-expanded', String(sharedPanelOpen));
   const label = $('#shared-panel-toggle-label');
   const mark = $('.shared-toggle-mark');
-  if (label) label.textContent = sharedPanelOpen ? '管理を閉じる' : '管理を開く';
+  if (label) label.textContent = sharedPanelOpen ? '閉じる' : '共有スペース';
   if (mark) mark.textContent = sharedPanelOpen ? '−' : '＋';
-  if (sharedPanelOpen && focusRequests) {
-    const requestHeading = $('#shared-requests h3');
-    if (requestHeading) {
-      requestHeading.tabIndex = -1;
-      requestHeading.scrollIntoView({ behavior: 'auto', block: 'start' });
-      requestHeading.focus({ preventScroll: true });
-    }
-  }
 }
 
 function render() {
@@ -244,20 +234,13 @@ function render() {
   if (!statusEl) return;
   const configured = isSharedSessionsConfigured();
   statusEl.textContent = statusMessage || (configured
-    ? '共有セッションを読み込むか、新規作成してください。'
+    ? '共有編成を開くか、新規作成してください。'
     : '共有機能は接続設定待ちです。js/supabase-config.mjs に公開用 publishable key を設定し、Supabase でマイグレーションを実行してください。');
-  $('#shared-create').disabled = !configured;
-  $('#shared-refresh').disabled = !configured;
+  $('#shared-create').disabled = !configured || createBusy;
+  $('#shared-refresh').disabled = !configured || active?.role === 'public-viewer';
   $('#shared-role-label').textContent = active
     ? roleLabel(active.role) + ' / revision ' + active.revision
     : 'この端末の個人編成';
-  const pendingCount = Array.isArray(admin?.requests) ? admin.requests.length : 0;
-  const requestBadge = $('#shared-request-badge');
-  if (requestBadge) {
-    requestBadge.hidden = pendingCount === 0;
-    requestBadge.textContent = '参加申請 ' + pendingCount;
-    requestBadge.setAttribute('aria-label', '未処理の参加申請 ' + pendingCount + ' 件');
-  }
 
   const list = $('#shared-session-list');
   list.replaceChildren();
@@ -267,8 +250,9 @@ function render() {
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
     const memberCount = Number(item.member_count);
+    const memberLimit = Number(item.member_limit) || 20;
     const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
-      ? memberCount + '/20名'
+      ? memberCount + '/' + memberLimit + '名'
       : '人数取得中';
     text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
       + ' · ' + memberCountLabel));
@@ -279,36 +263,40 @@ function render() {
       : '利用状況を取得できません'));
     row.append(text);
     const openButton = makeActionButton(selected ? '選択中' : '開く', 'shared-open-session', { sessionId: item.session_id });
-    openButton.disabled = Boolean(selected);
+    openButton.disabled = Boolean(selected) || Boolean(active?.controlBusy);
     row.append(openButton);
     list.append(row);
   });
   if (!sessions.length && configured) {
-    list.append(node('p', 'empty', '共同編集スペースはありません。「＋ 共同編集スペースを作成」から開始してください。'));
+    list.append(node('p', 'empty', 'この端末が編集参加している共有編成はありません。共有リンクから閲覧し、「編集に参加」を押すと一覧に追加されます。'));
   }
 
   $('#shared-active').hidden = !active;
-  $('#shared-access-waiting').hidden = !pendingRequestSessionId;
-  if (pendingRequestSessionId) {
-    $('#shared-access-message').textContent = '承認待ちの申請があります。承認までは編成内容は取得できません。';
-  }
   if (!active) return;
-
   $('#shared-active-title').textContent = active.title;
-  $('#shared-active-meta').textContent = '発行者: ' + active.ownerDisplayName + ' · ' + roleLabel(active.role) + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
+  const memberLimitLabel = Number(active.memberLimit) > 0 ? ' · 定員 ' + active.memberLimit + '名' : '';
+  $('#shared-active-meta').textContent = '発行者: ' + active.ownerDisplayName + ' · ' + roleLabel(active.role)
+    + memberLimitLabel + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
   const owner = active.role === 'owner' && !active.accessRevoked && active.status !== 'closed';
-  $('#shared-create-invite').hidden = !owner;
-  $('#shared-invite-tools').hidden = !owner || !inviteUrl;
+  $('#shared-join-edit').hidden = active.role !== 'public-viewer' || !active.publicEditEnabled;
+  $('#shared-join-edit').disabled = Boolean(active.controlBusy);
+  $('#shared-copy-session-link').hidden = false;
+  $('#shared-refresh-snapshot').hidden = false;
+  $('#shared-refresh-snapshot').disabled = Boolean(active.controlBusy);
   $('#shared-archive').hidden = !owner;
-  $('#shared-leave').disabled = active.saveBusy;
+  $('#shared-leave').disabled = active.saveBusy || Boolean(active.controlBusy);
   $('#shared-retry-save').hidden = !active.retry || active.status !== 'unsaved';
-  $('#shared-archive').disabled = active.saveBusy || Boolean(active.retry) || Boolean(active.incomingState);
+  $('#shared-archive').disabled = active.saveBusy || Boolean(active.retry) || Boolean(active.incomingState) || Boolean(active.controlBusy);
   $('#shared-conflict').hidden = !active.incomingState;
   if (active.incomingState) {
     $('#shared-conflict-message').textContent =
       'サーバー revision ' + active.incomingState.revision + ' が最新です。未保存の編成を保持しています。どちらを採用するか選んでください。';
   }
-  $('#shared-invite-link').value = inviteUrl;
+  $('#shared-public-settings').hidden = !owner;
+  $('#shared-public-view-enabled').checked = active.publicViewEnabled !== false;
+  $('#shared-public-edit-enabled').checked = active.publicEditEnabled !== false;
+  $('#shared-public-view-enabled').disabled = Boolean(active.controlBusy);
+  $('#shared-public-edit-enabled').disabled = Boolean(active.controlBusy) || active.publicViewEnabled === false;
   $('#shared-admin').hidden = !owner || !admin;
   if (owner && admin) renderAdmin(admin);
 }
@@ -327,6 +315,7 @@ async function refreshSessions() {
 }
 
 async function createSession() {
+  if (createBusy) return;
   const switchError = sessionSwitchError();
   if (switchError) {
     setStatus(switchError);
@@ -352,20 +341,53 @@ async function createSession() {
     return;
   }
   rememberDisplayName(ownerDisplayName);
+  createBusy = true;
+  render();
   try {
+    if (await getApi().needsAnonymousAuth()) {
+      await initializeTurnstile();
+      if (isTurnstileConfigured() && !isCaptchaReady()) {
+        setStatus('共有スペースの作成には不正利用防止の確認が必要です。確認を完了してから、もう一度作成してください。');
+        return;
+      }
+    }
     setStatus('共有編成をクラウドに作成しています…');
     const result = await getApi().createSession(title, ownerDisplayName);
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
+
+    // Keep database defaults private so an older deployed frontend cannot
+    // accidentally publish a workspace during the migration/deployment gap.
+    // The new UI explicitly enables the intended public defaults after creation.
+    let publicAccessError = null;
+    try {
+      const access = await getApi().setPublicAccess(result.session_id, true, true);
+      if (access?.public_view_enabled !== true || access?.public_edit_enabled !== true) {
+        throw new Error('公開設定の更新結果を確認できませんでした。');
+      }
+      Object.assign(result, access);
+    } catch (error) {
+      publicAccessError = error;
+    }
+
     $('#shared-session-title').value = '';
     await activateSession(result.session_id, result);
-    await refreshSessions();
+    if (publicAccessError) {
+      setStatus('共有スペースは作成されましたが、公開設定をONにできませんでした。非公開のままです。公開・参加設定を確認してください: '
+        + (publicAccessError.message || '設定エラー'));
+    }
   } catch (error) {
     setStatus('共同編集スペースを作成できませんでした: ' + error.message);
+  } finally {
+    createBusy = false;
+    render();
   }
 }
 
 function sessionSwitchError() {
   if (!active) return '';
+  if (active.controlBusy) {
+    return '共有設定・参加者管理の処理中です。完了してから切り替えてください。';
+  }
   if (active.saveBusy || active.retry || active.incomingState
     || !samePartyState(currentKeys(), currentPersonas(), active.lastSavedKeys, active.lastSavedPersonas)) {
     return '未保存の編集、保存処理、または競合があります。再試行・競合解決・破棄のいずれかを済ませてから切り替えてください。';
@@ -378,16 +400,20 @@ async function activateSession(sessionId, prefetched = null) {
   if (switchError) throw new Error(switchError);
   const snapshot = prefetched && Array.isArray(prefetched.party_keys)
     ? prefetched
-    : await getApi().pollSession(sessionId, -1);
+    : await getApi().readPublicSession(sessionId);
   if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
   if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
 
   if (!active && !personalPartySnapshot) personalPartySnapshot = currentPartyEntries();
   stopPolling();
+  stopRealtime();
   active = {
     sessionId: snapshot.session_id || sessionId,
     title: snapshot.title || '共有セッション',
-    role: snapshot.role || 'viewer',
+    role: snapshot.role || 'public-viewer',
+    publicViewEnabled: snapshot.public_view_enabled !== false,
+    publicEditEnabled: snapshot.public_edit_enabled !== false,
+    memberLimit: Number(snapshot.member_limit) || 20,
     ownerDisplayName: snapshotOwnerDisplayName(snapshot),
     revision: Number(snapshot.revision) || 0,
     lastSavedKeys: [...snapshot.party_keys],
@@ -401,18 +427,23 @@ async function activateSession(sessionId, prefetched = null) {
     lastActivity: Date.now(),
     failures: 0,
     pollBusy: false,
+    pollQueued: false,
     adminUpdatedAt: 0,
+    controlBusy: false,
   };
-  pendingRequestSessionId = null;
   admin = null;
-  inviteUrl = '';
   setSharedPanelOpen(true);
   setRoute('session=' + active.sessionId);
   bridge.setPartyKeys(snapshot.party_keys, remotePersonas(snapshot));
-  statusMessage = '「' + active.title + '」をクラウドから開きました。保存・同期状態はこのパネルで確認できます。';
+  statusMessage = snapshot._fromCache
+    ? '保存済みの閲覧キャッシュを表示しています。必要に応じて「編成を更新」を押してください。'
+    : '「' + active.title + '」を開きました。閲覧中は自動同期・定期通信を行いません。';
   render();
-  await refreshSessions();
-  schedulePoll(1000);
+  if (['owner', 'editor', 'viewer'].includes(active.role)) {
+    // refreshSessions already loads the owner roster; don't make a second admin RPC.
+    await refreshSessions();
+    if (active && ['owner', 'editor'].includes(active.role)) void startRealtime(active);
+  }
 }
 
 async function refreshAdmin() {
@@ -425,27 +456,93 @@ async function refreshAdmin() {
   try {
     const result = await getApi().getAdmin(session.sessionId);
     if (active !== session || session.role !== 'owner') return;
-    const previousAdmin = admin;
-    const requests = Array.isArray(result.requests) ? result.requests : [];
-    const previousIds = new Set((Array.isArray(previousAdmin?.requests) ? previousAdmin.requests : [])
-      .map((request) => request.request_id));
-    const arrivedRequests = previousAdmin
-      ? requests.filter((request) => !previousIds.has(request.request_id))
-      : [];
-    const firstLoadHasPendingRequests = !previousAdmin && requests.length > 0;
     admin = result;
     session.adminUpdatedAt = Date.now();
     render();
-    if (firstLoadHasPendingRequests || arrivedRequests.length > 0) {
-      setSharedPanelOpen(true, { focusRequests: true });
-      if (arrivedRequests.length > 0) {
-        bridge.showToast('新しい参加申請が' + arrivedRequests.length + '件あります。内容を確認してください。');
-      }
-    }
   } catch (error) {
     if (active !== session || session.role !== 'owner') return;
-    statusMessage = '参加権限の管理情報を取得できませんでした: ' + error.message;
+    statusMessage = '編集参加者の管理情報を取得できませんでした: ' + error.message;
     render();
+  }
+}
+
+function stopRealtime() {
+  // Invalidate a pending subscribe() as well as an already-open channel.
+  // Visibility changes and session switches can otherwise leave orphan sockets.
+  realtimeAttemptId += 1;
+  if (active) active.realtimeStarting = false;
+  if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+  realtimeRefreshTimer = null;
+  realtimeConnected = false;
+  const previous = realtimeChannel;
+  realtimeChannel = null;
+  if (previous && api) void api.removeChannel(previous).catch(() => {});
+}
+
+async function startRealtime(session) {
+  if (!session || active !== session || !['owner', 'editor'].includes(session.role) || document.hidden) return;
+  if (session.realtimeStarting || (realtimeChannel && realtimeConnected)) return;
+
+  stopRealtime();
+  const attemptId = realtimeAttemptId;
+  session.realtimeStarting = true;
+  let pendingChannel = null;
+  try {
+    const subscribePromise = getApi().subscribeSession(session.sessionId, (payload) => {
+      if (active !== session || realtimeAttemptId !== attemptId) return;
+      if (payload?._event === 'membership_changed') {
+        if (session.role === 'owner') void refreshAdmin();
+        if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+        realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 150);
+        return;
+      }
+      // The save RPC response owns the outcome of our in-flight write.
+      // Its own Broadcast echo must not be treated as a competing edit.
+      if (session.saveBusy) return;
+      const nextRevision = Number(payload?.revision) || 0;
+      if (nextRevision <= session.revision) return;
+      if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+      realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 300);
+    }, (status) => {
+      if (active !== session || realtimeAttemptId !== attemptId) return;
+      realtimeConnected = status === 'SUBSCRIBED';
+      if (realtimeConnected) {
+        stopPolling();
+        session.failures = 0;
+        // Reconcile after subscribe to close the read-to-subscribe race where
+        // a revision can be committed before this channel starts receiving.
+        if (session.saveBusy) session.pollQueued = true;
+        else void pollSession();
+      } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+        realtimeConnected = false;
+        session.realtimeStarting = false;
+        realtimeAttemptId += 1;
+        const failedChannel = realtimeChannel || pendingChannel;
+        realtimeChannel = null;
+        if (failedChannel && api) void api.removeChannel(failedChannel).catch(() => {});
+        schedulePoll(10000);
+      }
+    });
+
+    // Keep a bounded polling fallback until Realtime confirms the subscription.
+    schedulePoll(15000);
+    pendingChannel = await subscribePromise;
+    if (active === session && !document.hidden && realtimeAttemptId === attemptId) {
+      realtimeChannel = pendingChannel;
+    } else {
+      await getApi().removeChannel(pendingChannel);
+      if (session.realtimeStarting === true) session.realtimeStarting = false;
+    }
+  } catch (error) {
+    if (active === session && realtimeAttemptId === attemptId) {
+      realtimeConnected = false;
+      session.realtimeStarting = false;
+      session.status = 'disconnected';
+      statusMessage = 'Realtime接続に失敗しました。低頻度の確認通信へ切り替えます: ' + (error.message || '接続エラー');
+      render();
+      schedulePoll(10000);
+    }
+    if (pendingChannel) void getApi().removeChannel(pendingChannel).catch(() => {});
   }
 }
 
@@ -456,33 +553,63 @@ function stopPolling() {
 
 function schedulePoll(delay = null) {
   stopPolling();
-  if (!active || active.accessRevoked || active.status === 'closed' || document.hidden) return;
+  if (!active || active.role === 'public-viewer' || realtimeConnected || active.accessRevoked || active.status === 'closed' || document.hidden) return;
   const busyWindow = Date.now() - active.lastActivity < 120000;
-  const base = delay === null ? (busyWindow ? 5000 : 15000) : delay;
+  const base = delay === null ? (busyWindow ? 60000 : 120000) : delay;
   pollTimer = setTimeout(() => pollSession(), Math.round(base + Math.random() * Math.min(900, base * 0.15)));
 }
 
 async function pollSession() {
   const session = active;
-  if (!session || document.hidden || session.accessRevoked || session.status === 'closed' || session.pollBusy) return;
+  if (!session || document.hidden || session.accessRevoked || session.status === 'closed') return;
+  if (session.saveBusy || session.pollBusy) {
+    session.pollQueued = true;
+    return;
+  }
+
+  stopPolling();
   session.pollBusy = true;
+  session.pollQueued = false;
+  const finishPoll = () => {
+    session.pollBusy = false;
+    if (active === session && session.pollQueued && !session.saveBusy
+      && !session.accessRevoked && session.status !== 'closed') {
+      session.pollQueued = false;
+      setTimeout(() => { void pollSession(); }, 0);
+      return true;
+    }
+    return false;
+  };
+
   try {
     const result = await getApi().pollSession(session.sessionId, session.revision);
     if (active !== session) {
-      session.pollBusy = false;
+      finishPoll();
+      return;
+    }
+    // A save may have started while this snapshot request was in flight.
+    // Let the write response decide success/conflict before comparing snapshots.
+    if (session.saveBusy) {
+      session.pollQueued = true;
+      finishPoll();
       return;
     }
     session.failures = 0;
     if (result.status === 'closed') {
       session.status = 'closed';
+      session.pollQueued = false;
+      stopRealtime();
       statusMessage = '発行者がこのセッションを終了しました。編集は保存できません。';
       bridge.renderAll();
       render();
-      session.pollBusy = false;
+      finishPoll();
       return;
     }
     const previousRole = session.role;
-    if (result.role) session.role = result.role;
+    if (result.role) session.role = result.role === 'viewer' ? 'public-viewer' : result.role;
+    if (result.public_view_enabled !== undefined) session.publicViewEnabled = result.public_view_enabled !== false;
+    if (result.public_edit_enabled !== undefined) session.publicEditEnabled = result.public_edit_enabled !== false;
+    if (Number(result.member_limit) > 0) session.memberLimit = Number(result.member_limit);
     if (Array.isArray(result.members)) {
       session.ownerDisplayName = snapshotOwnerDisplayName(result, session.ownerDisplayName);
     }
@@ -516,19 +643,17 @@ async function pollSession() {
       session.revision = Math.max(session.revision, Number(result.revision) || 0);
     }
     render();
-    if (active === session && session.role === 'owner'
-      && Date.now() - (session.adminUpdatedAt || 0) >= 15000) {
-      await refreshAdmin();
-    }
   } catch (error) {
     if (/SESSION_ACCESS_DENIED|42501|permission denied|OWNER_REQUIRED/i.test(String(error.code || '') + ' ' + String(error.message || ''))) {
       session.accessRevoked = true;
       session.status = 'closed';
-      statusMessage = 'アクセス権が失効したか、セッションが終了されています。共有セッションを閉じてください。';
+      session.pollQueued = false;
+      statusMessage = '編集参加権限が失効したか、セッションが終了されています。閲覧リンクが有効なら閲覧モードで開き直せます。';
       stopPolling();
+      stopRealtime();
       bridge.renderAll();
       render();
-      session.pollBusy = false;
+      finishPoll();
       return;
     }
     session.failures += 1;
@@ -536,10 +661,10 @@ async function pollSession() {
     statusMessage = '同期エラー: ' + (error.message || '通信に失敗しました') + '。再接続を試みます。';
     render();
   }
-  session.pollBusy = false;
-  if (active === session && !session.accessRevoked && session.status !== 'closed') {
+  const queued = finishPoll();
+  if (!queued && active === session && !session.accessRevoked && session.status !== 'closed' && !realtimeConnected) {
     const delay = session.failures
-      ? Math.min(60000, 5000 * (2 ** Math.min(session.failures, 4)))
+      ? Math.min(120000, 10000 * (2 ** Math.min(session.failures, 4)))
       : null;
     schedulePoll(delay);
   }
@@ -551,6 +676,7 @@ function applySnapshot(snapshot) {
   active.title = snapshot.title || active.title;
   active.role = snapshot.role || active.role;
   active.ownerDisplayName = snapshotOwnerDisplayName(snapshot, active.ownerDisplayName);
+  if (Number(snapshot.member_limit) > 0) active.memberLimit = Number(snapshot.member_limit);
   active.lastSavedKeys = [...snapshot.party_keys];
   active.lastSavedPersonas = remotePersonas(snapshot);
   active.retry = null;
@@ -560,6 +686,150 @@ function applySnapshot(snapshot) {
   statusMessage = '他の利用者の編集を同期しました · revision ' + active.revision;
   bridge.setPartyKeys(snapshot.party_keys, active.lastSavedPersonas);
   render();
+}
+
+async function enterEditMode() {
+  const session = active;
+  if (!session || session.role !== 'public-viewer' || !session.publicEditEnabled || session.controlBusy) return;
+  session.controlBusy = true;
+  render();
+  try {
+    if (await getApi().needsAnonymousAuth()) {
+      await initializeTurnstile();
+      if (active !== session) return;
+      if (isTurnstileConfigured() && !isCaptchaReady()) {
+        setStatus('編集参加には不正利用防止の確認が必要です。表示された確認を完了し、もう一度「編集に参加」を押してください。');
+        return;
+      }
+    }
+    rememberDisplayName(displayName());
+    setStatus('編集参加を開始しています…');
+    const snapshot = await getApi().joinPublicSession(session.sessionId, displayName());
+    if (active !== session) return;
+    session.controlBusy = false;
+    await activateSession(session.sessionId, snapshot);
+    setStatus('編集参加しました。保存時はRealtime通知で他の編集者へ変更を知らせます。');
+  } catch (error) {
+    if (active === session) setStatus('編集に参加できませんでした: ' + (error.message || '通信エラー'));
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
+  }
+}
+
+async function refreshActiveSnapshot() {
+  const session = active;
+  if (!session) return;
+  if (session.role === 'public-viewer') {
+    try {
+      const snapshot = await getApi().readPublicSession(session.sessionId, { force: true });
+      if (active === session) await activateSession(session.sessionId, snapshot);
+    } catch (error) {
+      setStatus('閲覧データを更新できませんでした: ' + (error.message || '通信エラー'));
+    }
+    return;
+  }
+  await pollSession();
+}
+
+async function copySessionLink() {
+  if (!active) return;
+  const value = publicToolUrl() + '#session=' + encodeURIComponent(active.sessionId);
+  try {
+    await navigator.clipboard.writeText(value);
+    bridge.showToast('閲覧・編集参加用リンクをコピーしました。');
+  } catch {
+    const input = $('#shared-tool-url');
+    input.value = value;
+    input.focus();
+    input.select();
+    bridge.showToast('リンク欄を選択しました。コピーしてください。');
+  }
+}
+
+async function updateMemberLimit() {
+  const session = active;
+  if (!session || session.role !== 'owner' || session.controlBusy || !admin) return;
+  const input = $('#shared-member-limit');
+  const rawValue = String(input.value || '').trim();
+  if (!/^(?:[1-9]|1[0-9]|20)$/.test(rawValue)) {
+    setStatus('最大人数は1〜20の整数で指定してください。');
+    input.focus();
+    return;
+  }
+  const nextLimit = Number(rawValue);
+  const currentCount = Array.isArray(admin.members) ? admin.members.length : 1;
+  if (nextLimit < currentCount) {
+    setStatus('現在の参加人数（' + currentCount + '名）より小さい上限には変更できません。');
+    input.focus();
+    return;
+  }
+  const previousLimit = Number(admin.member_limit) || session.memberLimit || 6;
+  if (nextLimit === previousLimit) {
+    setStatus('最大人数は変更されていません。');
+    return;
+  }
+  if (nextLimit < previousLimit
+    && !window.confirm('最大人数を ' + nextLimit + '名に減らします。現在の参加者は維持されますが、空き枠は減少します。続行しますか？')) return;
+
+  session.controlBusy = true;
+  render();
+  try {
+    const result = await getApi().setMemberLimit(session.sessionId, nextLimit);
+    if (active !== session) return;
+    session.memberLimit = Number(result.member_limit) || nextLimit;
+    await refreshAdmin();
+    if (active === session) setStatus('最大参加人数を ' + session.memberLimit + '名に更新しました（ルームマスター含む）。');
+  } catch (error) {
+    if (active === session) {
+      const message = /MEMBER_LIMIT_BELOW_CURRENT/.test(error.message || '')
+        ? '現在の参加人数より小さい上限には変更できません。'
+        : /OWNER_REQUIRED/.test(error.message || '')
+          ? 'ルームマスターのみ最大人数を変更できます。'
+          : /MEMBER_LIMIT_OUT_OF_RANGE/.test(error.message || '')
+            ? '最大人数は1〜20名の範囲で指定してください。'
+            : '最大人数を更新できませんでした: ' + (error.message || '通信エラー');
+      setStatus(message);
+    }
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
+  }
+}
+
+async function updatePublicAccess() {
+  const session = active;
+  if (!session || session.role !== 'owner' || session.controlBusy) return;
+  const viewEnabled = $('#shared-public-view-enabled').checked;
+  const editEnabled = viewEnabled && $('#shared-public-edit-enabled').checked;
+  if (!viewEnabled) $('#shared-public-edit-enabled').checked = false;
+  session.controlBusy = true;
+  render();
+  // Keep the requested values visible while the controls are locked.
+  $('#shared-public-view-enabled').checked = viewEnabled;
+  $('#shared-public-edit-enabled').checked = editEnabled;
+  $('#shared-public-view-enabled').disabled = true;
+  $('#shared-public-edit-enabled').disabled = true;
+  $('#shared-leave').disabled = true;
+  $('#shared-archive').disabled = true;
+  try {
+    const result = await getApi().setPublicAccess(session.sessionId, viewEnabled, editEnabled);
+    if (active !== session) return;
+    session.publicViewEnabled = result.public_view_enabled !== false;
+    session.publicEditEnabled = result.public_edit_enabled !== false;
+    await refreshAdmin();
+    if (active !== session) return;
+    setStatus('公開設定を更新しました。' + (!session.publicEditEnabled ? ' 新しい編集参加は停止しました。既存の編集参加者は個別に解除できます。' : ''));
+  } catch (error) {
+    if (active === session) {
+      $('#shared-public-view-enabled').checked = session.publicViewEnabled !== false;
+      $('#shared-public-edit-enabled').checked = session.publicEditEnabled !== false;
+      setStatus('公開設定を更新できませんでした: ' + (error.message || '通信エラー'));
+    }
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
+  }
 }
 
 function onPartyChanged() {
@@ -627,11 +897,24 @@ async function sendSave(session, operation) {
     if (roleChanged) bridge.renderAll();
   } catch (error) {
     if (active !== session) return;
-    session.status = 'unsaved';
-    statusMessage = '未保存の編集があります: ' + (error.message || '通信エラー') + '。同じ操作IDで再試行できます。';
+    if (/EDITOR_REQUIRED|SESSION_ACCESS_DENIED|42501|permission denied/i.test(String(error.code || '') + ' ' + String(error.message || ''))) {
+      session.accessRevoked = true;
+      session.status = 'closed';
+      session.retry = null;
+      stopPolling();
+      stopRealtime();
+      statusMessage = '編集参加権限が解除されたため保存できません。未保存の内容はこの画面に残しています。共有編成を閉じる前に必要な情報を控えてください。';
+    } else {
+      session.status = 'unsaved';
+      statusMessage = '未保存の編集があります: ' + (error.message || '通信エラー') + '。同じ操作IDで再試行できます。';
+    }
   } finally {
     if (active === session) {
       session.saveBusy = false;
+      if (session.pollQueued && !session.accessRevoked && session.status !== 'closed') {
+        session.pollQueued = false;
+        void pollSession();
+      }
       render();
       if (!session.retry && !session.incomingState
         && !samePartyState(currentKeys(), currentPersonas(), session.lastSavedKeys, session.lastSavedPersonas)) {
@@ -673,31 +956,6 @@ function reapplyLocal() {
   onPartyChanged();
 }
 
-async function issueInvite() {
-  if (!active || active.role !== 'owner') return;
-  try {
-    const invite = await getApi().createInvite(active.sessionId, 168);
-    inviteUrl = location.origin + location.pathname + '#invite=' + invite.token;
-    statusMessage = '参加申請リンクを発行しました（有効期限: ' + new Date(invite.expires_at).toLocaleString() + '）。必要な相手に送る場合は、招待リンク専用ボタンでコピーしてください。';
-    await refreshAdmin();
-    render();
-  } catch (error) {
-    setStatus('リンクを発行できませんでした: ' + error.message);
-  }
-}
-
-async function copyInvite() {
-  if (!inviteUrl) return;
-  try {
-    await navigator.clipboard.writeText(inviteUrl);
-    bridge.showToast('招待用の参加申請リンクをコピーしました。ツール本体のURLとは別のリンクです。');
-  } catch {
-    $('#shared-invite-link').focus();
-    $('#shared-invite-link').select();
-    bridge.showToast('自動コピーできません。招待リンク欄を選択してコピーしてください。');
-  }
-}
-
 async function copyToolUrl() {
   const value = publicToolUrl();
   const input = $('#shared-tool-url');
@@ -712,48 +970,58 @@ async function copyToolUrl() {
   }
 }
 
-async function revokeInvite(inviteId) {
-  await getApi().revokeInvite(inviteId);
-  inviteUrl = '';
-  await refreshAdmin();
-  setStatus('招待リンクを失効しました。');
-}
-
 async function removeMember(userId) {
-  if (!active || !window.confirm('この参加者のアクセス権を剥奪しますか？')) return;
-  await getApi().removeMember(active.sessionId, userId);
-  await refreshAdmin();
-  setStatus('参加権限を剥奪しました。');
-}
-
-async function decideRequest(requestId, decision, role = 'viewer') {
-  await getApi().decideRequest(requestId, decision, role);
-  await refreshAdmin();
-  await refreshSessions();
-  setStatus(decision === 'approve' ? roleLabel(role) + 'として承認しました。' : '参加申請を却下しました。');
+  const session = active;
+  if (!session || session.role !== 'owner' || session.controlBusy
+    || !window.confirm('この編集参加者を解除しますか？この匿名Auth IDはこの共有スペースへ再参加できなくなります。ブラウザデータ削除や別端末で新しい匿名IDを作ると、公開編集がONの間は再参加できます。')) return;
+  session.controlBusy = true;
+  render();
+  try {
+    await getApi().removeMember(session.sessionId, userId);
+    if (active !== session) return;
+    await refreshAdmin();
+    if (active === session) setStatus('編集参加を解除し、この匿名Auth IDの再参加を禁止しました。');
+  } catch (error) {
+    if (active === session) setStatus('編集参加者を解除できませんでした: ' + (error.message || '通信エラー'));
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
+  }
 }
 
 async function archiveActive() {
   const session = active;
-  if (!session || session.role !== 'owner') return;
+  if (!session || session.role !== 'owner' || session.controlBusy) return;
   const switchError = sessionSwitchError();
   if (switchError) {
     setStatus(switchError + ' 未解決の編集がある間は共同編集スペースを終了できません。');
     return;
   }
   if (!window.confirm('「' + session.title + '」を終了しますか？共有編成・参加者・招待・申請・編集履歴を即時削除します。この操作は取り消せません。続行しますか？')) return;
+  session.controlBusy = true;
+  render();
   try {
     await getApi().archiveSession(session.sessionId);
     sessions = sessions.filter((item) => item.session_id !== session.sessionId);
-    leaveSession();
+    if (active === session) {
+      session.controlBusy = false;
+      leaveSession();
+    }
     await refreshSessions();
     setStatus('共有編成を終了し、共有データと関連記録を即時削除しました。個人編成は残っています。');
   } catch (error) {
-    setStatus('セッションを終了できませんでした: ' + error.message);
+    if (active === session) setStatus('セッションを終了できませんでした: ' + error.message);
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
   }
 }
 
 function leaveSession() {
+  if (active && active.controlBusy) {
+    setStatus('共有設定・参加者管理の処理中です。完了してから共有セッションを閉じてください。');
+    return;
+  }
   if (active && active.saveBusy) {
     setStatus('保存処理中です。完了してから共有セッションを閉じてください。');
     return;
@@ -763,13 +1031,10 @@ function leaveSession() {
     if (!window.confirm('サーバーに未保存、または競合中の編集があります。破棄して個人編成に戻りますか？')) return;
   }
   stopPolling();
-  if (accessTimer) clearTimeout(accessTimer);
-  accessTimer = null;
+  stopRealtime();
   const old = active;
   active = null;
   admin = null;
-  inviteUrl = '';
-  pendingRequestSessionId = null;
   setRoute('');
   if (personalPartySnapshot) bridge.setPartyKeys(personalPartySnapshot);
   personalPartySnapshot = null;
@@ -784,55 +1049,15 @@ function leaveSession() {
 function handleVisibility() {
   if (document.hidden) {
     stopPolling();
-    if (accessTimer) clearTimeout(accessTimer);
-    accessTimer = null;
+    stopRealtime();
     return;
   }
-  if (active && !active.accessRevoked) schedulePoll(250);
-  if (pendingRequestSessionId) scheduleAccessCheck(500);
-}
-
-function scheduleAccessCheck(delay = 15000) {
-  if (accessTimer) clearTimeout(accessTimer);
-  if (!pendingRequestSessionId || document.hidden) return;
-  accessTimer = setTimeout(async () => {
-    await checkAccess(true);
-    if (pendingRequestSessionId && !document.hidden) scheduleAccessCheck(15000);
-  }, delay);
-}
-
-async function checkAccess(quiet = false) {
-  const sessionId = pendingRequestSessionId;
-  if (!sessionId) return;
-  try {
-    const result = await getApi().checkAccess(sessionId, displayName());
-    if (result.status === 'approved') {
-      try {
-        // Keep the approved request pending until activation succeeds. If the
-        // current session has unsaved edits, activateSession rejects switching;
-        // retain the request so polling can retry after the user resolves them.
-        await activateSession(sessionId);
-      } catch (error) {
-        setStatus('参加が承認されましたが、現在の編成を切り替えられません: ' + error.message);
-        scheduleAccessCheck(15000);
-        return;
-      }
-      if (accessTimer) clearTimeout(accessTimer);
-      accessTimer = null;
-      pendingRequestSessionId = null;
-    } else if (['denied', 'revoked', 'not_requested', 'closed'].includes(result.status)) {
-      if (accessTimer) clearTimeout(accessTimer);
-      accessTimer = null;
-      pendingRequestSessionId = null;
-      setRoute('');
-      setStatus(result.status === 'closed' ? 'このセッションは終了しています。' : '参加申請の状態は「' + result.status + '」です。発行者へ確認してください。');
-    } else if (!quiet) {
-      setStatus('まだ承認されていません。承認後は自動で共有編成を開きます。');
-    }
-  } catch (error) {
-    if (!quiet) setStatus('承認状態を確認できませんでした: ' + error.message);
+  if (active && !active.accessRevoked && ['owner', 'editor'].includes(active.role)) {
+    void pollSession();
+    void startRealtime(active);
   }
 }
+
 
 function captureInitialRoute() {
   const params = new URLSearchParams(location.hash.slice(1));
@@ -842,14 +1067,14 @@ function captureInitialRoute() {
     requestedSessionId: params.get('request'),
   };
 
-  // Route links open the collaboration area directly rather than leaving
-  // invited users at the top of the unrelated personal-board interface.
+  // Shared-session links open the collaboration area directly rather than
+  // leaving visitors at the top of the unrelated personal-board interface.
   if (route.token || route.sessionId || route.requestedSessionId) {
     setSharedPanelOpen(true);
   }
 
-  // Invite tokens are bearer-like secrets. Remove them before any third-party
-  // script is loaded, while keeping the captured token only in this closure.
+  // Legacy invite tokens are bearer-like secrets. Remove them before any
+  // third-party script is loaded, then show the invite-retired notice.
   if (route.token) setRoute('');
   return route;
 }
@@ -872,35 +1097,9 @@ async function initializeRoute(route) {
     }
     return;
   }
-  if (requestedSessionId) {
-    pendingRequestSessionId = requestedSessionId;
-    setStatus('参加申請の承認状態を確認しています…');
-    await checkAccess();
-    if (pendingRequestSessionId) scheduleAccessCheck(15000);
-    return;
-  }
-  if (!token) return;
-
-  const provided = window.prompt('共有セッションで表示する名前を入力してください', displayName());
-  if (!provided || !provided.trim()) {
-    setStatus('参加申請をキャンセルしました。招待リンクを再度開くと申請できます。');
-    return;
-  }
-  rememberDisplayName(provided.trim().slice(0, 40));
-  try {
-    const result = await getApi().requestAccess(token, provided.trim().slice(0, 40));
-    if (result.status === 'approved') {
-      await activateSession(result.session_id);
-    } else if (result.status === 'pending') {
-      pendingRequestSessionId = result.session_id;
-      setRoute('request=' + result.session_id);
-      setStatus('参加申請を送信しました。発行者の承認までは編成内容は表示されません。');
-      scheduleAccessCheck(15000);
-    } else {
-      setStatus('参加申請を作成できませんでした: ' + (result.status || '不明な状態'));
-    }
-  } catch (error) {
-    setStatus('参加申請に失敗しました: ' + error.message);
+  if (token || requestedSessionId) {
+    setRoute('');
+    setStatus('招待制は廃止されました。発行者に新しい閲覧・編集リンクを共有してもらってください。');
   }
 }
 
@@ -912,22 +1111,8 @@ async function handleSharedClick(event) {
       case 'shared-open-session':
         await activateSession(button.dataset.sessionId);
         break;
-      case 'shared-approve':
-        await decideRequest(button.dataset.requestId, 'approve', button.dataset.role);
-        break;
-      case 'shared-deny':
-        await decideRequest(button.dataset.requestId, 'deny', 'viewer');
-        break;
       case 'shared-remove-member':
         await removeMember(button.dataset.userId);
-        break;
-      case 'shared-set-member-role':
-        await getApi().setMemberRole(active.sessionId, button.dataset.userId, button.dataset.role);
-        await refreshAdmin();
-        setStatus('参加者の権限を' + roleLabel(button.dataset.role) + 'に変更しました。');
-        break;
-      case 'shared-revoke-invite':
-        await revokeInvite(button.dataset.inviteId);
         break;
       default:
         break;
@@ -947,6 +1132,7 @@ async function initializeTurnstile() {
   }
   container.hidden = false;
   if (hint) hint.hidden = false;
+  if (turnstileWidgetId !== null) return;
   try {
     if (!window.turnstile) {
       await new Promise((resolve, reject) => {
@@ -976,9 +1162,10 @@ async function initializeTurnstile() {
         setStatus('不正利用防止の確認に失敗しました。ページを再読み込みしてやり直してください。');
       },
     });
+    turnstileWidgetId = widgetId;
     window.addEventListener('supabase-captcha-reset', () => {
       setCaptchaToken('');
-      if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
+      if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     });
   } catch (error) {
     setStatus('CAPTCHA を読み込めませんでした: ' + (error.message || '通信エラー'));
@@ -1025,22 +1212,26 @@ export async function initializeSharedSessionsUi(callbacks) {
     if (value) rememberDisplayName(value);
   });
   $('#shared-create').addEventListener('click', () => createSession());
-  $('#shared-create-invite').addEventListener('click', () => issueInvite());
-  $('#shared-copy-invite').addEventListener('click', () => copyInvite());
   $('#shared-leave').addEventListener('click', () => leaveSession());
   $('#shared-archive').addEventListener('click', () => archiveActive());
   $('#shared-retry-save').addEventListener('click', () => retrySave());
-  $('#shared-check-access').addEventListener('click', () => checkAccess());
+  $('#shared-join-edit').addEventListener('click', () => enterEditMode());
+  $('#shared-copy-session-link').addEventListener('click', () => copySessionLink());
+  $('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot());
+  $('#shared-public-view-enabled').addEventListener('change', () => updatePublicAccess());
+  $('#shared-update-member-limit').addEventListener('click', () => updateMemberLimit());
+  $('#shared-public-edit-enabled').addEventListener('change', () => updatePublicAccess());
   $('#shared-accept-remote').addEventListener('click', () => acceptRemote());
   $('#shared-reapply-local').addEventListener('click', () => reapplyLocal());
   document.addEventListener('click', handleSharedClick);
   document.addEventListener('visibilitychange', handleVisibility);
   window.addEventListener('online', () => {
-    if (active && !active.accessRevoked) schedulePoll(250);
-    if (pendingRequestSessionId) scheduleAccessCheck(500);
+    if (active && !active.accessRevoked && ['owner', 'editor'].includes(active.role)) {
+      void pollSession();
+      void startRealtime(active);
+    }
   });
   render();
   const initialRoute = captureInitialRoute();
-  await initializeTurnstile();
   await initializeRoute(initialRoute);
 }

@@ -13,6 +13,10 @@ export function setCaptchaToken(token) {
   captchaToken = typeof token === 'string' ? token : '';
 }
 
+export function isCaptchaReady() {
+  return Boolean(captchaToken);
+}
+
 function isPrivilegedKey(key) {
   const value = String(key || '').trim();
   const lower = value.toLowerCase();
@@ -68,9 +72,15 @@ async function rpc(name, args = {}, displayName = '') {
   const { data: authData, error: authError } = await client.auth.getSession();
   if (authError) throw authError;
   if (!authData.session) {
-    const captchaRequired = isTurnstileConfigured();
+    // Anonymous identities can create workspaces and join public-edit sessions.
+    // Fail closed if the public site key is missing, even when this RPC is called
+    // directly without going through the UI's Turnstile widget.
+    if (!isTurnstileConfigured()) {
+      throw new Error('匿名ログインを開始できません。Turnstile Site key が未設定のため、管理者が共有機能の設定を確認してください。');
+    }
+    const captchaRequired = true;
     const token = captchaToken;
-    if (captchaRequired && !token) {
+    if (!token) {
       throw new Error('不正利用防止の確認が必要です。Turnstile を完了してから、もう一度操作してください。');
     }
     let signInError;
@@ -109,23 +119,106 @@ async function rpc(name, args = {}, displayName = '') {
 
 export function createSharedSessions() {
   return {
-    async listSessions(displayName) {
-      return rpc('list_my_party_sessions', {}, displayName);
+    async needsAnonymousAuth() {
+      const client = await getClient();
+      const { data: authData, error } = await client.auth.getSession();
+      if (error) throw error;
+      return !authData.session;
+    },
+    async readPublicSession(sessionId, { force = false } = {}) {
+      const cacheKey = 'lpc-public-session:' + String(sessionId);
+      const client = await getClient();
+      const { data: authData, error: authError } = await client.auth.getSession();
+      if (authError) throw authError;
+      const authenticated = Boolean(authData.session);
+
+      // Only anonymous viewers use the short cache. Authenticated members must
+      // revalidate their role so an owner/editor can never be downgraded by a
+      // cached public-viewer snapshot.
+      if (!force && !authenticated && typeof sessionStorage !== 'undefined') {
+        try {
+          const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+          if (cached && Date.now() - cached.savedAt < 60000 && cached.data?.status === 'ok') {
+            return { ...cached.data, role: 'public-viewer', _fromCache: true };
+          }
+        } catch { /* Ignore malformed or unavailable session cache. */ }
+      }
+      const { data, error } = await client.rpc('read_public_party_session', { p_session_id: sessionId });
+      if (error) {
+        const translated = new Error(error.message || '公開編成を読み込めませんでした。');
+        translated.code = error.code;
+        throw translated;
+      }
+      if (!authenticated && data?.status === 'ok' && typeof sessionStorage !== 'undefined') {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            savedAt: Date.now(),
+            data: { ...data, role: 'public-viewer' },
+          }));
+        } catch { /* Cache is optional and must not block viewing. */ }
+      }
+      return data;
+    },
+    async joinPublicSession(sessionId, displayName) {
+      try {
+        return await rpc('join_public_party_session', {
+          p_session_id: sessionId,
+          p_display_name: String(displayName || '参加者').slice(0, 40),
+        }, displayName);
+      } catch (error) {
+        if (/SESSION_MEMBER_LIMIT/.test(error.message || '')) {
+          throw new Error('このルームは定員に達しています。ルームマスターが最大人数を変更すると参加できます。');
+        }
+        throw error;
+      }
+    },
+    async setPublicAccess(sessionId, publicViewEnabled, publicEditEnabled) {
+      return rpc('set_public_party_access', {
+        p_session_id: sessionId,
+        p_public_view_enabled: Boolean(publicViewEnabled),
+        p_public_edit_enabled: Boolean(publicEditEnabled),
+      });
+    },
+    async setMemberLimit(sessionId, memberLimit) {
+      return rpc('set_party_session_member_limit', {
+        p_session_id: sessionId,
+        p_member_limit: Number(memberLimit),
+      });
+    },
+    async subscribeSession(sessionId, onChange, onStatus) {
+      const client = await getClient();
+      const { data, error } = await client.auth.getSession();
+      if (error) throw error;
+      if (!data.session) throw new Error('編集参加の認証が必要です。');
+      await client.realtime.setAuth();
+      const channel = client
+        .channel('party:' + sessionId, { config: { private: true } })
+        .on('broadcast', { event: 'party_changed' }, (message) => {
+          onChange?.({ ...(message?.payload || message || {}), _event: 'party_changed' });
+        })
+        .on('broadcast', { event: 'membership_changed' }, (message) => {
+          onChange?.({ ...(message?.payload || message || {}), _event: 'membership_changed' });
+        })
+        .subscribe((status, errorInfo) => onStatus?.(status, errorInfo));
+      return channel;
+    },
+    async removeChannel(channel) {
+      if (!channel || !clientPromise) return;
+      const client = await getClient();
+      await client.removeChannel(channel);
+    },
+    async listSessions() {
+      // Listing a user's editing workspaces is optional for a public viewer.
+      // Do not create an anonymous Auth identity merely because the shared
+      // panel was opened; identities are created only by explicit create/join.
+      const client = await getClient();
+      const { data: authData, error: authError } = await client.auth.getSession();
+      if (authError) throw authError;
+      if (!authData.session) return [];
+      return rpc('list_my_party_sessions');
     },
     async createSession(title, displayName) {
       return rpc('create_party_session', { p_title: title, p_display_name: displayName }, displayName);
-    },
-    async createInvite(sessionId, expiresHours = 168) {
-      return rpc('create_party_invite', { p_session_id: sessionId, p_expires_hours: expiresHours });
-    },
-    async revokeInvite(inviteId) {
-      return rpc('revoke_party_invite', { p_invite_id: inviteId });
-    },
-    async requestAccess(token, displayName) {
-      return rpc('request_party_access', { p_token: token, p_display_name: displayName }, displayName);
-    },
-    async checkAccess(sessionId, displayName) {
-      return rpc('check_my_party_access', { p_session_id: sessionId }, displayName);
     },
     async pollSession(sessionId, afterRevision = -1) {
       return rpc('poll_party_session', { p_session_id: sessionId, p_after_revision: afterRevision });
@@ -143,14 +236,8 @@ export function createSharedSessions() {
     async getAdmin(sessionId) {
       return rpc('list_party_session_admin', { p_session_id: sessionId });
     },
-    async decideRequest(requestId, decision, role = 'editor') {
-      return rpc('decide_party_access_request', { p_request_id: requestId, p_decision: decision, p_role: role });
-    },
     async removeMember(sessionId, userId) {
       return rpc('remove_party_session_member', { p_session_id: sessionId, p_user_id: userId });
-    },
-    async setMemberRole(sessionId, userId, role) {
-      return rpc('set_party_session_member_role', { p_session_id: sessionId, p_user_id: userId, p_role: role });
     },
     async archiveSession(sessionId) {
       return rpc('archive_party_session', { p_session_id: sessionId });
