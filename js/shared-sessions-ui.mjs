@@ -224,7 +224,7 @@ function render() {
     ? '共有編成を開くか、新規作成してください。'
     : '共有機能は接続設定待ちです。js/supabase-config.mjs に公開用 publishable key を設定し、Supabase でマイグレーションを実行してください。');
   $('#shared-create').disabled = !configured;
-  $('#shared-refresh').disabled = !configured;
+  $('#shared-refresh').disabled = !configured || active?.role === 'public-viewer';
   $('#shared-role-label').textContent = active
     ? roleLabel(active.role) + ' / revision ' + active.revision
     : 'この端末の個人編成';
