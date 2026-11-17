@@ -1192,6 +1192,7 @@ export async function initializeSharedSessionsUi(callbacks) {
     const nextOpen = !sharedPanelOpen;
     setSharedPanelOpen(nextOpen);
     if (nextOpen && active?.role === 'owner') void refreshAdmin();
+    else if (nextOpen && !active) void refreshSessions();
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
   $('#shared-display-name').addEventListener('change', () => {
