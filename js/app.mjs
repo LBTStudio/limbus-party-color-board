@@ -881,7 +881,7 @@ function renderParty() {
           <div><dt>貫通耐性</dt><dd>${escapeHtml(persona.resPierce || '—')}</dd></div>
           <div><dt>打撃耐性</dt><dd>${escapeHtml(persona.resBlunt || '—')}</dd></div>
         </dl>
-        <p class="passive"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
+        <p class="passive" title="${escapeHtml([persona.passiveCond, persona.passiveName].filter(Boolean).join(' / ') || '—')}"><b>パッシブ</b> <span class="passive-conditions">${renderPassiveCondition(persona.passiveCond || '—')}</span>${persona.passiveName ? ` / ${escapeHtml(persona.passiveName)}` : ''}</p>
         <div class="slot-list">${slots}</div>
         <div class="card-resources" aria-label="大罪資源内訳">${resourceChips}</div>
       </article>
