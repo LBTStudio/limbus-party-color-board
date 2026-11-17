@@ -223,9 +223,11 @@ function setSharedPanelOpen(open) {
   if (!panel || !toggle) return;
   panel.classList.toggle('is-open', sharedPanelOpen);
   toggle.setAttribute('aria-expanded', String(sharedPanelOpen));
-  const label = $('#shared-panel-toggle-label');
+  const fullLabel = $('.shared-toggle-label-full');
+  const compactLabel = $('.shared-toggle-label-compact');
   const mark = $('.shared-toggle-mark');
-  if (label) label.textContent = sharedPanelOpen ? '共有パネルを閉じる' : '共有・共同編集を開く';
+  if (fullLabel) fullLabel.textContent = sharedPanelOpen ? '共有パネルを閉じる' : '共有・共同編集を開く';
+  if (compactLabel) compactLabel.textContent = sharedPanelOpen ? '閉じる' : '共有スペース';
   if (mark) mark.textContent = sharedPanelOpen ? '×' : '＋';
 }
 
