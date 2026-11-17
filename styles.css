@@ -1484,6 +1484,60 @@ textarea.input {
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
+
+.shared-join-choice {
+  display: grid;
+  gap: 11px;
+  margin: 0 0 12px;
+  padding: 15px;
+  border-color: var(--line-strong);
+  background: linear-gradient(145deg, rgba(48, 39, 29, .96), rgba(25, 23, 21, .98));
+}
+.shared-join-choice[hidden] {
+  display: none !important;
+}
+.shared-join-choice .kicker {
+  margin: 0 0 4px;
+  color: var(--tx-mute);
+  font-size: .62rem;
+  letter-spacing: .12em;
+}
+.shared-join-choice h3 {
+  margin: 0 0 4px;
+  font-size: .98rem;
+}
+.shared-join-choice-title {
+  margin: 0;
+  color: var(--tx-dim);
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+.shared-choice-name-field {
+  display: grid;
+  gap: 5px;
+  max-width: 420px;
+  color: var(--tx-dim);
+  font-size: .72rem;
+}
+.shared-choice-name-field .input {
+  width: 100%;
+}
+.shared-join-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.shared-join-choice-actions .btn {
+  min-height: 38px;
+}
+.shared-join-choice .hint {
+  margin: 0;
+  font-size: .7rem;
+  line-height: 1.5;
+}
+#shared-create-tools[hidden] {
+  display: none !important;
+}
 .shared-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
