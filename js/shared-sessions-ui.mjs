@@ -1187,7 +1187,7 @@ async function initializeRoute(route) {
   }
   if (sessionId) {
     try {
-      const snapshot = await getApi().readPublicSession(sessionId);
+      const snapshot = await getApi().readPublicSession(sessionId, { force: true });
       if (snapshot.status === 'closed') throw new Error('このセッションは終了されています。');
       if (!Array.isArray(snapshot.party_keys)) throw new Error('編成データが取得できませんでした。');
       if (['owner', 'editor'].includes(snapshot.role)) {
