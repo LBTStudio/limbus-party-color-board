@@ -17,6 +17,12 @@ let realtimeRefreshTimer = null;
 let turnstileWidgetId = null;
 let bridge = null;
 let createBusy = false;
+let displayNameSyncTimer = null;
+let displayNameSyncQueue = Promise.resolve();
+let displayNameInputVersion = 0;
+let displayNameComposing = false;
+
+const DISPLAY_NAME_SYNC_DELAY_MS = 450;
 
 function getApi() {
   if (!isSharedSessionsConfigured()) {
@@ -45,6 +51,41 @@ function rememberDisplayName(value = displayName()) {
   try {
     localStorage.setItem('lbt_party_shared_display_name', normalized);
   } catch { /* Optional preference. */ }
+}
+
+function storeDisplayNamePreference(value) {
+  const normalized = String(value || '').trim().slice(0, 40) || '参加者';
+  try {
+    localStorage.setItem('lbt_party_shared_display_name', normalized);
+  } catch { /* Optional preference. */ }
+  return normalized;
+}
+
+function scheduleDisplayNameSync(delay = DISPLAY_NAME_SYNC_DELAY_MS) {
+  if (displayNameSyncTimer) clearTimeout(displayNameSyncTimer);
+  const version = ++displayNameInputVersion;
+  const session = active;
+  displayNameSyncTimer = setTimeout(() => {
+    displayNameSyncTimer = null;
+    const value = storeDisplayNamePreference($('#shared-display-name')?.value || '');
+    if (!session || active !== session || !['owner', 'editor'].includes(session.role)) return;
+
+    // Serialize writes and collapse stale keystroke batches to the latest value.
+    displayNameSyncQueue = displayNameSyncQueue.catch(() => {}).then(async () => {
+      if (active !== session || version !== displayNameInputVersion
+        || !['owner', 'editor'].includes(session.role)) return;
+      try {
+        await getApi().updateMemberDisplayName(session.sessionId, value);
+        if (active === session && version === displayNameInputVersion) {
+          setStatus('編集参加時の表示名を共有先へ反映しました。');
+        }
+      } catch (error) {
+        if (active === session && version === displayNameInputVersion) {
+          setStatus('表示名を共有先へ同期できませんでした: ' + (error.message || '通信エラー'));
+        }
+      }
+    });
+  }, Math.max(0, delay));
 }
 
 function snapshotOwnerDisplayName(snapshot, fallback = '編成主') {
@@ -493,7 +534,8 @@ async function startRealtime(session) {
     const subscribePromise = getApi().subscribeSession(session.sessionId, (payload) => {
       if (active !== session || realtimeAttemptId !== attemptId) return;
       if (payload?._event === 'membership_changed') {
-        if (session.role === 'owner') void refreshAdmin();
+        // Refresh the workspace list (and owner roster) after a member renames themselves.
+        void refreshSessions();
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
         realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 150);
         return;
@@ -1197,9 +1239,23 @@ export async function initializeSharedSessionsUi(callbacks) {
     else if (nextOpen && !active) void refreshSessions();
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
-  $('#shared-display-name').addEventListener('change', () => {
-    const value = String($('#shared-display-name').value || '').trim().slice(0, 40);
-    if (value) rememberDisplayName(value);
+  const displayNameInput = $('#shared-display-name');
+  displayNameInput.addEventListener('compositionstart', () => {
+    displayNameComposing = true;
+    if (displayNameSyncTimer) clearTimeout(displayNameSyncTimer);
+    displayNameSyncTimer = null;
+    displayNameInputVersion += 1;
+  });
+  displayNameInput.addEventListener('compositionend', () => {
+    displayNameComposing = false;
+    scheduleDisplayNameSync();
+  });
+  displayNameInput.addEventListener('input', (event) => {
+    if (displayNameComposing || event.isComposing) return;
+    scheduleDisplayNameSync();
+  });
+  displayNameInput.addEventListener('change', () => {
+    if (!displayNameComposing) scheduleDisplayNameSync(0);
   });
   $('#shared-create').addEventListener('click', () => createSession());
   $('#shared-leave').addEventListener('click', () => leaveSession());
