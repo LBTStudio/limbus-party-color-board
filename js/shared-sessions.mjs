@@ -188,18 +188,6 @@ export function createSharedSessions() {
     async createSession(title, displayName) {
       return rpc('create_party_session', { p_title: title, p_display_name: displayName }, displayName);
     },
-    async createInvite(sessionId, expiresHours = 168) {
-      return rpc('create_party_invite', { p_session_id: sessionId, p_expires_hours: expiresHours });
-    },
-    async revokeInvite(inviteId) {
-      return rpc('revoke_party_invite', { p_invite_id: inviteId });
-    },
-    async requestAccess(token, displayName) {
-      return rpc('request_party_access', { p_token: token, p_display_name: displayName }, displayName);
-    },
-    async checkAccess(sessionId, displayName) {
-      return rpc('check_my_party_access', { p_session_id: sessionId }, displayName);
-    },
     async pollSession(sessionId, afterRevision = -1) {
       return rpc('poll_party_session', { p_session_id: sessionId, p_after_revision: afterRevision });
     },
@@ -216,14 +204,8 @@ export function createSharedSessions() {
     async getAdmin(sessionId) {
       return rpc('list_party_session_admin', { p_session_id: sessionId });
     },
-    async decideRequest(requestId, decision, role = 'editor') {
-      return rpc('decide_party_access_request', { p_request_id: requestId, p_decision: decision, p_role: role });
-    },
     async removeMember(sessionId, userId) {
       return rpc('remove_party_session_member', { p_session_id: sessionId, p_user_id: userId });
-    },
-    async setMemberRole(sessionId, userId, role) {
-      return rpc('set_party_session_member_role', { p_session_id: sessionId, p_user_id: userId, p_role: role });
     },
     async archiveSession(sessionId) {
       return rpc('archive_party_session', { p_session_id: sessionId });
