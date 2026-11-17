@@ -883,6 +883,15 @@ test('design documentation matches verified database membership lifecycle and ca
   assert.doesNotMatch(smoke, /編集停止後に非owner membershipが消え/);
 });
 
+test('checked-in production migration filename matches the applied Supabase migration version', () => {
+  const design = read('../docs/shared-sessions-design.md');
+  const setup = read('../docs/shared-sessions-setup.md');
+  assert.match(publicViewMigration, /public_view_enabled boolean not null default false/i);
+  assert.match(design, /20261117155808_public_view_open_edit_realtime/);
+  assert.match(setup, /migration version `20261117155808` として適用済み/);
+  assert.doesNotMatch(design + setup, /202611170001_public_view_open_edit_realtime/);
+});
+
 test('opening the shared workspace list does not create anonymous Auth identities', () => {
   const start = client.indexOf('async listSessions()');
   const end = client.indexOf('async createSession(', start);
