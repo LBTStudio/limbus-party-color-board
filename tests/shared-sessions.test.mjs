@@ -768,7 +768,7 @@ test('removing an editor blocks rejoining with the same anonymous account', () =
 });
 
 
-test('migration preserves existing private workspaces and initializes new workspaces as public', () => {
+test('database creation stays private until the new client explicitly enables public defaults', () => {
   const createStart = publicViewMigration.indexOf('create or replace function public.create_party_session');
   const readStart = publicViewMigration.indexOf('create or replace function public.read_public_party_session');
   assert.ok(createStart >= 0 && readStart > createStart);
@@ -778,11 +778,18 @@ test('migration preserves existing private workspaces and initializes new worksp
   assert.match(publicViewMigration, /public_view_enabled boolean not null default false/i);
   assert.match(publicViewMigration, /public_edit_enabled boolean not null default false/i);
   assert.doesNotMatch(publicViewMigration, /update public\.party_sessions\s+set public_view_enabled = false/i);
-  assert.match(createFn, /values \(v_title, v_user_id, true, true\)/);
+  assert.match(createFn, /values \\(v_title, v_user_id, false, false\\)/);
   assert.match(design, /追加カラムの `DEFAULT false` により既存スペースは従来どおり非公開/);
   assert.match(design, /公開編集を停止すると新規参加だけを拒否する/);
   assert.doesNotMatch(design, /公開編集を全体停止すると発行者以外の `session_members` を削除する/);
-  assert.match(design, /新規作成時に両方true/);
+  const createUiStart = sharedUi.indexOf('async function createSession()');
+  const createUiEnd = sharedUi.indexOf('function sessionSwitchError()', createUiStart);
+  const createUi = sharedUi.slice(createUiStart, createUiEnd);
+  assert.ok(createUi.indexOf('getApi().createSession') < createUi.indexOf('getApi().setPublicAccess(result.session_id, true, true)'));
+  assert.ok(createUi.indexOf('getApi().setPublicAccess(result.session_id, true, true)') < createUi.indexOf('activateSession(result.session_id, result)'));
+  assert.match(createUi, /非公開のままです/);
+  assert.match(design, /DBの初期値はfalse/);
+  assert.match(design, /新UIから作成した場合だけ両方true/);
   const opens = (publicViewMigration.match(/as \$\$/g) || []).length;
   const closes = (publicViewMigration.match(/^\$\$;$/gm) || []).length;
   assert.equal(opens, closes, 'all PL/pgSQL dollar-quoted bodies must be closed');
