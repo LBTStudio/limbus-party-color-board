@@ -910,14 +910,14 @@ async function copyToolUrl() {
 async function removeMember(userId) {
   const session = active;
   if (!session || session.role !== 'owner' || session.controlBusy
-    || !window.confirm('この編集参加者を解除しますか？このアカウントは、この共有スペースへ再参加できなくなります。')) return;
+    || !window.confirm('この編集参加者を解除しますか？この匿名Auth IDはこの共有スペースへ再参加できなくなります。ブラウザデータ削除や別端末で新しい匿名IDを作ると、公開編集がONの間は再参加できます。')) return;
   session.controlBusy = true;
   render();
   try {
     await getApi().removeMember(session.sessionId, userId);
     if (active !== session) return;
     await refreshAdmin();
-    if (active === session) setStatus('編集参加を解除し、このアカウントの再参加を禁止しました。');
+    if (active === session) setStatus('編集参加を解除し、この匿名Auth IDの再参加を禁止しました。');
   } catch (error) {
     if (active === session) setStatus('編集参加者を解除できませんでした: ' + (error.message || '通信エラー'));
   } finally {

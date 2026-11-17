@@ -934,3 +934,12 @@ test('Turnstile is required only when a new anonymous Auth identity must be crea
   assert.ok(createUi.includes('await initializeTurnstile();'));
   assert.ok(joinUi.includes('await initializeTurnstile();'));
 });
+
+
+test('anonymous editor removal blocks the same Auth ID, not a verified person', () => {
+  assert.match(sharedUi, /この匿名Auth IDはこの共有スペースへ再参加できなくなります/);
+  assert.match(sharedUi, /新しい匿名IDを作ると、公開編集がONの間は再参加できます/);
+  assert.match(design, /ブラウザデータ削除や別端末から新しい匿名IDを発行すれば/);
+  assert.match(failureModes, /新しい匿名IDまでは遮断できない/);
+  assert.match(read('../docs/shared-sessions-setup.md'), /本人そのものを恒久的に遮断する機能ではありません/);
+});
