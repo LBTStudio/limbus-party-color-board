@@ -658,7 +658,9 @@ test('main board groups roster maintenance actions and gives sharing a clear per
   assert.ok(html.includes('<details class="shared-info">'));
   assert.ok(html.includes('id="shared-panel-toggle"'));
   assert.ok(html.includes('id="shared-panel-content"'));
-  assert.ok(html.includes('id="shared-panel-toggle-label">共有・共同編集を開く'));
+  assert.ok(html.includes('class="shared-toggle-label-full">共有・共同編集を開く'));
+  assert.ok(html.includes('class="shared-toggle-label-compact">共有スペース'));
+  assert.ok(sharedUi.includes("if (compactLabel) compactLabel.textContent = sharedPanelOpen ? '閉じる' : '共有スペース'"));
   assert.ok(styles.includes('.shared-panel:not(.is-open) .shared-panel-content'));
   assert.ok(styles.includes('position: fixed;'));
   assert.ok(styles.includes('.shared-panel,\n  .card-actions'));
