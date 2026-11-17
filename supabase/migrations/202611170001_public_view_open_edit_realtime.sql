@@ -98,6 +98,14 @@ begin
   if not v_session.public_edit_enabled then
     raise exception 'PUBLIC_EDIT_DISABLED' using errcode = '42501';
   end if;
+  if exists (
+    select 1 from public.session_access_requests r
+    where r.session_id = p_session_id
+      and r.user_id = v_user_id
+      and r.status = 'revoked'
+  ) then
+    raise exception 'EDITOR_ACCESS_REVOKED' using errcode = '42501';
+  end if;
 
   select m.role into v_role
   from public.session_members m
@@ -139,6 +147,62 @@ begin
                           'public_edit_enabled', v_session.public_edit_enabled);
 end;
 $$;
+
+create or replace function public.remove_party_session_member(
+  p_session_id uuid,
+  p_user_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $
+declare
+  v_caller uuid := auth.uid();
+  v_owner uuid;
+  v_display_name text;
+begin
+  if v_caller is null then
+    raise exception 'AUTH_REQUIRED' using errcode = '42501';
+  end if;
+  select s.owner_user_id into v_owner
+  from public.party_sessions s
+  where s.id = p_session_id and s.archived_at is null
+  for update;
+  if not found or v_owner <> v_caller then
+    raise exception 'OWNER_REQUIRED' using errcode = '42501';
+  end if;
+  if p_user_id = v_owner then
+    raise exception 'CANNOT_REMOVE_OWNER' using errcode = '22023';
+  end if;
+
+  select m.display_name into v_display_name
+  from public.session_members m
+  where m.session_id = p_session_id and m.user_id = p_user_id;
+
+  delete from public.session_members
+  where session_id = p_session_id and user_id = p_user_id;
+  if not found then
+    raise exception 'MEMBER_NOT_FOUND' using errcode = 'P0002';
+  end if;
+
+  -- Keep a revocation tombstone so an open-edit link cannot immediately
+  -- re-add the same anonymous account after the owner removes it.
+  insert into public.session_access_requests(
+    session_id,user_id,display_name,status,requested_at,decided_by,decided_at
+  )
+  values (
+    p_session_id,p_user_id,coalesce(v_display_name,'参加者'),'revoked',now(),v_caller,now()
+  )
+  on conflict (session_id,user_id) do update
+    set display_name = excluded.display_name,
+        status = 'revoked',
+        decided_by = excluded.decided_by,
+        decided_at = excluded.decided_at;
+
+  return jsonb_build_object('status','removed','rejoin_blocked',true);
+end;
+$;
 
 create or replace function public.set_public_party_access(
   p_session_id uuid,
@@ -286,6 +350,36 @@ create trigger party_session_revision_broadcast
 after update of revision on public.party_sessions
 for each row execute function public.broadcast_party_revision();
 
+create or replace function public.broadcast_party_membership_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $
+declare
+  v_session_id uuid;
+begin
+  if tg_op = 'DELETE' then
+    v_session_id := old.session_id;
+  else
+    v_session_id := new.session_id;
+  end if;
+  perform realtime.send(
+    payload => jsonb_build_object('kind', 'membership_changed'),
+    event => 'membership_changed',
+    topic => 'party:' || v_session_id::text,
+    private => true
+  );
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$;
+
+drop trigger if exists party_session_member_broadcast on public.session_members;
+create trigger party_session_member_broadcast
+after insert or delete or update of role on public.session_members
+for each row execute function public.broadcast_party_membership_change();
+
 drop policy if exists party_editors_receive_revision_broadcast on realtime.messages;
 create policy party_editors_receive_revision_broadcast
 on realtime.messages
@@ -301,6 +395,7 @@ revoke all on function public.join_public_party_session(uuid,text) from public, 
 revoke all on function public.set_public_party_access(uuid,boolean,boolean) from public, anon;
 revoke all on function public.can_receive_party_broadcast(text) from public, anon;
 revoke all on function public.broadcast_party_revision() from public, anon, authenticated;
+revoke all on function public.broadcast_party_membership_change() from public, anon, authenticated;
 
 grant execute on function public.read_public_party_session(uuid) to anon, authenticated;
 grant execute on function public.join_public_party_session(uuid,text) to authenticated;
