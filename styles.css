@@ -3517,3 +3517,33 @@ h2 {
     font-weight: 850;
   }
 }
+
+/* The non-desktop shared dock keeps its original compact label. */
+.shared-toggle-label-full {
+  display: none;
+}
+.shared-toggle-label-compact {
+  display: inline;
+}
+
+@media (min-width: 1120px) and (min-height: 720px) {
+  .shared-panel:not(.is-open) .section-head > div:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .shared-toggle-label-full {
+    display: inline;
+  }
+
+  .shared-toggle-label-compact {
+    display: none;
+  }
+}
