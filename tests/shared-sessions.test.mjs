@@ -778,7 +778,9 @@ test('migration preserves existing private workspaces and initializes new worksp
   assert.match(publicViewMigration, /public_edit_enabled boolean not null default false/i);
   assert.doesNotMatch(publicViewMigration, /update public\.party_sessions\s+set public_view_enabled = false/i);
   assert.match(createFn, /values \(v_title, v_user_id, true, true\)/);
-  assert.match(design, /既存スペースの両方をfalse/);
+  assert.match(design, /追加カラムの `DEFAULT false` により既存スペースは従来どおり非公開/);
+  assert.match(design, /公開編集を停止すると新規参加だけを拒否する/);
+  assert.doesNotMatch(design, /公開編集を全体停止すると発行者以外の `session_members` を削除する/);
   assert.match(design, /新規作成時に両方true/);
   const opens = (publicViewMigration.match(/as \$\$/g) || []).length;
   const closes = (publicViewMigration.match(/^\$\$;$/gm) || []).length;
