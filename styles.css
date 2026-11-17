@@ -3547,3 +3547,166 @@ h2 {
     display: none;
   }
 }
+
+
+/* Typography audit: keep secondary UI text readable without enlarging the mobile layout model. */
+.kicker,
+.brand-kicker {
+  font-size: .7rem;
+}
+
+.topbar-meta {
+  font-size: .74rem;
+}
+
+.control label {
+  font-size: .72rem;
+}
+
+.section-meta {
+  font-size: .74rem;
+}
+
+.hint {
+  font-size: .8rem;
+}
+
+.resource-name {
+  font-size: .78rem;
+}
+
+.resource-personas {
+  font-size: .72rem;
+}
+
+.matrix {
+  font-size: .76rem;
+}
+
+.matrix thead th {
+  font-size: .68rem;
+}
+
+.member-label {
+  font-size: .68rem;
+}
+
+.member-name {
+  font-size: .74rem;
+}
+
+.slot-chip,
+.matrix tfoot th,
+.matrix tfoot td,
+.color-strip-indexes {
+  font-size: .68rem;
+}
+
+.card-player-field {
+  font-size: .74rem;
+}
+
+.kind-badge,
+.card-no,
+.mini-btn,
+.keyword,
+.stats dt,
+.slot-rank,
+.slot-derived-names,
+.sin-chip,
+.res-chip,
+.picker-no,
+.picker-keywords,
+.picker-state,
+.shared-storage-label,
+.shared-admin-item .hint,
+.shared-admin-buttons .btn,
+.lbt-import-option-skills,
+.persona-source-badge {
+  font-size: .68rem;
+}
+
+.stats dd {
+  font-size: .84rem;
+}
+
+.footer,
+.toolbar-note,
+.shared-request-badge,
+.shared-session-item small,
+.shared-member-limit-control .hint,
+.shared-lifecycle .hint,
+.lbt-import-option-meta,
+.manual-persona-fields label,
+.manual-skill-field,
+.manual-skill-set > .hint,
+.import-status,
+.picker-account-select,
+.picker-account-status,
+.shared-invite-tools label,
+.shared-fields label {
+  font-size: .72rem;
+}
+
+/* Desktop keeps the single-viewport board, with a 10px+ floor for dense table labels. */
+@media (min-width: 1120px) and (min-height: 720px) {
+  .brand-kicker {
+    font-size: .66rem;
+  }
+
+  .topbar-meta,
+  .control label,
+  .resource-section .section-meta,
+  .resource-personas,
+  .member-label,
+  .slot-chip,
+  .matrix tfoot th,
+  .matrix tfoot td,
+  .persona-color-legend,
+  .card-player-field,
+  .keyword,
+  .stats dt,
+  .sin-chip,
+  .res-chip {
+    font-size: .66rem;
+  }
+
+  .toolbar-more > summary,
+  .resource-name,
+  .matrix,
+  .member-name,
+  .count-pill,
+  .total-cell,
+  .card-player-input,
+  .passive,
+  .slot-name {
+    font-size: .72rem;
+  }
+
+  .matrix thead th {
+    font-size: .68rem;
+  }
+
+  .matrix tbody th,
+  .matrix tbody td {
+    height: 20px;
+    padding: 0 2px;
+  }
+
+  .matrix-persona-select {
+    gap: 0;
+    line-height: 1;
+  }
+
+  .member-label {
+    line-height: .94;
+  }
+
+  .member-name {
+    line-height: 1;
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle {
+    font-size: .76rem;
+  }
+}
