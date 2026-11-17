@@ -250,3 +250,16 @@ test('desktop board fits one viewport and reveals one selected persona while mob
   assert.match(styles, /\.persona-card:not\(\.is-selected-detail\) \{\s*display: none;/);
   assert.match(styles, /@media \(max-width: 640px\)[\s\S]*?\.persona-card:not\(\.is-selected-detail\) \{\s*display: flex;/);
 });
+
+
+test('typography audit keeps supporting text and compact desktop labels above the tiny-text range', () => {
+  const auditStart = styles.lastIndexOf('/* Typography audit:');
+  assert.ok(auditStart >= 0, 'the audited type scale is documented at the end of the stylesheet');
+  const audit = styles.slice(auditStart);
+  assert.match(audit, /\.hint \{\s*font-size: \.8rem;/);
+  assert.match(audit, /\.matrix \{\s*font-size: \.76rem;/);
+  assert.match(audit, /\.matrix thead th \{\s*font-size: \.68rem;/);
+  assert.match(audit, /\.member-label,\s*\.slot-chip[\s\S]*?font-size: \.66rem;/);
+  assert.match(audit, /\.shared-panel:not\(\.is-open\) \.shared-panel-toggle \{\s*font-size: \.76rem;/);
+  assert.doesNotMatch(audit, /font-size:\s*\.5[0-9]rem/);
+});
