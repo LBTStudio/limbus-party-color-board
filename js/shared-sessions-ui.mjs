@@ -735,8 +735,17 @@ async function sendSave(session, operation) {
     if (roleChanged) bridge.renderAll();
   } catch (error) {
     if (active !== session) return;
-    session.status = 'unsaved';
-    statusMessage = '未保存の編集があります: ' + (error.message || '通信エラー') + '。同じ操作IDで再試行できます。';
+    if (/EDITOR_REQUIRED|SESSION_ACCESS_DENIED|42501|permission denied/i.test(String(error.code || '') + ' ' + String(error.message || ''))) {
+      session.accessRevoked = true;
+      session.status = 'closed';
+      session.retry = null;
+      stopPolling();
+      stopRealtime();
+      statusMessage = '編集参加権限が解除されたため保存できません。未保存の内容はこの画面に残しています。共有編成を閉じる前に必要な情報を控えてください。';
+    } else {
+      session.status = 'unsaved';
+      statusMessage = '未保存の編集があります: ' + (error.message || '通信エラー') + '。同じ操作IDで再試行できます。';
+    }
   } finally {
     if (active === session) {
       session.saveBusy = false;
