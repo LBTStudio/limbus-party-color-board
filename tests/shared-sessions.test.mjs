@@ -168,6 +168,24 @@ test('public viewers do not poll; editors use Realtime with slow polling fallbac
   assert.match(sharedUi, /session\.pollBusy/);
   assert.match(sharedUi, /未保存の編集、保存処理、または競合があります/);
 });
+  
+test('Realtime subscription closes revision gaps and cancels stale in-flight channels', () => {
+  const stopStart = sharedUi.indexOf('function stopRealtime()');
+  const start = sharedUi.indexOf('async function startRealtime(session)', stopStart);
+  const end = sharedUi.indexOf('function stopPolling()', start);
+  const stop = sharedUi.slice(stopStart, start);
+  const connect = sharedUi.slice(start, end);
+  assert.ok(stopStart >= 0 && start > stopStart && end > start);
+  assert.match(sharedUi, /let realtimeAttemptId = 0/);
+  assert.match(stop, /realtimeAttemptId \+= 1/);
+  assert.match(stop, /active\.realtimeStarting = false/);
+  assert.match(connect, /session\.realtimeStarting \|\|/);
+  assert.match(connect, /realtimeAttemptId !== attemptId/);
+  assert.match(connect, /void pollSession\(\)/);
+  assert.match(connect, /schedulePoll\(15000\)/);
+  assert.match(connect, /await getApi\(\)\.removeChannel\(pendingChannel\)/);
+});
+
 
 test('pending-request cap is checked before the request is inserted', () => {
   const start = migration.indexOf('create or replace function public.request_party_access');
