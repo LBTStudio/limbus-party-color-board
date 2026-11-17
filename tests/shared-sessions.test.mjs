@@ -644,8 +644,8 @@ test('GitHub Actions dependencies are pinned and upstream data updates require r
 test('main board is prioritized and infrequent operations are grouped', () => {
   const toolbarStart = html.indexOf('<section class="panel controls"');
   const resourcesStart = html.indexOf('<section class="panel resource-section"');
-  const matrixStart = html.indexOf('<section class="panel" aria-labelledby="matrix-title"');
-  const personaStart = html.indexOf('<section class="panel" aria-labelledby="party-title"');
+  const matrixStart = html.indexOf('<section class="panel matrix-panel"');
+  const personaStart = html.indexOf('<section class="panel party-panel"');
   const sharingStart = html.indexOf('<section class="panel shared-panel" id="shared-panel"');
   assert.ok(toolbarStart >= 0 && resourcesStart > toolbarStart);
   assert.ok(matrixStart > resourcesStart && personaStart > matrixStart);
