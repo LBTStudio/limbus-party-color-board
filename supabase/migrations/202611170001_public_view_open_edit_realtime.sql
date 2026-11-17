@@ -19,20 +19,34 @@ as $$
 declare
   v_session public.party_sessions%rowtype;
   v_owner_name text;
+  v_user_id uuid := auth.uid();
+  v_member_role text;
 begin
   select s.* into v_session
   from public.party_sessions s
   where s.id = p_session_id
     and s.archived_at is null
-    and s.public_view_enabled = true;
+    and (
+      s.public_view_enabled = true
+      or exists (
+        select 1 from public.session_members access_member
+        where access_member.session_id = s.id and access_member.user_id = v_user_id
+      )
+    );
   if not found then
     raise exception 'PUBLIC_SESSION_NOT_FOUND' using errcode = 'P0002';
   end if;
 
-  select m.display_name into v_owner_name
+  select m.display_name, m.role into v_owner_name, v_member_role
   from public.session_members m
   where m.session_id = p_session_id and m.role = 'owner'
   limit 1;
+
+  if v_user_id is not null then
+    select m.role into v_member_role
+    from public.session_members m
+    where m.session_id = p_session_id and m.user_id = v_user_id;
+  end if;
 
   return jsonb_build_object(
     'status', 'ok',
@@ -43,7 +57,7 @@ begin
     'revision', v_session.revision,
     'updated_at', v_session.updated_at,
     'owner_display_name', coalesce(v_owner_name, '編成主'),
-    'role', 'public-viewer',
+    'role', case when v_member_role in ('owner', 'editor') then v_member_role else 'public-viewer' end,
     'public_view_enabled', v_session.public_view_enabled,
     'public_edit_enabled', v_session.public_edit_enabled
   );
@@ -173,6 +187,50 @@ begin
     'status', 'updated',
     'public_view_enabled', p_public_view_enabled,
     'public_edit_enabled', p_public_edit_enabled
+  );
+end;
+$$;
+ 
+-- The editor fallback poll also returns public flags, so disabled editing can
+-- be reflected after reconnect without a separate metadata request.
+create or replace function public.poll_party_session(
+  p_session_id uuid,
+  p_after_revision bigint default -1
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_revision bigint;
+  v_role text;
+  v_archived timestamptz;
+  v_public_view_enabled boolean;
+  v_public_edit_enabled boolean;
+  v_snapshot jsonb;
+begin
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
+  select s.revision,s.archived_at,m.role,s.public_view_enabled,s.public_edit_enabled
+    into v_revision,v_archived,v_role,v_public_view_enabled,v_public_edit_enabled
+  from public.party_sessions s
+  join public.session_members m on m.session_id=s.id and m.user_id=v_user_id
+  where s.id=p_session_id;
+  if not found then raise exception 'SESSION_ACCESS_DENIED' using errcode = '42501'; end if;
+  if v_archived is not null then
+    return jsonb_build_object('status','closed','session_id',p_session_id,'revision',v_revision,'role',v_role);
+  end if;
+  if v_revision=p_after_revision then
+    return jsonb_build_object(
+      'status','unchanged','session_id',p_session_id,'revision',v_revision,'role',v_role,
+      'public_view_enabled',v_public_view_enabled,'public_edit_enabled',v_public_edit_enabled
+    );
+  end if;
+  v_snapshot := public._party_session_snapshot(p_session_id);
+  return v_snapshot || jsonb_build_object(
+    'public_view_enabled',v_public_view_enabled,
+    'public_edit_enabled',v_public_edit_enabled
   );
 end;
 $$;
