@@ -420,26 +420,12 @@ async function refreshAdmin() {
   try {
     const result = await getApi().getAdmin(session.sessionId);
     if (active !== session || session.role !== 'owner') return;
-    const previousAdmin = admin;
-    const requests = Array.isArray(result.requests) ? result.requests : [];
-    const previousIds = new Set((Array.isArray(previousAdmin?.requests) ? previousAdmin.requests : [])
-      .map((request) => request.request_id));
-    const arrivedRequests = previousAdmin
-      ? requests.filter((request) => !previousIds.has(request.request_id))
-      : [];
-    const firstLoadHasPendingRequests = !previousAdmin && requests.length > 0;
     admin = result;
     session.adminUpdatedAt = Date.now();
     render();
-    if (firstLoadHasPendingRequests || arrivedRequests.length > 0) {
-      setSharedPanelOpen(true, { focusRequests: true });
-      if (arrivedRequests.length > 0) {
-        bridge.showToast('新しい参加申請が' + arrivedRequests.length + '件あります。内容を確認してください。');
-      }
-    }
   } catch (error) {
     if (active !== session || session.role !== 'owner') return;
-    statusMessage = '参加権限の管理情報を取得できませんでした: ' + error.message;
+    statusMessage = '編集参加者の管理情報を取得できませんでした: ' + error.message;
     render();
   }
 }
@@ -790,31 +776,6 @@ function reapplyLocal() {
   onPartyChanged();
 }
 
-async function issueInvite() {
-  if (!active || active.role !== 'owner') return;
-  try {
-    const invite = await getApi().createInvite(active.sessionId, 168);
-    inviteUrl = location.origin + location.pathname + '#invite=' + invite.token;
-    statusMessage = '参加申請リンクを発行しました（有効期限: ' + new Date(invite.expires_at).toLocaleString() + '）。必要な相手に送る場合は、招待リンク専用ボタンでコピーしてください。';
-    await refreshAdmin();
-    render();
-  } catch (error) {
-    setStatus('リンクを発行できませんでした: ' + error.message);
-  }
-}
-
-async function copyInvite() {
-  if (!inviteUrl) return;
-  try {
-    await navigator.clipboard.writeText(inviteUrl);
-    bridge.showToast('招待用の参加申請リンクをコピーしました。ツール本体のURLとは別のリンクです。');
-  } catch {
-    $('#shared-invite-link').focus();
-    $('#shared-invite-link').select();
-    bridge.showToast('自動コピーできません。招待リンク欄を選択してコピーしてください。');
-  }
-}
-
 async function copyToolUrl() {
   const value = publicToolUrl();
   const input = $('#shared-tool-url');
@@ -829,25 +790,11 @@ async function copyToolUrl() {
   }
 }
 
-async function revokeInvite(inviteId) {
-  await getApi().revokeInvite(inviteId);
-  inviteUrl = '';
-  await refreshAdmin();
-  setStatus('招待リンクを失効しました。');
-}
-
 async function removeMember(userId) {
-  if (!active || !window.confirm('この参加者のアクセス権を剥奪しますか？')) return;
+  if (!active || !window.confirm('この編集参加者を解除しますか？このアカウントは、この共有スペースへ再参加できなくなります。')) return;
   await getApi().removeMember(active.sessionId, userId);
   await refreshAdmin();
-  setStatus('参加権限を剥奪しました。');
-}
-
-async function decideRequest(requestId, decision, role = 'viewer') {
-  await getApi().decideRequest(requestId, decision, role);
-  await refreshAdmin();
-  await refreshSessions();
-  setStatus(decision === 'approve' ? roleLabel(role) + 'として承認しました。' : '参加申請を却下しました。');
+  setStatus('編集参加を解除し、このアカウントの再参加を禁止しました。');
 }
 
 async function archiveActive() {
@@ -994,35 +941,9 @@ async function initializeRoute(route) {
     }
     return;
   }
-  if (requestedSessionId) {
-    pendingRequestSessionId = requestedSessionId;
-    setStatus('参加申請の承認状態を確認しています…');
-    await checkAccess();
-    if (pendingRequestSessionId) scheduleAccessCheck(15000);
-    return;
-  }
-  if (!token) return;
-
-  const provided = window.prompt('共有セッションで表示する名前を入力してください', displayName());
-  if (!provided || !provided.trim()) {
-    setStatus('参加申請をキャンセルしました。招待リンクを再度開くと申請できます。');
-    return;
-  }
-  rememberDisplayName(provided.trim().slice(0, 40));
-  try {
-    const result = await getApi().requestAccess(token, provided.trim().slice(0, 40));
-    if (result.status === 'approved') {
-      await activateSession(result.session_id);
-    } else if (result.status === 'pending') {
-      pendingRequestSessionId = result.session_id;
-      setRoute('request=' + result.session_id);
-      setStatus('参加申請を送信しました。発行者の承認までは編成内容は表示されません。');
-      scheduleAccessCheck(15000);
-    } else {
-      setStatus('参加申請を作成できませんでした: ' + (result.status || '不明な状態'));
-    }
-  } catch (error) {
-    setStatus('参加申請に失敗しました: ' + error.message);
+  if (token || requestedSessionId) {
+    setRoute('');
+    setStatus('招待制は廃止されました。発行者に新しい閲覧・編集リンクを共有してもらってください。');
   }
 }
 
@@ -1034,12 +955,6 @@ async function handleSharedClick(event) {
       case 'shared-open-session':
         await activateSession(button.dataset.sessionId);
         break;
-      case 'shared-approve':
-        await decideRequest(button.dataset.requestId, 'approve', button.dataset.role);
-        break;
-      case 'shared-deny':
-        await decideRequest(button.dataset.requestId, 'deny', 'viewer');
-        break;
       case 'shared-remove-member':
         await removeMember(button.dataset.userId);
         break;
@@ -1047,9 +962,6 @@ async function handleSharedClick(event) {
         await getApi().setMemberRole(active.sessionId, button.dataset.userId, button.dataset.role);
         await refreshAdmin();
         setStatus('参加者の権限を' + roleLabel(button.dataset.role) + 'に変更しました。');
-        break;
-      case 'shared-revoke-invite':
-        await revokeInvite(button.dataset.inviteId);
         break;
       default:
         break;
@@ -1162,8 +1074,10 @@ export async function initializeSharedSessionsUi(callbacks) {
   document.addEventListener('click', handleSharedClick);
   document.addEventListener('visibilitychange', handleVisibility);
   window.addEventListener('online', () => {
-    if (active && !active.accessRevoked) schedulePoll(250);
-    if (pendingRequestSessionId) scheduleAccessCheck(500);
+    if (active && !active.accessRevoked && ['owner', 'editor'].includes(active.role)) {
+      void pollSession();
+      void startRealtime(active);
+    }
   });
   render();
   const initialRoute = captureInitialRoute();
