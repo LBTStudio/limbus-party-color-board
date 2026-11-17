@@ -556,7 +556,8 @@ test('workspace name and edit-join display name are independent fields', () => {
   assert.match(sharedUi, /const ownerDisplayName = String\(\$\('#shared-display-name'\)\.value \|\| ''\)/);
   assert.match(sharedUi, /localStorage\.getItem\('lbt_party_shared_display_name'\)/);
   assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?joinPublicSession/);
-  assert.match(sharedUi, /const displayNameInput = \$\('#shared-display-name'\);[\s\S]*?displayNameInput\.addEventListener\('input'/);\n  assert.match(sharedUi, /displayNameInput\.addEventListener\('change'/);
+  assert.match(sharedUi, /const displayNameInput = \$\('#shared-display-name'\);[\s\S]*?displayNameInput\.addEventListener\('input'/);
+  assert.match(sharedUi, /displayNameInput\.addEventListener\('change'/);
   assert.match(styles, /\.shared-fields \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
 
