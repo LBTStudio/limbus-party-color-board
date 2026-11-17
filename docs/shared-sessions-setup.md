@@ -33,6 +33,8 @@ Supabase Dashboard → Authentication / Sign-in methods の設定で **Anonymous
 
 匿名サインインは編集参加・スペース作成のタイミングだけで使います。第三者に悪用される可能性があるため、Supabase の Auth rate limit を確認し、編集参加を広く許可する前に上記の CAPTCHA / Turnstile を設定してください。
 
+SupabaseのAnonymous Authユーザーは自動削除されません。公式ドキュメントには30日を超えた匿名ユーザーを削除するSQL例がありますが、このプロジェクトではその一括削除を実行しないでください。`party_sessions.owner_user_id` と `session_members.user_id` は `auth.users` を `ON DELETE CASCADE` で参照しているため、所有者のAuthユーザーを削除すると共有スペースや参加データまで削除される可能性があります。同じAuthプロジェクトはLBTアカウント保管機能とも共有されています。現在は自動削除ジョブを設けず、Authユーザー数とDatabase Sizeを監視します。整理が必要な場合は、共有スペースの所有権・メンバーシップと他機能の参照を個別に確認してから実施してください。
+
 ## 4. 公開前に必須：Cloudflare Turnstile / CAPTCHA
 
 匿名ユーザーを大量生成する攻撃は、ユーザー単位の SQL レート制限だけでは防ぎ切れません。**公開範囲を広げる前に CAPTCHA を有効にしてください。**
