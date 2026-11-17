@@ -707,6 +707,14 @@ test('public viewing is anonymous and read-only while edit join is explicit and 
   assert.doesNotMatch(publicViewMigration, /as \$\n|^\$;$/m);
 });
 
+test('Realtime private-only mode is documented as a production prerequisite', () => {
+  const setup = read('../docs/shared-sessions-setup.md');
+  assert.match(setup, /Allow public access to channels/);
+  assert.match(setup, /を \*\*OFF\*\*/);
+  assert.match(setup, /realtime\.messages/);
+  assert.match(setup, /config\.private: true/);
+});
+
 test('Realtime only broadcasts revision metadata to current authenticated editors', () => {
   const broadcastStart = publicViewMigration.indexOf('create or replace function public.broadcast_party_revision');
   const policyStart = publicViewMigration.indexOf('create policy party_editors_receive_revision_broadcast');
