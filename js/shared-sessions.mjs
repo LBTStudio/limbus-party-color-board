@@ -72,9 +72,15 @@ async function rpc(name, args = {}, displayName = '') {
   const { data: authData, error: authError } = await client.auth.getSession();
   if (authError) throw authError;
   if (!authData.session) {
-    const captchaRequired = isTurnstileConfigured();
+    // Anonymous identities can create workspaces and join public-edit sessions.
+    // Fail closed if the public site key is missing, even when this RPC is called
+    // directly without going through the UI's Turnstile widget.
+    if (!isTurnstileConfigured()) {
+      throw new Error('匿名ログインを開始できません。Turnstile Site key が未設定のため、管理者が共有機能の設定を確認してください。');
+    }
+    const captchaRequired = true;
     const token = captchaToken;
-    if (captchaRequired && !token) {
+    if (!token) {
       throw new Error('不正利用防止の確認が必要です。Turnstile を完了してから、もう一度操作してください。');
     }
     let signInError;
