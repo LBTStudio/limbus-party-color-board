@@ -162,7 +162,7 @@ test('party member PL names persist in the matrix and detail cards show speed an
   const saveEnd = app.indexOf('function readUrlKeys()', saveStart);
   const save = app.slice(saveStart, saveEnd);
   assert.ok(matrixStart >= 0 && partyStart > matrixStart && partyEnd > partyStart);
-  assert.match(app.slice(matrixStart, partyStart), /entry\.playerName \|\| 'PL未設定'/);
+  assert.match(app.slice(matrixStart, partyStart), /entry\.playerName \|\| entry\.addedByDisplayName \|\| 'PL未設定'/);
   assert.match(detail, /data-player-name-index/);
   assert.match(detail, /persona\.speed/);
   assert.match(detail, /persona\.resSlash/);
