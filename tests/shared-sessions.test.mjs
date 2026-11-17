@@ -450,6 +450,7 @@ test('shared links use a single view-and-edit URL without invite issuance', () =
   assert.match(html, /id="shared-tool-url"/);
   assert.match(html, /id="shared-copy-tool-url">ツールURLをコピー/);
   assert.match(html, /id="shared-copy-session-link">閲覧・編集リンクをコピー/);
+  assert.match(html, /既に表示された情報やブラウザ内の60秒キャッシュは回収できません/);
   assert.match(html, /id="shared-join-edit"[^>]*>編集に参加/);
   assert.doesNotMatch(html, /id="shared-create-invite"|id="shared-copy-invite"|id="shared-access-waiting"/);
   assert.match(sharedUi, /function publicToolUrl\(\) \{\s*return location\.origin \+ location\.pathname;/);
