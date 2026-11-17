@@ -335,13 +335,17 @@ async function createSession() {
     return;
   }
   rememberDisplayName(ownerDisplayName);
+  await initializeTurnstile();
+  if (isTurnstileConfigured() && !isCaptchaReady()) {
+    setStatus('共有スペースの作成には不正利用防止の確認が必要です。確認を完了してから、もう一度作成してください。');
+    return;
+  }
   try {
     setStatus('共有編成をクラウドに作成しています…');
     const result = await getApi().createSession(title, ownerDisplayName);
     if (!result || !result.session_id) throw new Error('セッション作成の応答が不正です。');
     $('#shared-session-title').value = '';
     await activateSession(result.session_id, result);
-    await refreshSessions();
   } catch (error) {
     setStatus('共同編集スペースを作成できませんでした: ' + error.message);
   }
@@ -1050,6 +1054,7 @@ async function initializeTurnstile() {
   }
   container.hidden = false;
   if (hint) hint.hidden = false;
+  if (turnstileWidgetId !== null) return;
   try {
     if (!window.turnstile) {
       await new Promise((resolve, reject) => {
@@ -1079,9 +1084,10 @@ async function initializeTurnstile() {
         setStatus('不正利用防止の確認に失敗しました。ページを再読み込みしてやり直してください。');
       },
     });
+    turnstileWidgetId = widgetId;
     window.addEventListener('supabase-captcha-reset', () => {
       setCaptchaToken('');
-      if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
+      if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     });
   } catch (error) {
     setStatus('CAPTCHA を読み込めませんでした: ' + (error.message || '通信エラー'));
