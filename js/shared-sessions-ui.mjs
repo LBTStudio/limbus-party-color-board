@@ -389,9 +389,9 @@ async function activateSession(sessionId, prefetched = null) {
     : '「' + active.title + '」を開きました。閲覧中は自動同期・定期通信を行いません。';
   render();
   if (['owner', 'editor', 'viewer'].includes(active.role)) {
+    // refreshSessions already loads the owner roster; don't make a second admin RPC.
     await refreshSessions();
-    if (active.role === 'owner') await refreshAdmin();
-    if (['owner', 'editor'].includes(active.role)) void startRealtime(active);
+    if (active && ['owner', 'editor'].includes(active.role)) void startRealtime(active);
   }
 }
 
