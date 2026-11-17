@@ -362,6 +362,24 @@ test('creating a workspace validates the title and the owner display name separa
   assert.match(sharedUi, /if \(value\) rememberDisplayName\(value\);/);
 });
 
+test('shared-session admin actions are bound to their captured session and block navigation while pending', () => {
+  assert.match(sharedUi, /if \(active\.controlBusy\)[\s\S]*?共有設定・参加者管理の処理中です。完了してから切り替えてください。/);
+  assert.match(sharedUi, /function leaveSession\(\)[\s\S]*?active\.controlBusy[\s\S]*?共有設定・参加者管理の処理中です。完了してから共有セッションを閉じてください。/);
+  assert.match(sharedUi, /async function updatePublicAccess\(\)[\s\S]*?const session = active;[\s\S]*?setPublicAccess\(session\.sessionId/);
+  assert.match(sharedUi, /async function removeMember\(userId\)[\s\S]*?const session = active;[\s\S]*?removeMember\(session\.sessionId, userId\)/);
+  assert.match(sharedUi, /async function archiveActive\(\)[\s\S]*?const session = active;[\s\S]*?if \(active === session\)[\s\S]*?leaveSession\(\)/);
+  assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?const session = active;[\s\S]*?joinPublicSession\(session\.sessionId/);
+  assert.match(sharedUi, /adminItem\(label, description, controls = \[\][\s\S]*?active\?\.controlBusy/);
+});
+
+test('workspace creation prevents duplicate requests while CAPTCHA or RPC work is pending', () => {
+  assert.match(sharedUi, /let createBusy = false/);
+  assert.match(sharedUi, /async function createSession\(\)[\s\S]*?if \(createBusy\) return/);
+  assert.match(sharedUi, /createBusy = true;[\s\S]*?await initializeTurnstile\(\)/);
+  assert.match(sharedUi, /finally \{\s*createBusy = false;\s*render\(\);\s*\}/);
+  assert.match(sharedUi, /\$\('#shared-create'\)\.disabled = !configured \|\| createBusy/);
+});
+
 test('workspace creation is blocked before the create RPC when the current shared session has unsettled edits', () => {
   assert.match(sharedUi, /function sessionSwitchError\(\)/);
   const createStart = sharedUi.indexOf('async function createSession()');
