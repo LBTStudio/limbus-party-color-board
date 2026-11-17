@@ -676,6 +676,9 @@ async function updatePublicAccess() {
   if (!viewEnabled) $('#shared-public-edit-enabled').checked = false;
   session.controlBusy = true;
   render();
+  // Keep the requested values visible while the controls are locked.
+  $('#shared-public-view-enabled').checked = viewEnabled;
+  $('#shared-public-edit-enabled').checked = editEnabled;
   $('#shared-public-view-enabled').disabled = true;
   $('#shared-public-edit-enabled').disabled = true;
   $('#shared-leave').disabled = true;
