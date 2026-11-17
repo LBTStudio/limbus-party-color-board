@@ -181,21 +181,16 @@ test('edit role is rechecked after the session row lock', () => {
   assert.match(applyEdit, /EDITOR_REQUIRED/);
 });
 
-test('approved access remains pending if session activation is blocked by unsaved edits', () => {
-  const checkStart = sharedUi.indexOf('async function checkAccess(quiet = false)');
-  const checkEnd = sharedUi.indexOf('function captureInitialRoute()', checkStart);
-  const check = sharedUi.slice(checkStart, checkEnd);
-  const approvedStart = check.indexOf("if (result.status === 'approved')");
-  const deniedStart = check.indexOf("} else if (['denied', 'revoked', 'not_requested', 'closed'].includes(result.status))", approvedStart);
-  assert.ok(checkStart >= 0 && checkEnd > checkStart);
-  assert.ok(approvedStart >= 0 && deniedStart > approvedStart);
-  const approved = check.slice(approvedStart, deniedStart);
-  assert.ok(
-    approved.indexOf('await activateSession(sessionId)') < approved.indexOf('pendingRequestSessionId = null'),
-    'do not clear the approved request before the destination session actually opens',
-  );
-  assert.match(approved, /catch \(error\)[\s\S]*?scheduleAccessCheck\(15000\)/);
-  assert.match(approved, /参加が承認されましたが、現在の編成を切り替えられません/);
+test('public share route opens read-only immediately and retires old invite routes', () => {
+  const start = sharedUi.indexOf('async function initializeRoute(route)');
+  const end = sharedUi.indexOf('async function handleSharedClick', start);
+  const route = sharedUi.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(route, /if \(sessionId\)[\s\S]*?await activateSession\(sessionId\)/);
+  assert.match(route, /if \(token \|\| requestedSessionId\)[\s\S]*?招待制は廃止されました/);
+  assert.doesNotMatch(route, /requestAccess|checkAccess|scheduleAccessCheck/);
+  assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?joinPublicSession/);
+  assert.match(sharedUi, /function schedulePoll\(delay = null\)[\s\S]*?active\.role === 'public-viewer'/);
 });
 
 test('session switching preserves the personal snapshot and ignores stale admin responses', () => {
@@ -480,15 +475,14 @@ test('workspace archival is rejected before the RPC when local changes have not 
   assert.match(archive, /未解決の編集がある間は共同編集スペースを終了できません/);
 });
 
-test('workspace name and creator display name are independent fields', () => {
-  assert.match(html, /共同編集スペース名<input class="input" id="shared-session-title" maxlength="80"/);
-  assert.match(html, /自分の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname"/);
-  assert.match(html, /スペース名は編成の名前、表示名は参加者一覧に表示する自分の名前です/);
+test('workspace name and edit-join display name are independent fields', () => {
+  assert.match(html, /共有スペース名<input class="input" id="shared-session-title" maxlength="80"/);
+  assert.match(html, /編集参加時の表示名<input class="input" id="shared-display-name" maxlength="40" autocomplete="nickname"/);
+  assert.match(html, /表示名は編集参加者一覧に表示されます。閲覧のみの場合は入力不要です/);
   assert.match(sharedUi, /getApi\(\)\.createSession\(title, ownerDisplayName\)/);
   assert.match(sharedUi, /const ownerDisplayName = String\(\$\('#shared-display-name'\)\.value \|\| ''\)/);
   assert.match(sharedUi, /localStorage\.getItem\('lbt_party_shared_display_name'\)/);
-  assert.match(sharedUi, /window\.prompt\('共有セッションで表示する名前を入力してください'/);
-  assert.match(sharedUi, /getApi\(\)\.requestAccess\(token, provided\.trim\(\)\.slice\(0, 40\)\)/);
+  assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?joinPublicSession/);
   assert.match(sharedUi, /\$\('#shared-display-name'\)\.addEventListener\('change'/);
   assert.match(styles, /\.shared-fields \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
