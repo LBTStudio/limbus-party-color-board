@@ -16,11 +16,10 @@ begin
   if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
   if v_title = '' then raise exception 'SESSION_TITLE_REQUIRED' using errcode = '22023'; end if;
 
-  -- Preserve the existing rolling limits and serialized creation log.
+  -- Preserve existing anti-abuse controls and serialize creation counts per user.
   perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
   delete from public.party_session_creation_log
     where created_at < now() - interval '30 days';
-
   if (select count(*) from public.party_session_creation_log l
       where l.owner_user_id = v_user_id and l.created_at > now() - interval '1 hour') >= 10 then
     raise exception 'SESSION_CREATE_RATE_LIMIT' using errcode = '53300';
