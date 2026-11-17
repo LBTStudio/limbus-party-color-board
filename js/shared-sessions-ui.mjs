@@ -739,11 +739,23 @@ async function copySessionLink() {
     await navigator.clipboard.writeText(value);
     bridge.showToast('閲覧・編集参加用リンクをコピーしました。');
   } catch {
-    const input = $('#shared-tool-url');
-    input.value = value;
-    input.focus();
-    input.select();
-    bridge.showToast('リンク欄を選択しました。コピーしてください。');
+    let copied = false;
+    const fallback = document.createElement('textarea');
+    fallback.value = value;
+    fallback.setAttribute('readonly', '');
+    fallback.style.position = 'fixed';
+    fallback.style.opacity = '0';
+    document.body.appendChild(fallback);
+    try {
+      fallback.select();
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+    fallback.remove();
+    bridge.showToast(copied
+      ? '閲覧・編集参加用リンクをコピーしました。'
+      : 'リンクをコピーできませんでした。ブラウザのクリップボード権限を確認してください。');
   }
 }
 
@@ -956,20 +968,6 @@ function reapplyLocal() {
   onPartyChanged();
 }
 
-async function copyToolUrl() {
-  const value = publicToolUrl();
-  const input = $('#shared-tool-url');
-  input.value = value;
-  try {
-    await navigator.clipboard.writeText(value);
-    bridge.showToast('ツール本体のURLをコピーしました。招待権限や編成情報は含まれません。');
-  } catch {
-    input.focus();
-    input.select();
-    bridge.showToast('自動コピーできません。ツールURL欄を選択してコピーしてください。');
-  }
-}
-
 async function removeMember(userId) {
   const session = active;
   if (!session || session.role !== 'owner' || session.controlBusy
@@ -1174,7 +1172,6 @@ async function initializeTurnstile() {
 
 export async function initializeSharedSessionsUi(callbacks) {
   bridge = callbacks;
-  $('#shared-tool-url').value = publicToolUrl();
   const displayNameInput = $('#shared-display-name');
   try {
     const savedName = String(localStorage.getItem('lbt_party_shared_display_name') || '').trim().slice(0, 40);
@@ -1206,7 +1203,6 @@ export async function initializeSharedSessionsUi(callbacks) {
     });
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
-  $('#shared-copy-tool-url').addEventListener('click', () => copyToolUrl());
   $('#shared-display-name').addEventListener('change', () => {
     const value = String($('#shared-display-name').value || '').trim().slice(0, 40);
     if (value) rememberDisplayName(value);
