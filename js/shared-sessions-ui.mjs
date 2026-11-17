@@ -12,6 +12,7 @@ let sharedPanelOpen = false;
 let pollTimer = null;
 let realtimeChannel = null;
 let realtimeConnected = false;
+let realtimeAttemptId = 0;
 let realtimeRefreshTimer = null;
 let turnstileWidgetId = null;
 let bridge = null;
@@ -452,6 +453,10 @@ async function refreshAdmin() {
 }
 
 function stopRealtime() {
+  // Invalidate a pending subscribe() as well as an already-open channel.
+  // Visibility changes and session switches can otherwise leave orphan sockets.
+  realtimeAttemptId += 1;
+  if (active) active.realtimeStarting = false;
   if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
   realtimeRefreshTimer = null;
   realtimeConnected = false;
@@ -462,10 +467,15 @@ function stopRealtime() {
 
 async function startRealtime(session) {
   if (!session || active !== session || !['owner', 'editor'].includes(session.role) || document.hidden) return;
+  if (session.realtimeStarting || (realtimeChannel && realtimeConnected)) return;
+
   stopRealtime();
+  const attemptId = realtimeAttemptId;
+  session.realtimeStarting = true;
+  let pendingChannel = null;
   try {
-    const channel = await getApi().subscribeSession(session.sessionId, (payload) => {
-      if (active !== session) return;
+    const subscribePromise = getApi().subscribeSession(session.sessionId, (payload) => {
+      if (active !== session || realtimeAttemptId !== attemptId) return;
       if (payload?._event === 'membership_changed') {
         if (session.role === 'owner') void refreshAdmin();
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
@@ -477,24 +487,44 @@ async function startRealtime(session) {
       if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
       realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 300);
     }, (status) => {
-      if (active !== session) return;
+      if (active !== session || realtimeAttemptId !== attemptId) return;
       realtimeConnected = status === 'SUBSCRIBED';
       if (realtimeConnected) {
         stopPolling();
         session.failures = 0;
+        // Reconcile after subscribe to close the read-to-subscribe race where
+        // a revision can be committed before this channel starts receiving.
+        void pollSession();
       } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
         realtimeConnected = false;
+        session.realtimeStarting = false;
+        realtimeAttemptId += 1;
+        const failedChannel = realtimeChannel || pendingChannel;
+        realtimeChannel = null;
+        if (failedChannel && api) void api.removeChannel(failedChannel).catch(() => {});
         schedulePoll(10000);
       }
     });
-    if (active === session) realtimeChannel = channel;
-    else void getApi().removeChannel(channel);
+
+    // Keep a bounded polling fallback until Realtime confirms the subscription.
+    schedulePoll(15000);
+    pendingChannel = await subscribePromise;
+    if (active === session && !document.hidden && realtimeAttemptId === attemptId) {
+      realtimeChannel = pendingChannel;
+    } else {
+      await getApi().removeChannel(pendingChannel);
+      if (session.realtimeStarting === true) session.realtimeStarting = false;
+    }
   } catch (error) {
-    realtimeConnected = false;
-    session.status = 'disconnected';
-    statusMessage = 'Realtime接続に失敗しました。低頻度の確認通信へ切り替えます: ' + (error.message || '接続エラー');
-    render();
-    schedulePoll(10000);
+    if (active === session && realtimeAttemptId === attemptId) {
+      realtimeConnected = false;
+      session.realtimeStarting = false;
+      session.status = 'disconnected';
+      statusMessage = 'Realtime接続に失敗しました。低頻度の確認通信へ切り替えます: ' + (error.message || '接続エラー');
+      render();
+      schedulePoll(10000);
+    }
+    if (pendingChannel) void getApi().removeChannel(pendingChannel).catch(() => {});
   }
 }
 
