@@ -188,8 +188,15 @@ export function createSharedSessions() {
       const client = await getClient();
       await client.removeChannel(channel);
     },
-    async listSessions(displayName) {
-      return rpc('list_my_party_sessions', {}, displayName);
+    async listSessions() {
+      // Listing a user's editing workspaces is optional for a public viewer.
+      // Do not create an anonymous Auth identity merely because the shared
+      // panel was opened; identities are created only by explicit create/join.
+      const client = await getClient();
+      const { data: authData, error: authError } = await client.auth.getSession();
+      if (authError) throw authError;
+      if (!authData.session) return [];
+      return rpc('list_my_party_sessions');
     },
     async createSession(title, displayName) {
       return rpc('create_party_session', { p_title: title, p_display_name: displayName }, displayName);
