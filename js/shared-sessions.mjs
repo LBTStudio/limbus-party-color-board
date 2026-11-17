@@ -119,7 +119,7 @@ export function createSharedSessions() {
         try {
           const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
           if (cached && Date.now() - cached.savedAt < 60000 && cached.data?.status === 'ok') {
-            return { ...cached.data, _fromCache: true };
+            return { ...cached.data, role: 'public-viewer', _fromCache: true };
           }
         } catch { /* Ignore malformed or unavailable session cache. */ }
       }
@@ -132,7 +132,7 @@ export function createSharedSessions() {
       }
       if (data?.status === 'ok' && typeof sessionStorage !== 'undefined') {
         try {
-          sessionStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), data }));
+          sessionStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), data: { ...data, role: 'public-viewer' } }));
         } catch { /* Cache is optional and must not block viewing. */ }
       }
       return data;
