@@ -284,8 +284,8 @@ test('desktop roster management dropdown is not clipped by the one-screen contro
   const desktopStart = styles.indexOf('@media (min-width: 1120px) and (min-height: 720px)');
   assert.ok(desktopStart >= 0, 'the one-screen desktop layout exists');
   const desktop = styles.slice(desktopStart);
-  assert.match(html, /<details class="toolbar-more">[\\s\\S]*?<summary>編成管理<\\/summary>[\\s\\S]*?class="toolbar-more-menu"/);
-  assert.match(styles, /\\.toolbar-more-menu \\{[\\s\\S]*?position: absolute[\\s\\S]*?z-index: 30/);
-  assert.match(desktop, /main > \\.controls \\{\\s*overflow: visible;\\s*z-index: 40;/);
-  assert.match(desktop, /\\.toolbar-more \\{\\s*z-index: 41;/);
+  assert.match(html, /<details class="toolbar-more">[\s\S]*?<summary>編成管理<\/summary>[\s\S]*?class="toolbar-more-menu"/);
+  assert.match(styles, /\.toolbar-more-menu \{[\s\S]*?position: absolute[\s\S]*?z-index: 30/);
+  assert.match(desktop, /main > \.controls \{\s*overflow: visible;\s*z-index: 40;/);
+  assert.match(desktop, /\.toolbar-more \{\s*z-index: 41;/);
 });
