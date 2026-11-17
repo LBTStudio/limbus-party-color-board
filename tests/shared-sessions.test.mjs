@@ -769,6 +769,7 @@ test('removing an editor blocks rejoining with the same anonymous account', () =
 
 
 test('database creation stays private until the new client explicitly enables public defaults', () => {
+  const failureModes = read('../docs/shared-sessions-failure-modes.md');
   const createStart = publicViewMigration.indexOf('create or replace function public.create_party_session');
   const readStart = publicViewMigration.indexOf('create or replace function public.read_public_party_session');
   assert.ok(createStart >= 0 && readStart > createStart);
@@ -790,6 +791,7 @@ test('database creation stays private until the new client explicitly enables pu
   assert.match(createUi, /非公開のままです/);
   assert.match(design, /RPCは新規作成時も両方falseを明示する/);
   assert.match(design, /新UIは作成直後に `set_public_party_access\(true, true\)`/);
+  assert.match(failureModes, /DB関数で作成した新規スペースも両方falseで開始し、新UIが作成直後にowner専用RPCで公開・編集を有効化する/);
   const opens = (publicViewMigration.match(/as \$\$/g) || []).length;
   const closes = (publicViewMigration.match(/^\$\$;$/gm) || []).length;
   assert.equal(opens, closes, 'all PL/pgSQL dollar-quoted bodies must be closed');
