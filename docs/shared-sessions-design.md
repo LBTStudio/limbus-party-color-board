@@ -45,6 +45,12 @@
 
 招待・参加申請・owner承認を新規参加の条件にしない。旧テーブル・旧RPCは既存データ移行を安全にするため残すが、新しい画面から招待リンクを発行しない。
 
+## 匿名Authユーザーの保持
+
+SupabaseのAnonymous Authユーザーは自動削除されない。公式ドキュメントには古い匿名ユーザーを削除するSQL例があるが、このプロジェクトでは一律の30日削除を実装しない。`party_sessions.owner_user_id` と `session_members.user_id` は `auth.users` を `ON DELETE CASCADE` で参照しているため、単純な削除SQLは所有者の共有スペースや参加membershipを連鎖削除し得る。また、同じAuthプロジェクトはLBTアカウント保管機能とも共有されており、別機能のデータにも影響する可能性がある。
+
+現在、新しい匿名Auth IDを作るのは共有スペース作成または明示的な編集参加だけであり、公開閲覧と未認証の参加スペース一覧取得では作成しない。匿名ユーザーの自動削除ジョブは設けず、Authユーザー数とDatabase Sizeを監視する。将来整理する場合は、共有スペースの所有権移管・終了と他機能の参照をすべて検証する依存関係対応の手順を別途設計する。
+
 ## 編集者の同期
 
 編集者のみが `party:<session_id>` のprivate Broadcastチャンネルへ接続する。Realtime AuthorizationのRLSポリシーは `session_members` にowner/editorとして存在する認証ユーザーだけに受信を許可する。Supabase DashboardのRealtime Settingsでは `Allow public access to channels` をOFFにして、このprivate channel RLS認可を強制する。
