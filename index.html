@@ -142,7 +142,7 @@
     </div>
     <div id="shared-panel-content" class="shared-panel-content">
       <p class="hint shared-intro">共有リンクを開けば、認証や参加申請なしで編成を閲覧できます。編集に参加すると、同じ編成を複数人で直接編集できます。閲覧中は自動同期を行わず、編集者だけがRealtime通知で更新を受け取ります。</p>
-      <p class="hint shared-capacity-note">編集参加は1スペースにつき発行者を含め最大20名です。閲覧には参加人数の上限を設けませんが、アクセス集中時には一時的に読み込みが遅くなる場合があります。</p>
+      <p class="hint shared-capacity-note">新規ルームはルームマスターを含め6名で開始します。ルームマスターは最大20名まで変更できます。閲覧だけの人は定員に含みません。</p>
       <details class="shared-info">
         <summary>保存先・通信・保存期間について</summary>
         <div class="shared-storage-explainer" aria-label="データの保存先">
@@ -203,7 +203,18 @@
           <div class="control-actions shared-actions"><button type="button" class="btn btn-ghost" id="shared-accept-remote">サーバー版を採用</button><button type="button" class="btn" id="shared-reapply-local">自分の編成を再適用</button></div>
           <p class="hint">「自分の編成を再適用」は現在の編成全体でサーバー版を置き換えます。最新内容を確認してから選択してください。</p>
         </div>
-        <div id="shared-admin" class="shared-admin" hidden><h3>編集参加者の管理</h3><div id="shared-members"></div></div>
+        <div id="shared-admin" class="shared-admin" hidden>
+          <section class="shared-member-limit-control" aria-label="ルーム定員">
+            <h3>ルーム定員</h3>
+            <label for="shared-member-limit">最大参加人数（ルームマスター含む）
+              <input class="input" id="shared-member-limit" type="number" min="1" max="20" step="1" value="6" inputmode="numeric">
+            </label>
+            <p class="hint" id="shared-member-limit-hint">新規ルームは6名で開始します。1〜20名の範囲で変更できます。現在の参加人数より小さい上限にはできません。</p>
+            <button type="button" class="btn btn-ghost" id="shared-update-member-limit">最大人数を更新</button>
+          </section>
+          <h3>編集参加者の管理</h3>
+          <div id="shared-members"></div>
+        </div>
       </div>
     </div>
   </section>

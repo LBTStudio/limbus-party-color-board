@@ -1570,6 +1570,33 @@ textarea.input {
   display: grid;
   gap: 6px;
 }
+.shared-member-limit-control {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-1);
+}
+.shared-member-limit-control label {
+  display: grid;
+  gap: 5px;
+  width: min(100%, 260px);
+  color: var(--tx-dim);
+  font-size: 0.72rem;
+}
+.shared-member-limit-control input {
+  width: 100%;
+  min-height: 36px;
+}
+.shared-member-limit-control .hint {
+  margin: 0;
+  font-size: 0.68rem;
+}
+.shared-member-limit-control .btn {
+  min-height: 32px;
+}
 .shared-setting {
   display: flex;
   align-items: center;

@@ -13,6 +13,7 @@ const personaSnapshotMigration = read('../supabase/migrations/20261023181231_sha
 const partyCapacityMigration = read('../supabase/migrations/20261023213614_allow_twenty_personas_per_party.sql');
 const playerAssignmentMigration = read('../supabase/migrations/20261023232430_add_party_player_assignments_and_resistances.sql');
 const publicViewMigration = read('../supabase/migrations/20261117155808_public_view_open_edit_realtime.sql');
+const memberCapacityMigration = read('../supabase/migrations/20261118020200_shared_party_member_capacity.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -362,9 +363,9 @@ test('workspace list shows owner attribution and current members out of the exis
   assert.match(fn, /where s\.archived_at is null/);
   assert.match(memberCountMigration, /revoke all on function public\.list_my_party_sessions\(\) from public, anon/i);
   assert.match(memberCountMigration, /grant execute on function public\.list_my_party_sessions\(\) to authenticated/i);
-  assert.match(sharedUi, /memberCount \+ '\/20名'/);
-  assert.match(sharedUi, /編集参加者（' \+ members\.length \+ '\/20名）/);
-  assert.match(html, /発行者を含め最大20名/);
+  assert.match(sharedUi, /memberCount \+ '\/' \+ memberLimit \+ '名'/);
+  assert.match(sharedUi, /編集参加者（' \+ members\.length \+ '\/' \+ memberLimit \+ '名）/);
+  assert.match(html, /ルームマスターを含め6名で開始/);
   assert.match(forwardMigration, /count\(\*\)[\s\S]*?>= 20 then/);
   assert.match(forwardMigration, /for update/);
 });
@@ -942,4 +943,27 @@ test('anonymous editor removal blocks the same Auth ID, not a verified person', 
   assert.match(design, /ブラウザデータ削除や別端末から新しい匿名IDを発行すれば/);
   assert.match(read('../docs/shared-sessions-failure-modes.md'), /新しい匿名IDまでは遮断できない/);
   assert.match(read('../docs/shared-sessions-setup.md'), /本人そのものを恒久的に遮断する機能ではありません/);
+});
+
+test('new rooms default to six total members and room masters control the cap', () => {
+  assert.match(memberCapacityMigration, /add column if not exists member_limit integer not null default 6/i);
+  assert.match(memberCapacityMigration, /update public\.party_sessions\s+set member_limit = 20/i);
+  assert.match(memberCapacityMigration, /alter column member_limit set default 6/i);
+  assert.match(memberCapacityMigration, /check \(member_limit between 1 and 20\)/i);
+  assert.match(memberCapacityMigration, /before insert on public\.session_members/i);
+  assert.match(memberCapacityMigration, /for update/i);
+  assert.match(memberCapacityMigration, /v_member_count >= v_member_limit/i);
+  assert.match(memberCapacityMigration, /create or replace function public\.set_party_session_member_limit/i);
+  assert.match(memberCapacityMigration, /p_member_limit < v_member_count/i);
+  assert.match(memberCapacityMigration, /grant execute on function public\.set_party_session_member_limit\(uuid,integer\) to authenticated/i);
+  assert.match(memberCapacityMigration, /'member_limit', s\.member_limit/i);
+  assert.match(memberCapacityMigration, /'member_limit',v_member_limit/i);
+  assert.match(sharedUi, /async function updateMemberLimit\(\)/);
+  assert.match(sharedUi, /setMemberLimit\(session\.sessionId, nextLimit\)/);
+  assert.match(client, /set_party_session_member_limit/);
+  assert.match(html, /最大参加人数（ルームマスター含む）/);
+  assert.match(design, /新規ルームの初期上限は6名/);
+  assert.match(design, /現在の参加人数を下回れない/);
+  assert.match(read('../docs/shared-sessions-setup.md'), /ルームマスターは1〜20名/);
+  assert.equal((memberCapacityMigration.match(/as \$\$/g) || []).length, (memberCapacityMigration.match(/^\$\$;$/gm) || []).length);
 });

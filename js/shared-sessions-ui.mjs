@@ -179,9 +179,17 @@ function adminItem(label, description, controls = []) {
 
 function renderAdmin(data) {
   const members = Array.isArray(data.members) ? data.members : [];
+  const memberLimit = Math.max(1, Math.min(20, Number(data.member_limit) || 6));
+  const memberLimitInput = $('#shared-member-limit');
+  memberLimitInput.value = String(memberLimit);
+  memberLimitInput.min = String(Math.max(1, members.length));
+  memberLimitInput.disabled = Boolean(active?.controlBusy);
+  $('#shared-update-member-limit').disabled = Boolean(active?.controlBusy);
+  $('#shared-member-limit-hint').textContent = '現在 ' + members.length + '名 / 上限 ' + memberLimit
+    + '名。ルームマスターを含みます。上限は1〜20名で設定でき、参加中の人数より小さくはできません。';
   const membersRoot = $('#shared-members');
   membersRoot.replaceChildren(adminSection(
-    '編集参加者（' + members.length + '/20名）',
+    '編集参加者（' + members.length + '/' + memberLimit + '名）',
     members,
     '編集参加者はいません。',
     (item) => adminItem(
@@ -242,8 +250,9 @@ function render() {
     const text = node('div', 'shared-session-copy');
     text.append(node('strong', '', item.title));
     const memberCount = Number(item.member_count);
+    const memberLimit = Number(item.member_limit) || 20;
     const memberCountLabel = Number.isInteger(memberCount) && memberCount >= 1
-      ? memberCount + '/20名'
+      ? memberCount + '/' + memberLimit + '名'
       : '人数取得中';
     text.append(node('small', '', roleLabel(item.role) + ' · revision ' + (Number(item.revision) || 0)
       + ' · ' + memberCountLabel));
@@ -265,8 +274,9 @@ function render() {
   $('#shared-active').hidden = !active;
   if (!active) return;
   $('#shared-active-title').textContent = active.title;
+  const memberLimitLabel = Number(active.memberLimit) > 0 ? ' · 定員 ' + active.memberLimit + '名' : '';
   $('#shared-active-meta').textContent = '発行者: ' + active.ownerDisplayName + ' · ' + roleLabel(active.role)
-    + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
+    + memberLimitLabel + ' · revision ' + active.revision + ' · ' + activeStatusLabel();
   const owner = active.role === 'owner' && !active.accessRevoked && active.status !== 'closed';
   $('#shared-join-edit').hidden = active.role !== 'public-viewer' || !active.publicEditEnabled;
   $('#shared-join-edit').disabled = Boolean(active.controlBusy);
@@ -403,6 +413,7 @@ async function activateSession(sessionId, prefetched = null) {
     role: snapshot.role || 'public-viewer',
     publicViewEnabled: snapshot.public_view_enabled !== false,
     publicEditEnabled: snapshot.public_edit_enabled !== false,
+    memberLimit: Number(snapshot.member_limit) || 20,
     ownerDisplayName: snapshotOwnerDisplayName(snapshot),
     revision: Number(snapshot.revision) || 0,
     lastSavedKeys: [...snapshot.party_keys],
@@ -598,6 +609,7 @@ async function pollSession() {
     if (result.role) session.role = result.role === 'viewer' ? 'public-viewer' : result.role;
     if (result.public_view_enabled !== undefined) session.publicViewEnabled = result.public_view_enabled !== false;
     if (result.public_edit_enabled !== undefined) session.publicEditEnabled = result.public_edit_enabled !== false;
+    if (Number(result.member_limit) > 0) session.memberLimit = Number(result.member_limit);
     if (Array.isArray(result.members)) {
       session.ownerDisplayName = snapshotOwnerDisplayName(result, session.ownerDisplayName);
     }
@@ -664,6 +676,7 @@ function applySnapshot(snapshot) {
   active.title = snapshot.title || active.title;
   active.role = snapshot.role || active.role;
   active.ownerDisplayName = snapshotOwnerDisplayName(snapshot, active.ownerDisplayName);
+  if (Number(snapshot.member_limit) > 0) active.memberLimit = Number(snapshot.member_limit);
   active.lastSavedKeys = [...snapshot.party_keys];
   active.lastSavedPersonas = remotePersonas(snapshot);
   active.retry = null;
@@ -731,6 +744,56 @@ async function copySessionLink() {
     input.focus();
     input.select();
     bridge.showToast('リンク欄を選択しました。コピーしてください。');
+  }
+}
+
+async function updateMemberLimit() {
+  const session = active;
+  if (!session || session.role !== 'owner' || session.controlBusy || !admin) return;
+  const input = $('#shared-member-limit');
+  const rawValue = String(input.value || '').trim();
+  if (!/^(?:[1-9]|1[0-9]|20)$/.test(rawValue)) {
+    setStatus('最大人数は1〜20の整数で指定してください。');
+    input.focus();
+    return;
+  }
+  const nextLimit = Number(rawValue);
+  const currentCount = Array.isArray(admin.members) ? admin.members.length : 1;
+  if (nextLimit < currentCount) {
+    setStatus('現在の参加人数（' + currentCount + '名）より小さい上限には変更できません。');
+    input.focus();
+    return;
+  }
+  const previousLimit = Number(admin.member_limit) || session.memberLimit || 6;
+  if (nextLimit === previousLimit) {
+    setStatus('最大人数は変更されていません。');
+    return;
+  }
+  if (nextLimit < previousLimit
+    && !window.confirm('最大人数を ' + nextLimit + '名に減らします。現在の参加者は維持されますが、空き枠は減少します。続行しますか？')) return;
+
+  session.controlBusy = true;
+  render();
+  try {
+    const result = await getApi().setMemberLimit(session.sessionId, nextLimit);
+    if (active !== session) return;
+    session.memberLimit = Number(result.member_limit) || nextLimit;
+    await refreshAdmin();
+    if (active === session) setStatus('最大参加人数を ' + session.memberLimit + '名に更新しました（ルームマスター含む）。');
+  } catch (error) {
+    if (active === session) {
+      const message = /MEMBER_LIMIT_BELOW_CURRENT/.test(error.message || '')
+        ? '現在の参加人数より小さい上限には変更できません。'
+        : /OWNER_REQUIRED/.test(error.message || '')
+          ? 'ルームマスターのみ最大人数を変更できます。'
+          : /MEMBER_LIMIT_OUT_OF_RANGE/.test(error.message || '')
+            ? '最大人数は1〜20名の範囲で指定してください。'
+            : '最大人数を更新できませんでした: ' + (error.message || '通信エラー');
+      setStatus(message);
+    }
+  } finally {
+    session.controlBusy = false;
+    if (active === session) render();
   }
 }
 
@@ -1156,6 +1219,7 @@ export async function initializeSharedSessionsUi(callbacks) {
   $('#shared-copy-session-link').addEventListener('click', () => copySessionLink());
   $('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot());
   $('#shared-public-view-enabled').addEventListener('change', () => updatePublicAccess());
+  $('#shared-update-member-limit').addEventListener('click', () => updateMemberLimit());
   $('#shared-public-edit-enabled').addEventListener('change', () => updatePublicAccess());
   $('#shared-accept-remote').addEventListener('click', () => acceptRemote());
   $('#shared-reapply-local').addEventListener('click', () => reapplyLocal());

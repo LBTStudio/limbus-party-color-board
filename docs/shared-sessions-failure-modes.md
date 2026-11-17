@@ -9,7 +9,7 @@
 | 匿名閲覧RPCが大量に呼ばれる | DB CPU・通常Egressが無料枠を圧迫する | 閲覧は初回取得のみで自動pollなし。60秒のタブ内キャッシュと手動更新を使う。公開後は通常EgressとDB負荷を監視。専用CDNキャッシュ／IPレート制限は未実装として扱う | 68KiB/読取の仮定で450回/日なら約0.94GB/月、1,000回/日なら約2.09GB/月。DB CPU・実応答サイズは未測定で、IPレート制限もないため、組織Egress使用量に応じて公開範囲を制限する |
 | 読み取りRPCが内部情報を返す | メンバー、編集履歴、別セッションの情報漏えい | SECURITY DEFINER関数で必要最小限のフィールドだけを返す。テーブルへのanon直接権限は付与しない | anonが参加者一覧・編集イベント・別セッションを取得できない |
 | 閲覧キャッシュから編集権限が復元される | ログアウト後の古いowner/editor権限でUIが開く | sessionStorageのキャッシュには常にpublic-viewer roleを保存・返却する。書き込みはサーバー側membershipで再検証 | owner/editorで取得後にページ再読込し、キャッシュから書き込み権限が復元されない |
-| 編集参加の連打・参加枠超過 | membership行の乱造、スペース容量超過 | join RPCがセッション行をロックし、発行者込み20名・ユーザーごと20スペースを検証する。Anonymous AuthにTurnstileを併用できる | 同時joinでも上限を超えず、既存memberの再参加で重複行が作られない |
+| 編集参加の連打・参加枠超過 | membership行の乱造、スペース容量超過 | join RPCと全membership INSERTトリガーがルームマスター設定の定員（新規ルーム初期6名、最大20名）・ユーザーごと20スペースを検証する。Anonymous AuthにTurnstileを併用できる | 同時join・旧招待承認でも設定上限を超えず、既存memberの再参加で重複行が作られない |
 | ownerが特定編集者を解除する | 公開リンクから同じAuth IDが再参加する | `remove_party_session_member` が `session_access_requests.status='revoked'` の拒否記録を残し、join RPCが照合する。表示名でなくAuth user IDで判定する。ただし本人確認ではないため、別端末・ブラウザデータ削除後の新しい匿名IDまでは遮断できない | 解除した同じ匿名Auth IDは再参加できず、新しいIDは公開編集ONなら参加できることを確認する |
 | ownerが既存スペースを移行する | 旧来の非公開セッションが自動的に公開される | 新規カラムの `DEFAULT false` で既存スペースは非公開のまま維持する。移行で既存行を上書きしない。DB関数で作成した新規スペースも両方falseで開始し、新UIが作成直後にowner専用RPCで公開・編集を有効化する。旧UIからの作成は非公開のまま | 既存セッションはanon readで拒否され、ownerのみ読取・設定変更できる。新UIから作成した場合だけ公開フラグtrueになる |
 | 編集参加が無認証で直接呼ばれる | membershipの偽造 | join RPCはauth.uid()を必須にし、SECURITY DEFINERのサーバー処理だけでmembershipを作る。anonには実行権限を与えない | anonロールでjoin RPCを呼ぶと拒否される |

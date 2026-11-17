@@ -160,16 +160,29 @@ export function createSharedSessions() {
       return data;
     },
     async joinPublicSession(sessionId, displayName) {
-      return rpc('join_public_party_session', {
-        p_session_id: sessionId,
-        p_display_name: String(displayName || '参加者').slice(0, 40),
-      }, displayName);
+      try {
+        return await rpc('join_public_party_session', {
+          p_session_id: sessionId,
+          p_display_name: String(displayName || '参加者').slice(0, 40),
+        }, displayName);
+      } catch (error) {
+        if (/SESSION_MEMBER_LIMIT/.test(error.message || '')) {
+          throw new Error('このルームは定員に達しています。ルームマスターが最大人数を変更すると参加できます。');
+        }
+        throw error;
+      }
     },
     async setPublicAccess(sessionId, publicViewEnabled, publicEditEnabled) {
       return rpc('set_public_party_access', {
         p_session_id: sessionId,
         p_public_view_enabled: Boolean(publicViewEnabled),
         p_public_edit_enabled: Boolean(publicEditEnabled),
+      });
+    },
+    async setMemberLimit(sessionId, memberLimit) {
+      return rpc('set_party_session_member_limit', {
+        p_session_id: sessionId,
+        p_member_limit: Number(memberLimit),
       });
     },
     async subscribeSession(sessionId, onChange, onStatus) {
