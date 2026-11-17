@@ -226,12 +226,15 @@ test('edit role is rechecked after the session row lock', () => {
   assert.match(applyEdit, /EDITOR_REQUIRED/);
 });
 
-test('public share route opens read-only immediately and retires old invite routes', () => {
+test('public share route offers edit participation or viewing and retires old invite routes', () => {
   const start = sharedUi.indexOf('async function initializeRoute(route)');
-  const end = sharedUi.indexOf('async function handleSharedClick', start);
+  const end = sharedUi.indexOf('async function chooseSharedAccess(mode)', start);
   const route = sharedUi.slice(start, end);
   assert.ok(start >= 0 && end > start);
-  assert.match(route, /if \(sessionId\)[\s\S]*?await activateSession\(sessionId\)/);
+  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId\)/);
+  assert.match(route, /\['owner', 'editor'\]\.includes\(snapshot\.role\)[\s\S]*?await activateSession\(sessionId, snapshot\)/);
+  assert.match(route, /pendingJoinChoice = snapshot/);
+  assert.doesNotMatch(route, /await activateSession\(sessionId\);/);
   assert.match(route, /if \(token \|\| requestedSessionId\)[\s\S]*?招待制は廃止されました/);
   assert.doesNotMatch(route, /requestAccess|checkAccess|scheduleAccessCheck/);
   assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?joinPublicSession/);
