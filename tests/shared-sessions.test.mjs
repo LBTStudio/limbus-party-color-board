@@ -718,6 +718,9 @@ test('Realtime only broadcasts revision metadata to current authenticated editor
 
 test('public snapshot cache is short-lived and can never restore edit privileges', () => {
   assert.match(client, /sessionStorage/);
+  assert.match(client, /const authenticated = Boolean\(authData\.session\)/);
+  assert.match(client, /if \(!force && !authenticated && typeof sessionStorage/);
+  assert.match(client, /if \(!authenticated && data\?\.status === 'ok'/);
   assert.match(client, /Date\.now\(\) - cached\.savedAt < 60000/);
   assert.match(client, /role: 'public-viewer', _fromCache: true/);
   assert.match(client, /role: 'public-viewer' \} \}\)\)/);
