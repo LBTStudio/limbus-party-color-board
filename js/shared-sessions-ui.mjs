@@ -349,6 +349,10 @@ async function refreshSessions() {
     setStatus('参加中の共有編成をクラウドから読み込んでいます…');
     const result = await getApi().listSessions(displayName());
     sessions = Array.isArray(result) ? result : [];
+    const activeListing = active && sessions.find((item) => item.session_id === active.sessionId);
+    if (activeListing?.owner_display_name) {
+      active.ownerDisplayName = String(activeListing.owner_display_name).trim().slice(0, 40) || '編成主';
+    }
     statusMessage = '共有編成を読み込みました（' + sessions.length + '件）。';
     render();
     if (active && active.role === 'owner') await refreshAdmin();
@@ -500,6 +504,12 @@ async function refreshAdmin() {
     const result = await getApi().getAdmin(session.sessionId);
     if (active !== session || session.role !== 'owner') return;
     admin = result;
+    const owner = Array.isArray(result.members)
+      ? result.members.find((member) => member?.role === 'owner')
+      : null;
+    if (owner?.display_name) {
+      session.ownerDisplayName = String(owner.display_name).trim().slice(0, 40) || '編成主';
+    }
     session.adminUpdatedAt = Date.now();
     render();
   } catch (error) {
