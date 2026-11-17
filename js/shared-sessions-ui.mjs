@@ -111,7 +111,7 @@ function sameKeys(a, b) {
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
   if (!value || typeof value !== 'object') return value;
-  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableValue(value[key])]));
+  return Object.fromEntries(Object.keys(value).filter((key) => key !== 'addedByDisplayName').sort().map((key) => [key, stableValue(value[key])]));
 }
 
 function personaSignature(personas) {
@@ -134,6 +134,7 @@ function currentPartyEntries() {
     ? entries.map((entry) => ({
       key: String(entry?.key ?? ''),
       playerName: String(entry?.playerName ?? '').trim().slice(0, 80),
+      addedByDisplayName: String(entry?.addedByDisplayName ?? '').trim().slice(0, 40),
     })).filter((entry) => entry.key)
     : [];
 }
@@ -575,6 +576,27 @@ function stopRealtime() {
   if (previous && api) void api.removeChannel(previous).catch(() => {});
 }
 
+async function refreshContributorNames(session) {
+  if (!session || active !== session || session.role === 'public-viewer') return;
+  if (session.saveBusy || session.retry || session.incomingState
+    || !samePartyState(currentKeys(), currentPersonas(), session.lastSavedKeys, session.lastSavedPersonas)) return;
+
+  try {
+    const snapshot = await getApi().readPublicSession(session.sessionId, { force: true });
+    if (active !== session || session.saveBusy || session.retry || session.incomingState) return;
+    const nextPersonas = remotePersonas(snapshot);
+    if (Number(snapshot.revision) !== session.revision
+      || !samePartyState(snapshot.party_keys, nextPersonas, session.lastSavedKeys, session.lastSavedPersonas)) {
+      if (Number(snapshot.revision) > session.revision) void pollSession();
+      return;
+    }
+    session.lastSavedPersonas = nextPersonas;
+    bridge.setPartyKeys(snapshot.party_keys, nextPersonas);
+  } catch {
+    // A later membership event or explicit refresh can recover this display-only update.
+  }
+}
+
 async function startRealtime(session) {
   if (!session || active !== session || !['owner', 'editor'].includes(session.role) || document.hidden) return;
   if (session.realtimeStarting || (realtimeChannel && realtimeConnected)) return;
@@ -587,8 +609,11 @@ async function startRealtime(session) {
     const subscribePromise = getApi().subscribeSession(session.sessionId, (payload) => {
       if (active !== session || realtimeAttemptId !== attemptId) return;
       if (payload?._event === 'membership_changed') {
-        // Refresh the workspace list (and owner roster) after a member renames themselves.
+        // Refresh both the workspace roster and per-person contributor labels.
+        // Contributor labels change without a party revision, so pollSession alone
+        // would correctly return "unchanged" and leave the matrix stale.
         void refreshSessions();
+        void refreshContributorNames(session);
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
         realtimeRefreshTimer = setTimeout(() => { void pollSession(); }, 150);
         return;
@@ -996,6 +1021,7 @@ async function sendSave(session, operation) {
     session.revision = Number(result.revision) || session.revision;
     session.lastSavedKeys = Array.isArray(result.party_keys) ? [...result.party_keys] : [...operation.keys];
     session.lastSavedPersonas = remotePersonas(result);
+    bridge.setPartyKeys(session.lastSavedKeys, session.lastSavedPersonas);
     session.retry = null;
     session.status = 'saved';
     session.title = result.title || session.title;
@@ -1323,6 +1349,7 @@ export async function initializeSharedSessionsUi(callbacks) {
     get isActive() { return Boolean(active); },
     get sessionId() { return active ? active.sessionId : ''; },
     get personalPartySnapshot() { return personalPartySnapshot ? personalPartySnapshot.map((entry) => ({ ...entry })) : null; },
+    getDisplayName: () => active ? displayName() : '',
     canEdit,
     onPartyChanged,
   };
