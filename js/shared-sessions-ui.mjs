@@ -544,7 +544,7 @@ function schedulePoll(delay = null) {
   stopPolling();
   if (!active || active.role === 'public-viewer' || realtimeConnected || active.accessRevoked || active.status === 'closed' || document.hidden) return;
   const busyWindow = Date.now() - active.lastActivity < 120000;
-  const base = delay === null ? (busyWindow ? 30000 : 60000) : delay;
+  const base = delay === null ? (busyWindow ? 60000 : 120000) : delay;
   pollTimer = setTimeout(() => pollSession(), Math.round(base + Math.random() * Math.min(900, base * 0.15)));
 }
 

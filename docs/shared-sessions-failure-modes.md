@@ -19,7 +19,7 @@
 | Broadcastが別セッションへ流れる | 編成更新通知の混線 | topicを `party:<session UUID>` に分け、private channelのRLSで同じセッションのowner/editorだけを許可する | AのeditorがBのtopicへ接続できず、Bのrevisionを受け取らない |
 | Broadcast payloadに編成データが入る | Realtimeメッセージ量・内容漏えい | DB triggerはrevisionだけを送信し、編成本体は認可付きRPCから必要時に取得する | trigger payloadにparty_keys/party_personasが含まれない |
 | Realtimeの認可がメンバー剥奪後も残る | 古いWebSocketが通知を受け続ける | Supabaseは接続時にRealtime RLSを評価するため、membership削除が既存socketを即時切断するとは限らない。書き込みRPCで再確認し、通知payloadはrevisionだけに限定する | 参加権限を削除した後、古いタブのwriteが必ず拒否される |
-| Realtimeが停止・接続上限に達する | 編集画面が同期しない | 編集者のみRealtimeへ接続し、30/60秒pollへフォールバックする。hidden時は接続を停止。閲覧者にはRealtime接続させない | Realtimeを遮断し、編集画面がpollへ切り替わり、閲覧者の通信量が増えない |
+| Realtimeが停止・接続上限に達する | 編集画面が同期しない | 編集者のみRealtimeへ接続し、60/120秒pollへフォールバックする。hidden時は接続を停止。閲覧者にはRealtime接続させない | Realtimeを遮断し、編集画面がpollへ切り替わり、閲覧者の通信量が増えない |
 | 2人が同時に編集する | 後勝ち上書き、重複、上限超過 | per-session revision、expected_revision、unique operation_idをトランザクションで検証する | stale revisionが競合となり、同じoperation_idの再送で二重反映しない |
 | 保存成功後に応答だけ失われる | 再試行で同じ操作を二重適用 | operation_idで冪等性を確保し、成功応答前は保存済み表示にしない | commit後のタイムアウトを模擬し、同じIDの再送で二重反映しない |
 | ブラウザタブが休止・復帰する | 古い表示、接続の重複 | hidden時はRealtime/pollを停止し、復帰時にrevision確認後に再接続する | hidden中に定期通信が止まり、復帰時に同期が再開する |

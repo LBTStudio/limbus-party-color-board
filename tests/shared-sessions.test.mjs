@@ -160,7 +160,7 @@ test('public viewers do not poll; editors use Realtime with slow polling fallbac
   assert.match(sharedUi, /realtimeConnected/);
   assert.match(sharedUi, /startRealtime\(active\)/);
   assert.match(sharedUi, /schedulePoll\(10000\)/);
-  assert.match(sharedUi, /busyWindow \? 30000 : 60000/);
+  assert.match(sharedUi, /busyWindow \? 60000 : 120000/);
   assert.match(sharedUi, /expectedRevision/);
   assert.match(sharedUi, /operationId/);
   assert.match(sharedUi, /reapplyLocal/);
