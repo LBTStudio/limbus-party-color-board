@@ -2,13 +2,58 @@
 -- Apply after 20261027111058_preserve_derived_skill_names.sql.
 
 alter table public.party_sessions
-  add column if not exists public_view_enabled boolean not null default true,
-  add column if not exists public_edit_enabled boolean not null default true;
+  add column if not exists public_view_enabled boolean not null default false,
+  add column if not exists public_edit_enabled boolean not null default false;
 
+-- Existing workspaces retain the old private-by-default behavior. Owners can
+-- opt in to open viewing/editing from the new settings panel. New workspaces
+-- are created open by the replacement create_party_session RPC below.
 update public.party_sessions
-set public_view_enabled = true,
-    public_edit_enabled = true
+set public_view_enabled = false,
+    public_edit_enabled = false
 where archived_at is null;
+
+create or replace function public.create_party_session(
+  p_title text,
+  p_display_name text default '編成主'
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $
+declare
+  v_user_id uuid := auth.uid();
+  v_session_id uuid;
+  v_title text := left(btrim(coalesce(p_title,'')),80);
+  v_name text := left(btrim(coalesce(p_display_name,'')),40);
+begin
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '42501'; end if;
+  if v_title = '' then raise exception 'SESSION_TITLE_REQUIRED' using errcode = '22023'; end if;
+  if (select count(*) from public.party_sessions s
+      where s.owner_user_id = v_user_id and s.created_at > now() - interval '1 hour') >= 10 then
+    raise exception 'SESSION_CREATE_RATE_LIMIT' using errcode = '53300';
+  end if;
+  if (select count(*) from public.party_sessions s
+      where s.owner_user_id = v_user_id and s.archived_at is null) >= 20 then
+    raise exception 'ACTIVE_SESSION_LIMIT' using errcode = '53300';
+  end if;
+  if (select count(*) from public.party_sessions s
+      where s.owner_user_id = v_user_id and s.created_at > now() - interval '30 days') >= 50 then
+    raise exception 'SESSION_STORAGE_LIMIT' using errcode = '53300';
+  end if;
+  if v_name = '' then v_name := '編成主'; end if;
+  insert into public.party_sessions (
+    title, owner_user_id, public_view_enabled, public_edit_enabled
+  )
+  values (v_title, v_user_id, true, true)
+  returning id into v_session_id;
+  insert into public.session_members (session_id,user_id,role,display_name)
+  values (v_session_id,v_user_id,'owner',v_name);
+  return public._party_session_snapshot(v_session_id)
+    || jsonb_build_object('public_view_enabled',true,'public_edit_enabled',true);
+end;
+$;
 
 create or replace function public.read_public_party_session(p_session_id uuid)
 returns jsonb
