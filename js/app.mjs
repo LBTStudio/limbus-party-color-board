@@ -872,7 +872,7 @@ function renderParty() {
         <div class="card-title">
           <div>
             <h3 class="persona-name">${escapeHtml(persona.name)}</h3>
-            <div class="keyword-row">${keywordTags}</div>
+            <div class="keyword-row" title="${escapeHtml(persona.keywords.join('・') || 'キーワードなし')}">${keywordTags}</div>
           </div>
         </div>
         <dl class="stats">
