@@ -12,6 +12,7 @@ const lifecycleMigration = read('../supabase/migrations/20261023152951_shared_se
 const personaSnapshotMigration = read('../supabase/migrations/20261023181231_shared_persona_snapshots.sql');
 const partyCapacityMigration = read('../supabase/migrations/20261023213614_allow_twenty_personas_per_party.sql');
 const playerAssignmentMigration = read('../supabase/migrations/20261023232430_add_party_player_assignments_and_resistances.sql');
+const publicViewMigration = read('../supabase/migrations/202611170001_public_view_open_edit_realtime.sql');
 const closedSessionAccessMigration = read('../supabase/migrations/20261023201147_restrict_closed_session_status_to_related_users.sql');
 const immediateDeleteMigration = read('../supabase/migrations/20261023204722_immediate_delete_manually_ended_sessions_and_owner_display_name.sql');
 const memberCountMigration = read('../supabase/migrations/20261023211716_add_member_count_to_workspace_list.sql');
@@ -148,15 +149,17 @@ test('Turnstile token is wired into anonymous signup', () => {
   assert.match(sharedUi, /challenges\.cloudflare\.com\/turnstile/);
 });
 
-test('polling avoids hidden-tab churn and offers explicit conflict handling', () => {
+test('public viewers do not poll; editors use Realtime with slow polling fallback', () => {
   assert.match(sharedUi, /document\.hidden/);
-  assert.match(sharedUi, /5000/);
-  assert.match(sharedUi, /15000/);
+  assert.match(sharedUi, /active\.role === 'public-viewer'/);
+  assert.match(sharedUi, /realtimeConnected/);
+  assert.match(sharedUi, /startRealtime\(active\)/);
+  assert.match(sharedUi, /schedulePoll\(10000\)/);
+  assert.match(sharedUi, /busyWindow \? 30000 : 60000/);
   assert.match(sharedUi, /expectedRevision/);
   assert.match(sharedUi, /operationId/);
   assert.match(sharedUi, /reapplyLocal/);
   assert.match(sharedUi, /accessRevoked/);
-  assert.match(sharedUi, /!active\.incomingState/);
   assert.match(sharedUi, /session\.pollBusy/);
   assert.match(sharedUi, /未保存の編集、保存処理、または競合があります/);
 });
@@ -207,7 +210,8 @@ test('docs describe the implemented shared-session feature', () => {
   assert.doesNotMatch(readme, /複数人の編集は同期されません/);
   assert.doesNotMatch(design, /共有セッションは未実装/);
   assert.doesNotMatch(failureModes, /共有セッション機能がまだない/);
-  assert.match(readme, /招待リンクを開いた人はアクセス申請を送り/);
+  assert.match(readme, /閲覧モードは初回取得後に定期通信しません/);
+  assert.match(readme, /編集参加は招待・承認なし/);
 });
 
 test('per-session resource caps are protected by parent-row locks', () => {
@@ -318,8 +322,8 @@ test('workspace list shows owner attribution and current members out of the exis
   assert.match(memberCountMigration, /revoke all on function public\.list_my_party_sessions\(\) from public, anon/i);
   assert.match(memberCountMigration, /grant execute on function public\.list_my_party_sessions\(\) to authenticated/i);
   assert.match(sharedUi, /memberCount \+ '\/20名'/);
-  assert.match(sharedUi, /参加者（' \+ members\.length \+ '\/20名）/);
-  assert.match(html, /発行者を含め最大20名まで参加できます/);
+  assert.match(sharedUi, /編集参加者（' \+ members\.length \+ '\/20名）/);
+  assert.match(html, /発行者を含め最大20名/);
   assert.match(forwardMigration, /count\(\*\)[\s\S]*?>= 20 then/);
   assert.match(forwardMigration, /for update/);
 });
@@ -328,9 +332,9 @@ test('shared session lifecycle clearly separates browser-local and cloud data', 
   const html = read('../index.html');
   assert.match(html, /編成の共同編集・同期/);
   assert.match(html, /shared-title-short">共同編集/);
-  assert.match(html, /招待リンクから参加申請を受け付け/);
-  assert.match(html, /発行者が承認したメンバーと同じ編成を共同編集/);
-  assert.match(html, /共同編集スペースの保存期間と自動削除/);
+  assert.match(html, /認証や参加申請なしで編成を閲覧できます/);
+  assert.match(html, /編集に参加すると、同じ編成を複数人で直接編集/);
+  assert.match(html, /Realtime通知/);
   assert.match(html, /この端末の個人編成/);
   assert.match(html, /PERSONAL · THIS BROWSER/);
   assert.match(html, /SHARED · CLOUD DATABASE/);
@@ -448,7 +452,8 @@ test('member capacity supports 16 within the 20-person cap and workspace lists s
 test('tool URL copying is separate from invitation issuance and cannot auto-copy an invite secret', () => {
   assert.match(html, /id="shared-tool-url"/);
   assert.match(html, /id="shared-copy-tool-url">ツールURLをコピー/);
-  assert.match(html, /id="shared-copy-invite">招待リンクをコピー/);
+  assert.match(html, /id="shared-copy-session-link">閲覧・編集リンクをコピー/);
+  assert.match(html, /id="shared-join-edit">編集に参加/);
   assert.match(html, /共同編集への参加権限はありません/);
   assert.match(sharedUi, /function publicToolUrl\(\) \{\s*return location\.origin \+ location\.pathname;/);
   const start = sharedUi.indexOf('async function issueInvite()');
@@ -539,14 +544,17 @@ test('CSP disallows inline script execution and limits resource origins', () => 
   assert.ok(policy.includes('hobntjcrzybqsiobrpsz.supabase.co'));
 });
 
-test('invite token is removed from the URL before loading third-party scripts', () => {
+test('public read routes do not load Turnstile; edit and create actions load it lazily', () => {
   const initPosition = sharedUi.indexOf('const initialRoute = captureInitialRoute();');
-  const turnstilePosition = sharedUi.indexOf('await initializeTurnstile();', initPosition);
-  assert.ok(initPosition >= 0 && turnstilePosition > initPosition);
+  const routePosition = sharedUi.indexOf('await initializeRoute(initialRoute)', initPosition);
+  assert.ok(initPosition >= 0 && routePosition > initPosition);
+  assert.ok(!sharedUi.slice(initPosition, routePosition).includes('initializeTurnstile'));
   const captureStart = sharedUi.indexOf('function captureInitialRoute()');
   const routeStart = sharedUi.indexOf('async function initializeRoute(route)', captureStart);
   assert.ok(captureStart >= 0 && routeStart > captureStart);
   assert.ok(sharedUi.slice(captureStart, routeStart).includes("if (route.token) setRoute('');"));
+  assert.match(sharedUi, /async function enterEditMode\(\)[\s\S]*?await initializeTurnstile\(\)/);
+  assert.match(sharedUi, /async function createSession\(\)[\s\S]*?await initializeTurnstile\(\)/);
 });
 
 test('browser Supabase SDK dependency uses an exact version instead of a floating major tag', () => {
@@ -588,10 +596,10 @@ test('main board is prioritized and infrequent operations are grouped', () => {
   assert.ok(styles.includes('.shared-panel,\n  .card-actions'));
   assert.ok(sharedUi.includes('a[href="#shared-panel"]'));
   assert.ok(sharedUi.includes('setSharedPanelOpen(true)'));
-  assert.ok(sharedUi.includes('setSharedPanelOpen(true, { focusRequests: true })'));
-  assert.ok(sharedUi.includes('requestHeading.scrollIntoView({ behavior: \'auto\', block: \'start\' })'));
-  assert.ok(sharedUi.includes("bridge.showToast('新しい参加申請が"));
-  assert.ok(sharedUi.includes("requestBadge.textContent = '参加申請 ' + pendingCount"));
+  assert.ok(sharedUi.includes("$('#shared-join-edit').addEventListener('click', () => enterEditMode())"));
+  assert.ok(sharedUi.includes("$('#shared-refresh-snapshot').addEventListener('click', () => refreshActiveSnapshot())"));
+  assert.ok(sharedUi.includes("$('#shared-public-edit-enabled').addEventListener('change', () => updatePublicAccess())"));
+  assert.ok(sharedUi.includes("$('#shared-copy-session-link').addEventListener('click', () => copySessionLink())"));
 });
 
 
@@ -667,4 +675,54 @@ test('shared snapshots persist bounded PL names and resistance fields without we
   assert.match(app, /assignmentOnly: true/);
   assert.match(app, /playerNamesByKey\.set/);
   assert.match(sharedUi, /currentPartyEntries\(\)/);
+});
+
+test('public viewing is anonymous and read-only while edit join is explicit and capacity-checked', () => {
+  const readStart = publicViewMigration.indexOf('create or replace function public.read_public_party_session');
+  const joinStart = publicViewMigration.indexOf('create or replace function public.join_public_party_session');
+  const accessStart = publicViewMigration.indexOf('create or replace function public.set_public_party_access');
+  const realtimeStart = publicViewMigration.indexOf('create or replace function public.can_receive_party_broadcast');
+  assert.ok(readStart >= 0 && joinStart > readStart && accessStart > joinStart && realtimeStart > accessStart);
+  const readFn = publicViewMigration.slice(readStart, joinStart);
+  const joinFn = publicViewMigration.slice(joinStart, accessStart);
+  const accessFn = publicViewMigration.slice(accessStart, realtimeStart);
+  assert.match(readFn, /security definer/i);
+  assert.match(readFn, /public_view_enabled/);
+  assert.match(readFn, /auth\.uid\(\)/);
+  assert.match(readFn, /'role', case when v_member_role in \('owner', 'editor'\) then v_member_role else 'public-viewer' end/);
+  assert.match(publicViewMigration, /grant execute on function public\.read_public_party_session\(uuid\) to anon, authenticated/i);
+  assert.match(joinFn, /for update/);
+  assert.match(joinFn, /public_edit_enabled/);
+  assert.match(joinFn, /SESSION_MEMBER_LIMIT/);
+  assert.match(joinFn, /USER_SESSION_LIMIT/);
+  assert.match(joinFn, /role = 'editor'/);
+  assert.match(accessFn, /owner_user_id=v_user_id/);
+  assert.match(accessFn, /delete from public\.session_members[\s\S]*?role <> 'owner'/);
+  assert.match(publicViewMigration, /add column if not exists public_view_enabled boolean not null default true/i);
+  assert.match(publicViewMigration, /add column if not exists public_edit_enabled boolean not null default true/i);
+});
+
+test('Realtime only broadcasts revision metadata to current authenticated editors', () => {
+  const broadcastStart = publicViewMigration.indexOf('create or replace function public.broadcast_party_revision');
+  const policyStart = publicViewMigration.indexOf('create policy party_editors_receive_revision_broadcast');
+  assert.ok(broadcastStart >= 0 && policyStart > broadcastStart);
+  const broadcast = publicViewMigration.slice(broadcastStart, policyStart);
+  assert.match(broadcast, /realtime\.send/);
+  assert.match(broadcast, /jsonb_build_object\('revision', new\.revision\)/i);
+  assert.match(broadcast, /private => true/i);
+  assert.doesNotMatch(broadcast, /party_personas|party_keys/);
+  assert.match(publicViewMigration, /public\.can_receive_party_broadcast\(\(select realtime\.topic\(\)\)\)/);
+  assert.match(publicViewMigration, /m\.role in \('owner', 'editor'\)/);
+  assert.match(client, /\.channel\('party:' \+ sessionId, \{ config: \{ private: true \} \}\)/);
+  assert.match(client, /\.on\('broadcast', \{ event: 'party_changed' \}/);
+  assert.match(client, /client\.removeChannel\(channel\)/);
+});
+
+test('public snapshot cache is short-lived and can never restore edit privileges', () => {
+  assert.match(client, /sessionStorage/);
+  assert.match(client, /Date\.now\(\) - cached\.savedAt < 60000/);
+  assert.match(client, /role: 'public-viewer', _fromCache: true/);
+  assert.match(client, /role: 'public-viewer' \} \}\)\)/);
+  assert.match(sharedUi, /閲覧中は自動同期・定期通信を行いません/);
+  assert.match(sharedUi, /必要に応じて「編成を更新」を押してください/);
 });
