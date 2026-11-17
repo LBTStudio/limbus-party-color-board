@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { MAX_IMPORT_CHARS, MAX_IMPORT_ROWS, MAX_PARTY, parsePartySheet } from '../js/core.mjs';
 import { escapeHtml } from '../js/security.mjs';
+import { forgetKnownSharedSession, readKnownSharedSessions, rememberKnownSharedSession } from '../js/known-shared-sessions.mjs';
 
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 const personas = JSON.parse(read('../data/personas.json')).personas;
@@ -914,6 +915,41 @@ test('opening the shared workspace list does not create anonymous Auth identitie
   assert.match(listMethod, /if \(!authData\.session\) return \[\]/);
   assert.match(listMethod, /return rpc\('list_my_party_sessions'\)/);
   assert.doesNotMatch(listMethod, /signInAnonymously|captchaToken/);
+});
+
+test('recently opened shared spaces remain discoverable without restoring stale edit privileges', () => {
+  const values = new Map();
+  const storage = {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, String(value)); },
+  };
+  const firstId = '123e4567-e89b-42d3-a456-426614174000';
+  const secondId = '123e4567-e89b-42d3-a456-426614174001';
+
+  assert.equal(rememberKnownSharedSession(firstId, '攻略共有スペース', storage), true);
+  assert.equal(rememberKnownSharedSession(secondId, '検証用スペース', storage), true);
+  assert.deepEqual(readKnownSharedSessions(storage), [
+    { session_id: secondId, title: '検証用スペース' },
+    { session_id: firstId, title: '攻略共有スペース' },
+  ]);
+  assert.equal(rememberKnownSharedSession(firstId, '攻略共有スペース・更新', storage), true);
+  assert.equal(readKnownSharedSessions(storage)[0].title, '攻略共有スペース・更新');
+
+  for (let index = 2; index < 11; index += 1) {
+    const suffix = String(index).padStart(12, '0');
+    rememberKnownSharedSession('123e4567-e89b-42d3-a456-' + suffix, '履歴 ' + index, storage);
+  }
+  assert.equal(readKnownSharedSessions(storage).length, 8, 'the local history is bounded');
+  assert.equal(rememberKnownSharedSession('not-a-session-id', 'invalid', storage), false);
+  assert.equal(forgetKnownSharedSession(firstId, storage), true);
+  assert.equal(readKnownSharedSessions(storage).some((item) => item.session_id === firstId), false);
+
+  assert.match(sharedUi, /rememberKnownSharedSession\(snapshot\.session_id \|\| sessionId/);
+  assert.match(sharedUi, /readKnownSharedSessions\(\)/);
+  assert.match(sharedUi, /rememberedOnly: true/);
+  assert.match(sharedUi, /item\.rememberedOnly \? '再接続' : '開く'/);
+  assert.match(sharedUi, /forgetKnownSharedSession\(session\.sessionId\)/);
+  assert.match(sharedUi, /前回利用した共有スペース · 接続時に権限を再確認します/);
 });
 
 test('anonymous Auth retention avoids unsafe cascading cleanup of shared workspaces', () => {
