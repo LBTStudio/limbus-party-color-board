@@ -3456,3 +3456,64 @@ h2 {
     display: flex;
   }
 }
+
+
+/* Make the shared workspace an unmistakable desktop action, not a tiny dock. */
+@media (min-width: 1120px) and (min-height: 720px) {
+  .shared-panel:not(.is-open) {
+    top: 9px;
+    right: max(16px, calc((100vw - 1600px) / 2));
+    bottom: auto;
+    width: fit-content;
+    max-width: min(270px, calc(100vw - 32px));
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .shared-panel:not(.is-open) > .section-head {
+    margin: 0;
+  }
+
+  .shared-panel:not(.is-open) .shared-dock-tools {
+    gap: 0;
+  }
+
+  .shared-panel:not(.is-open) #shared-role-label {
+    display: none;
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid #ead28a;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #e6cc77, #c49e46);
+    color: #17130d;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .42), 0 2px 10px rgba(200, 168, 75, .2);
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle:hover {
+    border-color: #fff0b5;
+    background: linear-gradient(135deg, #f0da91, #d2b15c);
+    color: #17130d;
+    transform: translateY(-1px);
+  }
+
+  .shared-panel:not(.is-open) .shared-panel-toggle:focus-visible {
+    outline: 3px solid #fff0b5;
+    outline-offset: 3px;
+  }
+
+  .shared-panel:not(.is-open) .shared-toggle-mark {
+    margin-left: 8px;
+    color: currentColor;
+    font-size: 1.05rem;
+    font-weight: 850;
+  }
+}
