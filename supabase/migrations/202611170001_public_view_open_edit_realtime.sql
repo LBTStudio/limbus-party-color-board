@@ -21,7 +21,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog
-as $
+as $$
 declare
   v_user_id uuid := auth.uid();
   v_session_id uuid;
@@ -53,7 +53,7 @@ begin
   return public._party_session_snapshot(v_session_id)
     || jsonb_build_object('public_view_enabled',true,'public_edit_enabled',true);
 end;
-$;
+$$;
 
 create or replace function public.read_public_party_session(p_session_id uuid)
 returns jsonb
