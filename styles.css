@@ -3764,3 +3764,121 @@ h2 {
     font-size: .76rem;
   }
 }
+
+/* Desktop readability correction: all dense board labels remain comfortably legible. */
+@media (min-width: 1120px) {
+  .brand-kicker,
+  .kicker {
+    font-size: .78rem;
+  }
+
+  .topbar-meta,
+  .section-meta,
+  .toolbar-note,
+  .footer,
+  .hint,
+  .shared-intro,
+  .shared-name-note {
+    font-size: .82rem;
+  }
+
+  .control label,
+  .toolbar-more > summary,
+  .shared-fields label,
+  .shared-choice-name-field,
+  .shared-invite-tools label,
+  .manual-persona-fields label,
+  .manual-skill-field,
+  .picker-account-select {
+    font-size: .8rem;
+  }
+
+  .toolbar-primary .btn,
+  .toolbar-add,
+  .shared-panel-toggle,
+  .btn {
+    font-size: .82rem;
+  }
+
+  select,
+  .card-player-input,
+  .manual-skill-field select {
+    font-size: .84rem;
+  }
+
+  .resource-section .section-meta,
+  .resource-personas,
+  .persona-color-legend {
+    font-size: .78rem;
+  }
+
+  .resource-name {
+    font-size: .9rem;
+  }
+
+  .matrix {
+    font-size: .82rem;
+  }
+
+  .matrix thead th,
+  .matrix tfoot th,
+  .matrix tfoot td {
+    font-size: .78rem;
+  }
+
+  .member-label {
+    font-size: .76rem;
+  }
+
+  .member-name,
+  .slot-name,
+  .card-player-field,
+  .passive {
+    font-size: .82rem;
+  }
+
+  .slot-chip,
+  .count-pill,
+  .total-cell,
+  .sin-chip,
+  .res-chip,
+  .kind-badge,
+  .card-no,
+  .mini-btn,
+  .keyword,
+  .stats dt,
+  .slot-rank,
+  .slot-derived-names,
+  .picker-no,
+  .picker-keywords,
+  .picker-state,
+  .shared-request-badge,
+  .shared-session-item small,
+  .shared-storage-label,
+  .shared-admin-item .hint,
+  .shared-admin-buttons .btn,
+  .shared-lifecycle .hint,
+  .lbt-import-option-meta,
+  .lbt-import-option-skills,
+  .persona-source-badge,
+  .picker-account-status {
+    font-size: .76rem;
+  }
+
+  .stats dd {
+    font-size: .92rem;
+  }
+
+  .shared-join-choice .kicker {
+    font-size: .74rem;
+  }
+
+  .shared-join-choice .hint {
+    font-size: .8rem;
+  }
+
+  .matrix tbody th,
+  .matrix tbody td {
+    line-height: 1.05;
+  }
+}
