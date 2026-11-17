@@ -906,6 +906,34 @@ test('checked-in production migration filename matches the applied Supabase migr
   assert.doesNotMatch(design + setup, /202611170001_public_view_open_edit_realtime/);
 });
 
+test('public shared links ask new visitors to choose edit participation or read-only viewing', () => {
+  const routeStart = sharedUi.indexOf('async function initializeRoute(route)');
+  const routeEnd = sharedUi.indexOf('async function chooseSharedAccess(mode)', routeStart);
+  const route = sharedUi.slice(routeStart, routeEnd);
+  const choiceStart = sharedUi.indexOf('async function chooseSharedAccess(mode)');
+  const choiceEnd = sharedUi.indexOf('async function handleSharedClick(event)', choiceStart);
+  const choice = sharedUi.slice(choiceStart, choiceEnd);
+
+  assert.ok(routeStart >= 0 && routeEnd > routeStart);
+  assert.match(route, /const snapshot = await getApi\(\)\.readPublicSession\(sessionId\)/);
+  assert.match(route, /\['owner', 'editor'\]\.includes\(snapshot\.role\)/);
+  assert.match(route, /pendingJoinChoice = snapshot/);
+  assert.doesNotMatch(route, /await activateSession\(sessionId\);/);
+  assert.match(choice, /snapshot\.public_edit_enabled === false/);
+  assert.match(choice, /rememberDisplayName\(chosenName\)/);
+  assert.match(choice, /await activateSession\(snapshot\.session_id, snapshot\)/);
+  assert.match(choice, /if \(joinAsEditor\) await enterEditMode\(\)/);
+  assert.match(sharedUi, /chooseSharedAccess\('editor'\)/);
+  assert.match(sharedUi, /chooseSharedAccess\('viewer'\)/);
+
+  assert.match(html, /id="shared-join-as-editor">参加者として参加/);
+  assert.match(html, /id="shared-join-as-viewer">閲覧のみ/);
+  assert.match(html, /id="shared-choice-display-name"/);
+  assert.match(html, /id="shared-create-tools"/);
+  assert.match(styles, /\.shared-join-choice-actions/);
+  assert.match(styles, /#shared-create-tools\[hidden\]/);
+});
+
 test('opening the shared workspace list does not create anonymous Auth identities', () => {
   const start = client.indexOf('async listSessions()');
   const end = client.indexOf('async createSession(', start);
