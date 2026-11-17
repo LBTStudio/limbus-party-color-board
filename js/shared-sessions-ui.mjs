@@ -225,8 +225,8 @@ function setSharedPanelOpen(open) {
   toggle.setAttribute('aria-expanded', String(sharedPanelOpen));
   const label = $('#shared-panel-toggle-label');
   const mark = $('.shared-toggle-mark');
-  if (label) label.textContent = sharedPanelOpen ? '閉じる' : '共有スペース';
-  if (mark) mark.textContent = sharedPanelOpen ? '−' : '＋';
+  if (label) label.textContent = sharedPanelOpen ? '共有パネルを閉じる' : '共有・共同編集を開く';
+  if (mark) mark.textContent = sharedPanelOpen ? '×' : '＋';
 }
 
 function render() {
@@ -1192,15 +1192,6 @@ export async function initializeSharedSessionsUi(callbacks) {
     const nextOpen = !sharedPanelOpen;
     setSharedPanelOpen(nextOpen);
     if (nextOpen && active?.role === 'owner') void refreshAdmin();
-  });
-  document.querySelectorAll('a[href="#shared-panel"]').forEach((link) => {
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-      setSharedPanelOpen(true);
-      $('#shared-panel-toggle').focus();
-      if (active?.role === 'owner') void refreshAdmin();
-      else if (!active) void refreshSessions();
-    });
   });
   $('#shared-refresh').addEventListener('click', () => refreshSessions());
   $('#shared-display-name').addEventListener('change', () => {
