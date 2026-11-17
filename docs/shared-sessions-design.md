@@ -117,7 +117,7 @@ Freeの同時Realtime接続200はプロジェクト全体の上限であり、�
 
 ## マイグレーションとリリース条件
 
-追加マイグレーション `202611170001_public_view_open_edit_realtime.sql` は、既存の招待テーブル・承認RPCを削除せず、新しい公開フラグ、読み取りRPC、直接参加RPC、private Broadcast trigger/RLS policyを追加する。既存セッションとDB関数で作成されたセッションはpublic view/editをfalseにして非公開を維持する。新UIから作成したセッションだけ、作成直後に両方trueへ切り替える。
+追加マイグレーション `20261117155808_public_view_open_edit_realtime.sql` は、既存の招待テーブル・承認RPCを削除せず、新しい公開フラグ、読み取りRPC、直接参加RPC、private Broadcast trigger/RLS policyを追加する。既存セッションとDB関数で作成されたセッションはpublic view/editをfalseにして非公開を維持する。新UIから作成したセッションだけ、作成直後に両方trueへ切り替える。
 
 公開前に次を確認する。
 
