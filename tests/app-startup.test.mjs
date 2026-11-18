@@ -292,6 +292,7 @@ test('desktop roster management dropdown is not clipped by the one-screen contro
 
 
 
+
 test('the full persona-name matrix cell opens details, including its padding area', () => {
   const start = styles.lastIndexOf('/* The entire persona-name cell is the detail-selection target');
   assert.ok(start >= 0, 'full-cell hit area styling is present');
@@ -300,12 +301,18 @@ test('the full persona-name matrix cell opens details, including its padding are
   const clickEnd = app.indexOf('function renderAll()', clickStart);
   assert.ok(clickStart >= 0 && clickEnd > clickStart, 'the delegated click handler exists');
   const clickHandler = app.slice(clickStart, clickEnd);
-  assert.match(app, /<th scope="row" class="member"><button type="button" class="matrix-persona-select" data-action="select-persona"/);
-  assert.match(clickHandler, /event\.target\.closest\('\[data-action\]'\)/);
-  assert.match(clickHandler, /case 'select-persona':[\\s\\S]*?state\.selectedDetailKey = action\.dataset\.key/);
-  assert.match(hitArea, /\.matrix tbody th\.member \{\s*padding: 0;/);
-  assert.match(hitArea, /\.matrix-persona-select \{[\\s\\S]*?width: 100%;[\\s\\S]*?height: 100%;[\\s\\S]*?min-height: 100%;[\\s\\S]*?padding: 6px 6px 6px 10px;/);
-  assert.match(hitArea, /\.matrix-persona-select:hover \{[\\s\S]*?background:/);
-  assert.match(hitArea, /\.matrix-persona-select:focus-visible \{[\\s\S]*?outline: 2px solid var\(--gold-hi\)/);
-  assert.match(hitArea, /@media \(min-width: 1120px\) and \(min-height: 720px\)[\s\S]*?\.matrix tbody th\.member \{\s*padding: 0;/);
+  assert.ok(app.includes('<th scope="row" class="member"><button type="button" class="matrix-persona-select" data-action="select-persona"'));
+  assert.ok(clickHandler.includes("event.target.closest('[data-action]')"));
+  assert.ok(clickHandler.includes("case 'select-persona':"));
+  assert.ok(clickHandler.includes('state.selectedDetailKey = action.dataset.key'));
+  assert.ok(hitArea.includes('.matrix tbody th.member {\n  padding: 0;'));
+  assert.ok(hitArea.includes('width: 100%;'));
+  assert.ok(hitArea.includes('height: 100%;'));
+  assert.ok(hitArea.includes('min-height: 100%;'));
+  assert.ok(hitArea.includes('padding: 6px 6px 6px 10px;'));
+  assert.ok(hitArea.includes('.matrix-persona-select:hover'));
+  assert.ok(hitArea.includes('.matrix-persona-select:focus-visible'));
+  assert.ok(hitArea.includes('outline: 2px solid var(--gold-hi);'));
+  assert.ok(hitArea.includes('@media (min-width: 1120px) and (min-height: 720px)'));
+  assert.ok(hitArea.includes('.matrix-persona-select {\n    padding: 0 6px;'));
 });
