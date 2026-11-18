@@ -289,3 +289,30 @@ test('desktop roster management dropdown is not clipped by the one-screen contro
   assert.match(desktop, /main > \.controls \{\s*overflow: visible;\s*z-index: 40;/);
   assert.match(desktop, /\.toolbar-more \{\s*z-index: 41;/);
 });
+
+
+
+
+test('the full persona-name matrix cell opens details, including its padding area', () => {
+  const start = styles.lastIndexOf('/* The entire persona-name cell is the detail-selection target');
+  assert.ok(start >= 0, 'full-cell hit area styling is present');
+  const hitArea = styles.slice(start);
+  const clickStart = app.indexOf('function handleClick(event)');
+  const clickEnd = app.indexOf('function renderAll()', clickStart);
+  assert.ok(clickStart >= 0 && clickEnd > clickStart, 'the delegated click handler exists');
+  const clickHandler = app.slice(clickStart, clickEnd);
+  assert.ok(app.includes('<th scope="row" class="member"><button type="button" class="matrix-persona-select" data-action="select-persona"'));
+  assert.ok(clickHandler.includes("event.target.closest('[data-action]')"));
+  assert.ok(clickHandler.includes("case 'select-persona':"));
+  assert.ok(clickHandler.includes('state.selectedDetailKey = action.dataset.key'));
+  assert.ok(hitArea.includes('.matrix tbody th.member {\n  padding: 0;'));
+  assert.ok(hitArea.includes('width: 100%;'));
+  assert.ok(hitArea.includes('height: 100%;'));
+  assert.ok(hitArea.includes('min-height: 100%;'));
+  assert.ok(hitArea.includes('padding: 6px 6px 6px 10px;'));
+  assert.ok(hitArea.includes('.matrix-persona-select:hover'));
+  assert.ok(hitArea.includes('.matrix-persona-select:focus-visible'));
+  assert.ok(hitArea.includes('outline: 2px solid var(--gold-hi);'));
+  assert.ok(hitArea.includes('@media (min-width: 1120px) and (min-height: 720px)'));
+  assert.ok(hitArea.includes('.matrix-persona-select {\n    padding: 0 6px;'));
+});
